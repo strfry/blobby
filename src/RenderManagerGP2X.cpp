@@ -239,7 +239,7 @@ void RenderManagerGP2X::draw()
 	// Drawing the names
 	drawText(mLeftPlayerName, Vector2(12, 550), false);
 
-	drawText(mRightPlayerName, Vector2(788-(24*mRightPlayerName.length()), 550), false);
+	drawText(mRightPlayerName, Vector2(788-(24*int(mRightPlayerName.length())), 550), false);
 }
 
 bool RenderManagerGP2X::setBackground(const std::string& filename)

@@ -54,7 +54,7 @@ struct QueueObject
 	std::string text;
 	std::vector<std::string> entries;
 	int selected;
-	int lenght;
+	int length;
 };
 
 typedef std::queue<QueueObject> RenderQueue;
@@ -127,25 +127,25 @@ void IMGUI::end()
 				break;
 			case SCROLLBAR:
 				rmanager.drawOverlay(0.5, obj.pos1, obj.pos1 + Vector2(210.0, 26.0));
-				rmanager.drawImage("gfx/scrollbar.bmp",obj.pos1 + Vector2(obj.pos2.x * 200.0 + 5 , 13));
+				rmanager.drawImage("gfx/scrollbar.bmp",obj.pos1 + Vector2(obj.pos2.x * 200 + 5 , 13));
 				break;
 			case ACTIVESCROLLBAR:
 				rmanager.drawOverlay(0.5, obj.pos1, obj.pos1 + Vector2(210.0, 26.0));
-				rmanager.drawImage("gfx/scrollbar.bmp",obj.pos1 + Vector2(obj.pos2.x * 200.0 + 5 , 13));
+				rmanager.drawImage("gfx/scrollbar.bmp",obj.pos1 + Vector2(obj.pos2.x * 200 + 5 , 13));
 	
 				break;
 			case EDITBOX:
-				rmanager.drawOverlay(0.4, obj.pos1, obj.pos1 + Vector2(10.0+obj.lenght*24.0, 10.0+24.0));
+				rmanager.drawOverlay(0.4, obj.pos1, obj.pos1 + Vector2(10.0+obj.length*24.0, 10.0+24.0));
 				rmanager.drawText(obj.text, obj.pos1+Vector2(5.0, 5.0), false);
 				break;
 			case ACTIVEEDITBOX:
-				rmanager.drawOverlay(0.2, obj.pos1, obj.pos1 + Vector2(10.0+obj.lenght*24.0, 10.0+24.0));
+				rmanager.drawOverlay(0.2, obj.pos1, obj.pos1 + Vector2(10.0+obj.length*24.0, 10.0+24.0));
 				rmanager.drawText(obj.text, obj.pos1+Vector2(5.0, 5.0), true);
 				if (obj.pos2.x >= 0)
-					rmanager.drawOverlay(1.0, Vector2((obj.pos2.x)*24.0+obj.pos1.x+5.0, obj.pos1.y+5.0), Vector2((obj.pos2.x)*24.0+obj.pos1.x+5.0+3.0, obj.pos1.y+5.0+24.0), Color(255,255,255));
+					rmanager.drawOverlay(1.0, Vector2((obj.pos2.x)*24 + obj.pos1.x + 5, obj.pos1.y + 5), Vector2((obj.pos2.x)*24 + obj.pos1.x+ 5 + 3, obj.pos1.y + 5 + 24), Color(255,255,255));
 				break;
 			case HIGHLIGHTEDITBOX:
-				rmanager.drawOverlay(0.2, obj.pos1, obj.pos1 + Vector2(10.0+obj.lenght*24.0, 10.0+24.0));
+				rmanager.drawOverlay(0.2, obj.pos1, obj.pos1 + Vector2(10.0+obj.length*24.0, 10.0+24.0));
 				rmanager.drawText(obj.text, obj.pos1+Vector2(5.0, 5.0), true);
 				break;
 			case SELECTBOX:
@@ -246,7 +246,7 @@ bool IMGUI::doButton(int id, const Vector2& position, const std::string& text)
 		Vector2 mousepos = InputManager::getSingleton()->position();
 		if (mousepos.x > position.x &&
 			mousepos.y > position.y &&
-			mousepos.x < position.x + text.length() * 24 &&
+			mousepos.x < position.x + int(text.length()) * 24 &&
 			mousepos.y < position.y + 24.0)
 		{
 			obj.type = HIGHLIGHTTEXT;
@@ -323,7 +323,7 @@ bool IMGUI::doScrollbar(int id, const Vector2& position, float& value)
 			}
 			if (mHeldWidget == id)
 			{
-				value = (mousepos.x - position.x) / 200.0;
+				value = toDouble((mousepos.x - position.x) / 200);
 				mActiveButton = id;
 			}
 		}
@@ -347,13 +347,13 @@ void IMGUI::resetSelection()
 
 bool IMGUI::doEditbox(int id, const Vector2& position, int length, std::string& text, unsigned& cpos)
 {
-	// lenght does not actually work!
+	// length does not actually work!
 	bool changed = false;
 	QueueObject obj;
 	obj.id = id;
 	obj.pos1 = position;
 	obj.type = EDITBOX;
-	obj.lenght = length;
+	obj.length = length;
 
 		Vector2 mousepos = InputManager::getSingleton()->position();
 		if (mousepos.x > position.x &&
@@ -365,7 +365,7 @@ bool IMGUI::doEditbox(int id, const Vector2& position, int length, std::string& 
 			if (InputManager::getSingleton()->click())
 			{
 				if (mousepos.x < position.x + text.length() * 24.0)
-					cpos = (int)(mousepos.x-position.x-5.0+12)/24;
+					cpos = toInt((mousepos.x-position.x-5+12)/24);
 				mActiveButton = id;
 			}
 		}
@@ -509,7 +509,7 @@ bool IMGUI::doSelectbox(int id, const Vector2& pos1, const Vector2& pos2, const 
 	obj.pos2 = pos2;
 	obj.type = SELECTBOX;
 
-	const int itemsPerPage = int(pos2.y - pos1.y - 10) / 24;
+	const int itemsPerPage = toInt(pos2.y - pos1.y - 10) / 24;
 	int first = (int)(selected / itemsPerPage)*itemsPerPage;	//the first visible element in the list
 
 	if (!mInactive)
@@ -566,7 +566,7 @@ bool IMGUI::doSelectbox(int id, const Vector2& pos1, const Vector2& pos2, const 
 		{
 			if (InputManager::getSingleton()->click())
 			{
-				int tmp = (int)((mousepos.y-pos1.y-5) / 24)+first;
+				int tmp = toInt(((mousepos.y-pos1.y-5) / 24)+first);
 				if (tmp < entries.size())
 					selected = tmp;
 				mActiveButton = id;

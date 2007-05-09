@@ -245,7 +245,7 @@ void RenderManagerGL2D::draw()
 		Vector2& ballPosition = *iter;
 */
 		glLoadIdentity();
-		glTranslatef(mBallPosition.x, mBallPosition.y, 0.5);
+		glTranslatef(toDouble(mBallPosition.x), toDouble(mBallPosition.y), 0.5);
 
 		drawQuad(64.0, 64.0);
 /*
@@ -258,7 +258,7 @@ void RenderManagerGL2D::draw()
 	
 	// left blob
 	glLoadIdentity();
-	glTranslatef(mLeftBlobPosition.x, mLeftBlobPosition.y, 0.6);
+	glTranslatef(toDouble(mLeftBlobPosition.x), toDouble(mLeftBlobPosition.y), 0.6);
 	glBindTexture(GL_TEXTURE_2D, mBlob[int(mLeftBlobAnimationState)  % 5]);
 	glColor3ubv(mLeftBlobColor.val);
 	drawQuad(128.0, 128.0);
@@ -271,7 +271,7 @@ void RenderManagerGL2D::draw()
 
 	// right blob
 	glLoadIdentity();
-	glTranslatef(mRightBlobPosition.x, mRightBlobPosition.y, 0.6);
+	glTranslatef(toDouble(mRightBlobPosition.x), toDouble(mRightBlobPosition.y), 0.6);
 	glBindTexture(GL_TEXTURE_2D, mBlob[int(mRightBlobAnimationState)  % 5]);
 	glColor3ubv(mRightBlobColor.val);
 	drawQuad(128.0, 128.0);
@@ -311,7 +311,7 @@ void RenderManagerGL2D::draw()
 	GLubyte markerColor = SDL_GetTicks() % 1000 >= 500 ? 255 : 0;
 	glColor3ub(markerColor, markerColor, markerColor);
 	glLoadIdentity();
-	glTranslatef(mBallPosition.x, 7.5, -0.4);
+	glTranslatef(toDouble(mBallPosition.x), 7.5, -0.4);
 	drawQuad(5.0, 5.0);
 
 	// Mouse marker
@@ -330,14 +330,14 @@ void RenderManagerGL2D::draw()
 	
 	glLoadIdentity();
 	pos = blobShadowPosition(mLeftBlobPosition);
-	glTranslatef(pos.x, pos.y, 0.2);
+	glTranslatef(toDouble(pos.x), toDouble(pos.y), 0.2);
 	glColor4ub(mLeftBlobColor.r, mLeftBlobColor.g, mLeftBlobColor.b, 128);
 	glBindTexture(GL_TEXTURE_2D, mBlobShadow[int(mLeftBlobAnimationState)  % 5]);
 	drawQuad(128.0, 32.0);
 	
 	glLoadIdentity();
 	pos = blobShadowPosition(mRightBlobPosition);
-	glTranslatef(pos.x, pos.y, 0.2);
+	glTranslatef(toDouble(pos.x), toDouble(pos.y), 0.2);
 	glColor4ub(mRightBlobColor.r, mRightBlobColor.g, mRightBlobColor.b, 128);
 	glBindTexture(GL_TEXTURE_2D, mBlobShadow[int(mRightBlobAnimationState)  % 5]);
 	drawQuad(128.0, 32.0);
@@ -345,7 +345,7 @@ void RenderManagerGL2D::draw()
 	// Ball shadow	
 	glLoadIdentity();
 	pos = ballShadowPosition(mBallPosition);
-	glTranslatef(pos.x, pos.y, 0.2);
+	glTranslatef(toDouble(pos.x), toDouble(pos.y), 0.2);
 	glColor4f(1.0, 1.0, 1.0, 0.5);
 	glBindTexture(GL_TEXTURE_2D, mBallShadow);
 	drawQuad(128.0, 32.0);
@@ -364,7 +364,7 @@ void RenderManagerGL2D::draw()
 	// Drawing the names
 	drawText(mLeftPlayerName, Vector2(12, 550), false);
 
-	drawText(mRightPlayerName, Vector2(788-(24*mRightPlayerName.length()), 550), false);
+	drawText(mRightPlayerName, Vector2(788-(24*int(mRightPlayerName.length())), 550), false);
 }
 
 bool RenderManagerGL2D::setBackground(const std::string& filename)
@@ -454,8 +454,8 @@ void RenderManagerGL2D::drawText(const std::string& text, Vector2 position, bool
 	while (index != -1)
 	{
 		glLoadIdentity();
-		glTranslatef(position.x + length + 12.0,
-				position.y + 12.0, 0.0);
+		glTranslatef(toDouble(position.x) + length + 12.0,
+				toDouble(position.y) + 12.0, 0.0);
 		if (highlight)
 			glBindTexture(GL_TEXTURE_2D, mHighlightFont[index]);
 		else
@@ -488,7 +488,7 @@ void RenderManagerGL2D::drawImage(const std::string& filename, Vector2 position)
 	glAlphaFunc(GL_GREATER, 0.5);
 	glEnable(GL_ALPHA_TEST);
 	glLoadIdentity();
-	glTranslatef(position.x , position.y, 0.0);
+	glTranslatef(toDouble(position.x), toDouble(position.y), 0.0);
 	glBindTexture(GL_TEXTURE_2D, imageBuffer->glHandle);
 	drawQuad(imageBuffer->w, imageBuffer->h);
 
@@ -506,10 +506,10 @@ void RenderManagerGL2D::drawOverlay(float opacity, Vector2 pos1, Vector2 pos2, C
 	glColor4f(col.r, col.g, col.b, opacity);
 	glLoadIdentity();
 	glBegin(GL_QUADS);
-		glVertex2f(pos1.x, pos1.y);
-		glVertex2f(pos1.x, pos2.y);
-		glVertex2f(pos2.x, pos2.y);
-		glVertex2f(pos2.x, pos1.y);
+		glVertex2f(toDouble(pos1.x), toDouble(pos1.y));
+		glVertex2f(toDouble(pos1.x), toDouble(pos2.y));
+		glVertex2f(toDouble(pos2.x), toDouble(pos2.y));
+		glVertex2f(toDouble(pos2.x), toDouble(pos1.y));
 	glEnd();
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
@@ -523,7 +523,7 @@ void RenderManagerGL2D::drawBlob(const Vector2& pos, const Color& col)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
 	glLoadIdentity();
-	glTranslatef(pos.x, pos.y, 0.6);
+	glTranslatef(toDouble(pos.x), toDouble(pos.y), 0.6);
 	glBindTexture(GL_TEXTURE_2D, mBlob[0]);
 	glColor3ubv(col.val);
 	drawQuad(128.0, 128.0);
@@ -546,7 +546,7 @@ void RenderManagerGL2D::drawParticle(const Vector2& pos, int player)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
 	glLoadIdentity();
-	glTranslatef(pos.x, pos.y, 0.6);
+	glTranslatef(toDouble(pos.x), toDouble(pos.y), 0.6);
 	glBindTexture(GL_TEXTURE_2D, mParticle);
 	if (player == 0)
 		glColor3ubv(mLeftBlobColor.val);

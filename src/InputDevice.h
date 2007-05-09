@@ -158,7 +158,7 @@ public:
 		mMouseXPos = mMouseXPos > 600 ? 600 : mMouseXPos;
 		if (mMouseXPos >= 600 && warp)
 			SDL_WarpMouse(600, 310);
-		float blobpos = match->getBlobPosition(mPlayer).x;
+		float blobpos = toDouble(match->getBlobPosition(mPlayer).x);
 		mMarkerX = mMouseXPos + playerOffset;
 		if (blobpos + BLOBBY_SPEED < mMarkerX)
 			input.right = true;

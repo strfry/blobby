@@ -22,34 +22,29 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <cassert>
 #include <cmath>
 
+#include "FixedPoint.h"
+
+typedef FixedPoint Number;
 
 class Vector2
 {
 	public:
-		union
-		{
-			struct 
-			{
-				float x;
-				float y;		
-			};
-			float val[2];
-		};
+	Number x;
+	Number y;		
 	
 	Vector2();
-	Vector2(float x, float y);
+	Vector2(Number x, Number y);
 	Vector2(const Vector2& v1, const Vector2& v2);
 
 	void clear();
 	
 	Vector2 reflectX();
 	Vector2 reflectY();
-	Vector2 scale(float factor);
-	Vector2 scaleX(float factor);
-	Vector2 scaleY(float factor);
-	float length() const;
+	Vector2 scale(Number factor);
+	Vector2 scaleX(Number factor);
+	Vector2 scaleY(Number factor);
+	Number length() const;
 	Vector2 normalise();
-	Vector2 contraVector();
 	
 	inline Vector2 halfVector(const Vector2& vec)
 	{
@@ -83,7 +78,7 @@ class Vector2
 		return Vector2(x - vector.x, y - vector.y);
 	}
 	
-	inline Vector2 operator * (float scalar) const
+	inline Vector2 operator * (Number scalar) const
 	{
 		return Vector2(x * scalar, y * scalar);
 	}
@@ -93,10 +88,10 @@ class Vector2
 		return Vector2(x * vector.x, y * vector.y);
 	}
 	
-	inline Vector2 operator / (float scalar) const
+	inline Vector2 operator / (Number scalar) const
 	{
 		assert(scalar != 0.0);
-		float invert = 1.0 / scalar;
+		Number invert = 1.0 / scalar;
 		return Vector2(x * invert, y * invert);
 	}
 	
@@ -127,12 +122,12 @@ class Vector2
 	}
 
 
-	inline float dotProduct(const Vector2& vector)
+	inline Number dotProduct(const Vector2& vector)
 	{
 		return x * vector.x + y * vector.y;
 	}
 	
-	inline float crossProduct(const Vector2& vector)
+	inline Number crossProduct(const Vector2& vector)
 	{
 		return x * vector.y - y * vector.x;
 	}
@@ -151,7 +146,7 @@ inline Vector2::Vector2()
 	this->y=0;
 }
 
-inline Vector2::Vector2(float x, float y)
+inline Vector2::Vector2(Number x, Number y)
 {
 	this->x=x;
 	this->y=y;	
@@ -173,25 +168,25 @@ inline Vector2 Vector2::reflectY()
 	return Vector2(x, -y);
 }
 
-inline Vector2 Vector2::scale(float factor)
+inline Vector2 Vector2::scale(Number factor)
 {
 	return Vector2(x * factor, y * factor);
 }
 
-inline Vector2 Vector2::scaleX(float factor)
+inline Vector2 Vector2::scaleX(Number factor)
 {
 	return Vector2(x * factor, y);
 }
 
-inline Vector2 Vector2::scaleY(float factor)
+inline Vector2 Vector2::scaleY(Number factor)
 {
 	return Vector2(x, y * factor);
 }
 
-inline float Vector2::length() const
+inline Number Vector2::length() const
 {
 #ifdef USE_SSE
-	float ret;
+	Number ret;
 	asm (
 		"movss 	%1,	%%xmm0	\n"
 		"movss 	%2,	%%xmm1	\n"
@@ -212,21 +207,16 @@ inline float Vector2::length() const
 
 inline Vector2 Vector2::normalise()
 {
-	float fLength = length();
+	Number fLength = length();
 	if (fLength > 1e-08)
 		return Vector2(x / fLength, y / fLength);	
 	return *this;
 }
 
-inline Vector2 Vector2::contraVector()
-{
-	return Vector2(-x, -y);
-}
-
 inline void Vector2::clear()
 {
-	x = 0.0;
-	y = 0.0;
+	x = 0;
+	y = 0;
 }
 
 inline bool operator < (Vector2 v1, Vector2 v2)

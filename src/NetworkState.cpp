@@ -483,11 +483,11 @@ void NetworkGameState::step()
 		mLocalInput->getInput() : PlayerInput();
 
 	rmanager->setBlob(0, mPhysicWorld.getBlob(LEFT_PLAYER),
-		mPhysicWorld.getBlobState(LEFT_PLAYER));
+		toDouble(mPhysicWorld.getBlobState(LEFT_PLAYER)));
 	rmanager->setBlob(1, mPhysicWorld.getBlob(RIGHT_PLAYER),
-		mPhysicWorld.getBlobState(RIGHT_PLAYER));
+		toDouble(mPhysicWorld.getBlobState(RIGHT_PLAYER)));
 	rmanager->setBall(mPhysicWorld.getBall(),
-		mPhysicWorld.getBallRotation());
+		toDouble(mPhysicWorld.getBallRotation()));
 
 	float time = float(SDL_GetTicks()) / 1000.0;
 	if (mLeftOscillate)

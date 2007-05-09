@@ -278,7 +278,7 @@ int ScriptedInputSource::moveto(lua_State* state)
 	if (match != 0)
 	{
 		PlayerSide player = getSide(state);
-		float position = match->getBlobPosition(player).x;
+		FixedPoint position = match->getBlobPosition(player).x;
 		if (player == RIGHT_PLAYER)
 		{
 //			target = 800.0 - target;
@@ -300,10 +300,10 @@ int ScriptedInputSource::ballx(lua_State* state)
 		lua_pushnumber(state, 400.0);
 		return 1;
 	}
-	float pos = match->getBallPosition().x;
+	FixedPoint pos = match->getBallPosition().x;
 	if (getSide(state) == RIGHT_PLAYER)
 		pos = 800.0 - pos;
-	lua_pushnumber(state, pos);
+	lua_pushnumber(state, toDouble(pos));
 	return 1;
 }
 
@@ -315,9 +315,9 @@ int ScriptedInputSource::bally(lua_State* state)
 		lua_pushnumber(state, 150.0);
 		return 1;
 	}
-	float pos = match->getBallPosition().y;
+	FixedPoint pos = match->getBallPosition().y;
 	pos = 600.0 - pos;
-	lua_pushnumber(state, pos);
+	lua_pushnumber(state, toDouble(pos));
 	return 1;
 }
 
@@ -329,10 +329,10 @@ int ScriptedInputSource::bspeedx(lua_State* state)
 		lua_pushnumber(state, 0.0);
 		return 1;
 	}
-	float vel = match->getBallVelocity().x;
+	FixedPoint vel = match->getBallVelocity().x;
 	if (getSide(state) == RIGHT_PLAYER)
 		vel = -vel;
-	lua_pushnumber(state, vel);
+	lua_pushnumber(state, toDouble(vel));
 	return 1;
 }
 
@@ -344,9 +344,9 @@ int ScriptedInputSource::bspeedy(lua_State* state)
 		lua_pushnumber(state, 0.0);
 		return 1;
 	}
-	float vel = match->getBallVelocity().y;
+	FixedPoint vel = match->getBallVelocity().y;
 	vel = -vel;
-	lua_pushnumber(state, vel);
+	lua_pushnumber(state, toDouble(vel));
 	return 1;
 }
 
@@ -359,10 +359,10 @@ int ScriptedInputSource::posx(lua_State* state)
 		lua_pushnumber(state, 0.0);
 		return 1;
 	}
-	float pos = match->getBlobPosition(player).x;
+	FixedPoint pos = match->getBlobPosition(player).x;
 	if (player == RIGHT_PLAYER)
 		pos = 800.0 - pos;
-	lua_pushnumber(state, pos);
+	lua_pushnumber(state, toDouble(pos));
 	return 1;
 }
 
@@ -377,9 +377,9 @@ int ScriptedInputSource::posy(lua_State* state)
 		lua_pushnumber(state, 0.0);
 		return 1;
 	}
-	float pos = match->getBlobPosition(player).y;
+	FixedPoint pos = match->getBlobPosition(player).y;
 	pos = 600.0 - pos;
-	lua_pushnumber(state, pos);
+	lua_pushnumber(state, toDouble(pos));
 	return 1;
 }
 
@@ -394,10 +394,10 @@ int ScriptedInputSource::oppx(lua_State* state)
 	}
 	PlayerSide invPlayer =
 		player == LEFT_PLAYER ? RIGHT_PLAYER : LEFT_PLAYER;
-	float pos = match->getBlobPosition(invPlayer).x;
+	FixedPoint pos = match->getBlobPosition(invPlayer).x;
 	if (invPlayer == LEFT_PLAYER)
 	pos = 800.0 - pos;
-	lua_pushnumber(state, pos);
+	lua_pushnumber(state, toDouble(pos));
 	return 1;
 }
 
@@ -412,9 +412,9 @@ int ScriptedInputSource::oppy(lua_State* state)
 	}
 	PlayerSide invPlayer =
 		player == LEFT_PLAYER ? RIGHT_PLAYER : LEFT_PLAYER;
-	float pos = match->getBlobPosition(invPlayer).y;
+	FixedPoint pos = match->getBlobPosition(invPlayer).y;
 	pos = 600.0 - pos;
-	lua_pushnumber(state, pos);
+	lua_pushnumber(state, toDouble(pos));
 	return 1;
 }
 
@@ -443,10 +443,10 @@ int ScriptedInputSource::estimx(lua_State* state)
 		lua_pushnumber(state, 0.0);
 		return 1;
 	}
-	float estim = match->getBallTimeEstimation(num).x;
+	FixedPoint estim = match->getBallTimeEstimation(num).x;
 	if (getSide(state) == RIGHT_PLAYER)
 		estim = 800.0 - estim;
-	lua_pushnumber(state, estim);
+	lua_pushnumber(state, toDouble(estim));
 	return 1;
 }
 
@@ -460,8 +460,8 @@ int ScriptedInputSource::estimy(lua_State* state)
 		lua_pushnumber(state, 0.0);
 		return 1;
 	}
-	float estim = match->getBallTimeEstimation(num).y;
+	FixedPoint estim = match->getBallTimeEstimation(num).y;
 	estim = 600.0 - estim;
-	lua_pushnumber(state, estim);
+	lua_pushnumber(state, toDouble(estim));
 	return 1;
 }

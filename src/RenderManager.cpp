@@ -179,7 +179,7 @@ Vector2 RenderManager::ballShadowPosition(const Vector2& position)
 {
 	return Vector2(
 		position.x + (500.0 - position.y) / 4 + 16.0,
-		500.0 - (500.0 - position.y) / 16.0 - 10.0		
+		500.0 - (500.0 - position.y) / 16 - 10		
 	);
 }
 
@@ -198,7 +198,7 @@ Vector2 RenderManager::blobShadowPosition(const Vector2& position)
 {
 	return Vector2(
 		position.x + (500.0 - position.y) / 4 + 16.0,
-		500.0 - (500.0 - position.y) / 16.0 - 10.0
+		500.0 - (500.0 - position.y) / 16 - 10.0
 	);
 }
 

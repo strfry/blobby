@@ -1,6 +1,6 @@
 SUBDIRS = lua tinyxml raknet
 
-WANTED_WARNING = -Wall
+WANTED_WARNING = -Wall -Werror
 
 AM_CXXFLAGS = -DTIXML_USE_STL=1 -DGAMEDATADIR=\"$(GAMEDATADIR)\" -DHAVE_LIBGL=$(HAVE_LIBGL)
 AM_LDFLAGS = -Llua -Ltinyxml -Lraknet

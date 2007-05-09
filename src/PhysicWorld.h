@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "InputSource.h"
 
 
-const float BLOBBY_SPEED = 4.5; // BLOBBY_SPEED is necessary to determine the size of the input buffer
+const FixedPoint BLOBBY_SPEED = 4.5; // BLOBBY_SPEED is necessary to determine the size of the input buffer
 
 namespace RakNet
 {
@@ -50,21 +50,21 @@ private:
 	Vector2 mBlobVelocity[MAX_PLAYERS];
 	Vector2 mBallVelocity;
 
-	float mBallRotation;
-	float mBallAngularVelocity;
-	float mBlobState[MAX_PLAYERS];
-	float mCurrentBlobbyAnimationSpeed[MAX_PLAYERS];
+	FixedPoint mBallRotation;
+	FixedPoint mBallAngularVelocity;
+	FixedPoint mBlobState[MAX_PLAYERS];
+	FixedPoint mCurrentBlobbyAnimationSpeed[MAX_PLAYERS];
 
 	PlayerInput mPlayerInput[MAX_PLAYERS];
 
 	bool mIsGameRunning;
 	bool mIsBallValid;
 
-	float mLastHitIntensity;
-	float mTimeSinceBallout;
+	FixedPoint mLastHitIntensity;
+	FixedPoint mTimeSinceBallout;
 
-	float mLastSpeed;
-	float mAvgTimeDelta;
+	FixedPoint mLastSpeed;
+	FixedPoint mAvgTimeDelta;
 public:
 	PhysicWorld();
 	~PhysicWorld();
@@ -72,7 +72,7 @@ public:
 	Vector2 getBallVelocity();
 	bool getBlobJump(PlayerSide player);
 	bool getBallActive();
-	float estimateBallImpact();
+	FixedPoint estimateBallImpact();
 	Vector2 estimateBallPosition(int steps);
 
 	void setLeftInput(const PlayerInput& input);
@@ -81,10 +81,10 @@ public:
 	Vector2 getBlob(PlayerSide player);
 	Vector2 getBall();
 
-	float getBlobState(PlayerSide player);
-	float getBallRotation();
+	FixedPoint getBlobState(PlayerSide player);
+	FixedPoint getBallRotation();
 
-	float getBallSpeed();
+	FixedPoint getBallSpeed();
 
 	// These functions tell about ball collisions for game logic and sound
 	bool ballHitLeftPlayer();
@@ -100,7 +100,7 @@ public:
 
 	// This reports the intensity of the collision
 	// which was detected and also queried last.
-	float lastHitIntensity();
+	FixedPoint lastHitIntensity();
 
 	// Here the game logic can decide whether the ball is valid.
 	// If not, no ball to player collision checking is done,
@@ -117,7 +117,7 @@ public:
 	// This resets the player to their starting Positions
 	void resetPlayer();
 
-	void step(float timeDelta, float speed);
+	void step(FixedPoint timeDelta, FixedPoint speed);
 
 	// For reducing ball speed after rule violation
 	void dampBall();

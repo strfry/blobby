@@ -182,7 +182,7 @@ bool NetworkGame::step()
 		{
 			RakNet::BitStream stream;
 			stream.Write(ID_BALL_PLAYER_COLLISION);
-			stream.Write(mPhysicWorld.lastHitIntensity());
+			stream.Write(toValue(mPhysicWorld.lastHitIntensity()));
 			broadcastBitstream(&stream, &stream);
 			mLeftHitcount++;
 			mRightHitcount = 0;
@@ -202,7 +202,7 @@ bool NetworkGame::step()
 		{
 			RakNet::BitStream stream;
 			stream.Write(ID_BALL_PLAYER_COLLISION);
-			stream.Write(mPhysicWorld.lastHitIntensity());
+			stream.Write(toValue(mPhysicWorld.lastHitIntensity()));
 			broadcastBitstream(&stream, &stream);
 			mRightHitcount++;
 			mLeftHitcount = 0;

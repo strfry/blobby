@@ -92,11 +92,11 @@ void DuelMatch::step(float timeDelta, float speed)
 	if (mOutput)
 	{
 		rmanager->setBlob(0, mPhysicWorld.getBlob(LEFT_PLAYER),
-			mPhysicWorld.getBlobState(LEFT_PLAYER));
+			toDouble(mPhysicWorld.getBlobState(LEFT_PLAYER)));
 		rmanager->setBlob(1, mPhysicWorld.getBlob(RIGHT_PLAYER),
-			mPhysicWorld.getBlobState(RIGHT_PLAYER));
+			toDouble(mPhysicWorld.getBlobState(RIGHT_PLAYER)));
 		rmanager->setBall(mPhysicWorld.getBall(),
-				mPhysicWorld.getBallRotation());
+				toDouble(mPhysicWorld.getBallRotation()));
 	}
 
 	// Protection of multiple hit counts when the ball is squeezed
@@ -107,10 +107,10 @@ void DuelMatch::step(float timeDelta, float speed)
 			if (mOutput)
 			{
 				smanager->playSound("sounds/bums.wav",
-					mPhysicWorld.lastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
+					toDouble(mPhysicWorld.lastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME));
 				Vector2 hitPos = mPhysicWorld.getBall() +
 					(mPhysicWorld.getBlob(LEFT_PLAYER) - mPhysicWorld.getBall()).normalise().scale(31.5);
-				BloodManager::getSingleton().spillBlood(hitPos, mPhysicWorld.lastHitIntensity(), 0);
+				BloodManager::getSingleton().spillBlood(hitPos, toDouble(mPhysicWorld.lastHitIntensity()), 0);
 			}
 			mLeftHitcount++;
 			mRightHitcount = 0;
@@ -131,10 +131,10 @@ void DuelMatch::step(float timeDelta, float speed)
 			if (mOutput)
 			{
 				smanager->playSound("sounds/bums.wav",
-					mPhysicWorld.lastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
+					toDouble(mPhysicWorld.lastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME));
 				Vector2 hitPos = mPhysicWorld.getBall() +
 					(mPhysicWorld.getBlob(RIGHT_PLAYER) - mPhysicWorld.getBall()).normalise().scale(31.5);
-				BloodManager::getSingleton().spillBlood(hitPos, mPhysicWorld.lastHitIntensity(), 1);
+				BloodManager::getSingleton().spillBlood(hitPos, toDouble(mPhysicWorld.lastHitIntensity()), 1);
 			}
 			mRightHitcount++;
 			mLeftHitcount = 0;
@@ -255,7 +255,7 @@ Vector2 DuelMatch::getBallVelocity()
 
 float DuelMatch::getBallEstimation()
 {
-	return mPhysicWorld.estimateBallImpact();
+	return toDouble(mPhysicWorld.estimateBallImpact());
 }
 
 Vector2 DuelMatch::getBallTimeEstimation(int steps)
