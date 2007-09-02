@@ -38,8 +38,6 @@ typedef int socklen_t;
 #include <fcntl.h>
 #endif
 
-#include "ExtendedOverlappedPool.h"
-
 #ifdef _MSC_VER
 #pragma warning( push )
 #endif
