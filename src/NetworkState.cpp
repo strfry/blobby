@@ -25,14 +25,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "ReplayRecorder.h"
 
-#include "raknet/RakClient.h"
-#include "raknet/PacketEnumerations.h"
-#include "raknet/GetTime.h"
+#include <GetTime.h>
+#include <RakPeer.h>
 
 #include "IMGUI.h"
 #include "SoundManager.h"
 #include "LocalInputSource.h"
-#include "raknet/RakServer.h"
+#include "raknet/RakPeer.h"
 #include "raknet/StringCompressor.h"
 
 
@@ -44,7 +43,9 @@ NetworkSearchState::NetworkSearchState()
 	mDisplayInfo = false;
 	mEnteringServer = false;
 
-	mPingClient = new RakClient;
+	mPingClient = new RakPeer;
+	SocketDescriptor pingsock;
+	mPingClient->Startup(-1, 0, &pingsock, 1);
 	broadcast();
 }
 
@@ -69,7 +70,7 @@ NetworkSearchState::~NetworkSearchState()
 	{
 		if (*iter)
 		{
-			(*iter)->Disconnect(50);
+			(*iter)->Shutdown(50, 1);
 			delete *iter;
 		}
 	}
@@ -92,33 +93,32 @@ void NetworkSearchState::step()
 				case ID_CONNECTION_REQUEST_ACCEPTED:
 				{
 					printf("connection accepted from %s\n",
-						mPingClient->PlayerIDToDottedIP(
-							packet->playerId));
+						packet->systemAddress.ToString());
 
 					RakNet::BitStream stream;
 					stream.Write(ID_BLOBBY_SERVER_PRESENT);
 					stream.Write(BLOBBY_VERSION_MAJOR);
 					stream.Write(BLOBBY_VERSION_MINOR);
 					(*iter)->Send(&stream, HIGH_PRIORITY,
-						RELIABLE_ORDERED, 0);
+						RELIABLE_ORDERED, 0,
+						UNASSIGNED_SYSTEM_ADDRESS, false);
 					break;
 				}
 				case ID_BLOBBY_SERVER_PRESENT:
 				{
-					RakNet::BitStream stream((char*)packet->data,
+					RakNet::BitStream stream(packet->data,
 						packet->length, false);
 					printf("server is a blobby server\n");
 					int ival;
 					stream.Read(ival);
 					ServerInfo info(stream,
-						(*iter)->PlayerIDToDottedIP(
-							packet->playerId));
+						packet->systemAddress.ToString());
 					if (std::find(
 							mScannedServers.begin(),
 							mScannedServers.end(),
 							info) == mScannedServers.end())
 						mScannedServers.push_back(info);
-					(*iter)->Disconnect(50);
+					(*iter)->Shutdown(50, 1);
 					delete *iter;
 					iter = mQueryClients.erase(iter);
 					skip = true;
@@ -138,9 +138,9 @@ void NetworkSearchState::step()
 		{
 			case ID_PONG:
 			{
-				std::string hostname = mPingClient->PlayerIDToDottedIP(packet->playerId);
+				std::string hostname = packet->systemAddress.ToString();
 				printf("got ping response by \"%s\", trying to connect\n", hostname.c_str());
-				RakClient* newClient = new RakClient;
+				RakPeer* newClient = new RakPeer;
 				newClient->Connect(
 					hostname.c_str(), BLOBBY_PORT, 0, 0, 0);
 				mQueryClients.push_back(newClient);
@@ -263,13 +263,13 @@ void NetworkSearchState::step()
 void NetworkSearchState::broadcast()
 {
 	mScannedServers.clear();
-	mPingClient->PingServer("255.255.255.255", BLOBBY_PORT, 0, true);
-	mPingClient->PingServer("blobby.openanno.org", BLOBBY_PORT, 0, true);
+	mPingClient->Ping("255.255.255.255", BLOBBY_PORT, true);
+	mPingClient->Ping("blobby.openanno.org", BLOBBY_PORT, true);
 	UserConfig config;
 	config.loadFile("config.xml");
-	mPingClient->PingServer(
+	mPingClient->Ping(
 		config.getString("network_last_server").c_str(),
-		BLOBBY_PORT, 0, true);
+		BLOBBY_PORT, true);
 }
 
 NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port)
@@ -298,7 +298,7 @@ NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port)
 	RenderManager::getSingleton().setBlobColor(1, mRightColor);
 	RenderManager::getSingleton().redraw();
 
-	mClient = new RakClient();
+	mClient = new RakPeer();
 	if (mClient->Connect(servername.c_str(), port, 0, 0, 0))
 		mNetworkState = CONNECTING;
 	else
@@ -315,7 +315,7 @@ NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port)
 
 NetworkGameState::~NetworkGameState()
 {
-	mClient->Disconnect(50);
+	mClient->Shutdown(50, 1);
 	delete mLocalInput;
 	delete mClient;
 	delete mReplayRecorder;
@@ -338,29 +338,29 @@ void NetworkGameState::step()
 				stream.Write(ID_ENTER_GAME);
 				stream.Write(mOwnSide);
 				StringCompressor::Instance()->EncodeString((char*)mFakeMatch->getPlayerName().c_str(), 16, &stream);
-				mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
+				mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, false);
 				RenderManager::getSingleton().setPlayernames(mOwnSide ?  "" : mFakeMatch->getPlayerName(), mOwnSide ? mFakeMatch->getPlayerName() : "");
 				mNetworkState = WAITING_FOR_OPPONENT;
 				break;
 			}
 			case ID_PHYSIC_UPDATE:
 			{
-				RakNet::BitStream stream((char*)packet->data, packet->length, false);
+				RakNet::BitStream stream(packet->data, packet->length, false);
 				int ival;
 				stream.Read(ival);
 				stream.Read(ival);	//ID_TIMESTAMP
 				stream.Read(ival);	//TODO: un-lag based on timestamp delta
-				RakNet::BitStream streamCopy = RakNet::BitStream(stream);
 				//printf("Physic packet received. Time: %d\n", ival);
 				mPhysicWorld.setState(&stream);
-				mFakeMatch->setState(&streamCopy);
+				stream.Reset();
+				mFakeMatch->setState(&stream);
 				mReplayRecorder->record(mPhysicWorld.getPlayersInput());
 				break;
 			}
 			case ID_WIN_NOTIFICATION:
 			{
 				int ival;
-				RakNet::BitStream stream((char*)packet->data, packet->length, false);
+				RakNet::BitStream stream(packet->data, packet->length, false);
 				stream.Read(ival);
 				stream.Read((int&)mWinningPlayer);
 				mNetworkState = PLAYER_WON;
@@ -376,7 +376,7 @@ void NetworkGameState::step()
 			case ID_BALL_RESET:
 			{
 				int ival;
-				RakNet::BitStream stream((char*)packet->data, packet->length, false);
+				RakNet::BitStream stream(packet->data, packet->length, false);
 				stream.Read(ival);
 				stream.Read((int&)mServingPlayer);
 				stream.Read(mLeftScore);
@@ -398,7 +398,7 @@ void NetworkGameState::step()
 			{
 				int ival;
 				float intensity;
-				RakNet::BitStream stream((char*)packet->data, packet->length, false);
+				RakNet::BitStream stream(packet->data, packet->length, false);
 				stream.Read(ival);
 				stream.Read(intensity);
 				SoundManager::getSingleton().playSound("sounds/bums.wav",
@@ -420,7 +420,7 @@ void NetworkGameState::step()
 			{
 				int ival;
 				char* charName = new char[16];
-				RakNet::BitStream stream((char*)packet->data, packet->length, false);
+				RakNet::BitStream stream(packet->data, packet->length, false);
 				stream.Read(ival);
 				StringCompressor::Instance()->DecodeString(charName, 16, &stream);
 				mFakeMatch->setOpponentName(std::string(charName));
@@ -451,11 +451,7 @@ void NetworkGameState::step()
 			case ID_NO_FREE_INCOMING_CONNECTIONS:
 				mNetworkState = SERVER_FULL;
 				break;
-			case ID_RECEIVED_STATIC_DATA:
-				break;
 			case ID_REMOTE_NEW_INCOMING_CONNECTION:
-				break;
-			case ID_REMOTE_EXISTING_CONNECTION:
 				break;
 			default:
 				printf("Received unknown Packet %d\n", packet->data[0]);
@@ -614,16 +610,16 @@ void NetworkGameState::step()
 			{
 				RakNet::BitStream stream;
 				stream.Write(ID_PAUSE);
-				mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
+				mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, false);
 			}
 			RakNet::BitStream stream;
 			stream.Write(ID_INPUT_UPDATE);
-			stream.Write(ID_TIMESTAMP);
+			stream.Write((int)ID_TIMESTAMP);
 			stream.Write(RakNet::GetTime());
 			stream.Write(input.left);
 			stream.Write(input.right);
 			stream.Write(input.up);
-			mClient->Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0);
+			mClient->Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, UNASSIGNED_SYSTEM_ADDRESS, false);
 			break;
 		}
 		case PLAYER_WON:
@@ -658,7 +654,7 @@ void NetworkGameState::step()
 			{
 				RakNet::BitStream stream;
 				stream.Write(ID_UNPAUSE);
-				mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
+				mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0, UNASSIGNED_SYSTEM_ADDRESS, false);
 			}
 			if (imgui.doButton(GEN_ID, Vector2(500, 330), "quit"))
 			{
@@ -677,8 +673,9 @@ void NetworkGameState::step()
 
 NetworkHostState::NetworkHostState()
 {
-	mServer = new RakServer;
-	mServer->Start(2, 0, 0, BLOBBY_PORT);
+	mServer = new RakPeer;
+	SocketDescriptor hostsock(BLOBBY_PORT, "");
+	mServer->Startup(2, 0, &hostsock, 1);
 	mNetworkGame = 0;
 	mGameState = new NetworkGameState("localhost", BLOBBY_PORT);
 	mLocalPlayerSide = NO_PLAYER;
@@ -689,7 +686,7 @@ NetworkHostState::~NetworkHostState()
 	delete mGameState;
 	if (mNetworkGame)
 		delete mNetworkGame;
-	mServer->Disconnect(1);
+	mServer->Shutdown(50, 1);
 	delete mServer;
 }
 
@@ -706,8 +703,8 @@ void NetworkHostState::step()
 			case ID_PAUSE:
 			case ID_UNPAUSE:
 			{
-				if (packet->playerId == mLocalPlayer ||
-					packet->playerId == mRemotePlayer)
+				if (packet->systemAddress == mLocalPlayer ||
+					packet->systemAddress == mRemotePlayer)
 				{
 					if (mNetworkGame)
 						mNetworkGame->injectPacket(packet);
@@ -733,13 +730,13 @@ void NetworkHostState::step()
 				myinfo.writeToBitstream(stream);
 				mServer->Send(&stream, HIGH_PRIORITY,
 						RELIABLE_ORDERED, 0,
-						packet->playerId, false);
+						packet->systemAddress, false);
 				break;
 			}
 			case ID_ENTER_GAME:
 			{
 				int ival;
-				RakNet::BitStream stream((char*)packet->data,
+				RakNet::BitStream stream(packet->data,
 						packet->length, false);
 				stream.Read(ival);
 				stream.Read(ival);
@@ -751,29 +748,29 @@ void NetworkHostState::step()
 				if (mLocalPlayerSide == NO_PLAYER)
 				{ // First player is probably the local one
 					mLocalPlayerSide = newSide;
-					mLocalPlayer = packet->playerId;
+					mLocalPlayer = packet->systemAddress;
 					mLocalPlayerName = playerName;
 				}
 				else
 				{
-					mRemotePlayer = packet->playerId;
+					mRemotePlayer = packet->systemAddress;
 					mRemotePlayerName = playerName;
 
-					PlayerID leftPlayer;
-					PlayerID rightPlayer;
+					SystemAddress leftPlayer;
+					SystemAddress rightPlayer;
 					std::string leftPlayerName;
 					std::string rightPlayerName;
 
 					if (LEFT_PLAYER == mLocalPlayerSide)
 					{
 						leftPlayer = mLocalPlayer;
-						rightPlayer = packet->playerId;
+						rightPlayer = packet->systemAddress;
 						leftPlayerName = mLocalPlayerName;
 						rightPlayerName = playerName;
 					}
 					else
 					{
-						leftPlayer = packet->playerId;
+						leftPlayer = packet->systemAddress;
 						rightPlayer = mLocalPlayer;
 						leftPlayerName = playerName;
 						rightPlayerName = mLocalPlayerName;
@@ -836,15 +833,18 @@ void NetworkLoginState::step()
 
 	if (imgui.doButton(GEN_ID, Vector2(100.0, 400.0), "OK"))
 	{
-		RakClient client;
+		RakPeer client;
 		if (client.Connect(MASTER_SERVER_HOSTNAME, MASTER_SERVER_PORT, 0, 0, 0))
 		{
 			RakNet::BitStream stream(32);
 			StringCompressor::Instance()->EncodeString(mUsername.c_str(), 16, &stream);
 			StringCompressor::Instance()->EncodeString(mPassword.c_str(), 16, &stream);
 
+			RakNet::BitStream reply;
+
 			client.RPC("login", &stream, HIGH_PRIORITY, RELIABLE_ORDERED,
-					0, false, UNASSIGNED_NETWORK_ID);
+					0, UNASSIGNED_SYSTEM_ADDRESS, false,
+					0, UNASSIGNED_NETWORK_ID, &reply);
 		}
 		else
 		{

@@ -16,10 +16,6 @@
 /// option) any later version.
 
 
-#if defined(_MSC_VER) && _MSC_VER < 1299 // VC6 doesn't support template specialization
-#include "BitStream_NoTemplate.h"
-#else
-
 #ifndef __BITSTREAM_H
 #define __BITSTREAM_H
 
@@ -575,11 +571,7 @@ namespace RakNet
 	private:
 
 		BitStream( const BitStream &invalid) {
-			#ifdef _MSC_VER
-			#pragma warning(disable:4100)
-			// warning C4100: 'invalid' : unreferenced formal parameter
-			#endif
-
+			(void)invalid;
 		}
 
 		/// Assume the input source points to a native type, compress and write it.
@@ -1446,5 +1438,3 @@ namespace RakNet
 #endif
 
 #endif 
-
-#endif // VC6

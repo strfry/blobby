@@ -17,15 +17,16 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
+#include <BitStream.h>
+#include <GetTime.h>
+#include <RakPeer.h>
+#include <StringCompressor.h>
+
 #include "NetworkGame.h"
 #include "NetworkMessage.h"
-#include "raknet/RakServer.h"
-#include "raknet/BitStream.h"
-#include "raknet/GetTime.h"
-#include "raknet/StringCompressor.h"
 
-NetworkGame::NetworkGame(RakServer& server,
-			PlayerID leftPlayer, PlayerID rightPlayer,
+NetworkGame::NetworkGame(RakPeer& server,
+			SystemAddress leftPlayer, SystemAddress rightPlayer,
 			std::string leftPlayerName, std::string rightPlayerName,
 			PlayerSide switchedSide)
 	: mServer(server)
@@ -111,7 +112,7 @@ bool NetworkGame::step()
 			{
 				PlayerInput newInput;
 				int ival;
-				RakNet::BitStream stream((char*)packet->data,
+				RakNet::BitStream stream(packet->data,
 						packet->length, false);
 				stream.Read(ival);
 				stream.Read(ival);
@@ -120,13 +121,13 @@ bool NetworkGame::step()
 				stream.Read(newInput.right);
 				stream.Read(newInput.up);
 
-				if (packet->playerId == mLeftPlayer)
+				if (packet->systemAddress == mLeftPlayer)
 				{
 					if (mSwitchedSide == LEFT_PLAYER)
 						newInput.swap();
 					mPhysicWorld.setLeftInput(newInput);
 				}
-				if (packet->playerId == mRightPlayer)
+				if (packet->systemAddress == mRightPlayer)
 				{
 					if (mSwitchedSide == RIGHT_PLAYER)
 						newInput.swap();
@@ -165,9 +166,11 @@ bool NetworkGame::step()
 		if (mPhysicWorld.ballHitLeftPlayer())
 		{
 			RakNet::BitStream stream;
+			RakNet::BitStream switchStream;
 			stream.Write(ID_BALL_PLAYER_COLLISION);
 			stream.Write(mPhysicWorld.lastHitIntensity());
-			RakNet::BitStream switchStream(stream);
+			switchStream.Write(ID_BALL_PLAYER_COLLISION);
+			switchStream.Write(mPhysicWorld.lastHitIntensity());
 			stream.Write(LEFT_PLAYER);
 			switchStream.Write(RIGHT_PLAYER);
 			broadcastBitstream(&stream, &switchStream);
@@ -188,9 +191,11 @@ bool NetworkGame::step()
 		if (mPhysicWorld.ballHitRightPlayer())
 		{
 			RakNet::BitStream stream;
+			RakNet::BitStream switchStream;
 			stream.Write(ID_BALL_PLAYER_COLLISION);
 			stream.Write(mPhysicWorld.lastHitIntensity());
-			RakNet::BitStream switchStream(stream);
+			switchStream.Write(ID_BALL_PLAYER_COLLISION);
+			switchStream.Write(mPhysicWorld.lastHitIntensity());
 			stream.Write(RIGHT_PLAYER);
 			switchStream.Write(LEFT_PLAYER);
 			broadcastBitstream(&stream, &switchStream);
@@ -307,7 +312,7 @@ void NetworkGame::broadcastPhysicState()
 {
 	RakNet::BitStream stream;
 	stream.Write(ID_PHYSIC_UPDATE);
-	stream.Write(ID_TIMESTAMP);
+	stream.Write((MessageType)ID_TIMESTAMP);
 	stream.Write(RakNet::GetTime());
 	if (mSwitchedSide == LEFT_PLAYER)
 		mPhysicWorld.getSwappedState(&stream);
@@ -318,7 +323,7 @@ void NetworkGame::broadcastPhysicState()
 
 	stream.Reset();
 	stream.Write(ID_PHYSIC_UPDATE);
-	stream.Write(ID_TIMESTAMP);
+	stream.Write((MessageType)ID_TIMESTAMP);
 	stream.Write(RakNet::GetTime());
 	if (mSwitchedSide == RIGHT_PLAYER)
 		mPhysicWorld.getSwappedState(&stream);

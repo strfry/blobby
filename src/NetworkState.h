@@ -26,8 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <vector>
 #include <list>
 
-class RakClient;
-class RakServer;
+class RakPeer;
 class DuelMatch;
 class NetworkGame;
 
@@ -41,9 +40,9 @@ public:
 private:
 	void broadcast();
 
-	typedef std::list<RakClient*> ClientList;
+	typedef std::list<RakPeer*> ClientList;
 
-	RakClient* mPingClient;
+	RakPeer* mPingClient;
 
 	std::vector<ServerInfo> mScannedServers;
 	ClientList mQueryClients;
@@ -116,7 +115,7 @@ private:
 	bool mSaveReplay;
 	std::string mFilename;
 
-	RakClient* mClient;
+	RakPeer* mClient;
 	PlayerSide mOwnSide;
 	PlayerSide mWinningPlayer;
 
@@ -139,11 +138,11 @@ public:
 private:
 	NetworkGameState* mGameState;
 	NetworkGame* mNetworkGame;
-	RakServer* mServer;
+	RakPeer* mServer;
 
 	PlayerSide mLocalPlayerSide;
-	PlayerID mLocalPlayer;
-	PlayerID mRemotePlayer;
+	SystemAddress mLocalPlayer;
+	SystemAddress mRemotePlayer;
 	std::string mLocalPlayerName;
 	std::string mRemotePlayerName;
 };

@@ -20,14 +20,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #pragma once
 
 #include <list>
+#include <RakNetTypes.h>
 
 #include "Global.h"
 #include "PhysicWorld.h"
-#include "raknet/NetworkTypes.h"
 #include "UserConfig.h"
 #include "SpeedController.h"
 
-class RakServer;
+class RakPeer;
 
 typedef std::list<Packet> PacketQueue;
 
@@ -36,12 +36,12 @@ class NetworkGame
 public:
 	// The given server is used to send messages to the client, received
 	// messages have to bo injected manually in this class.
-	// The PlayerID parameters are the IDs of the participating players.
+	// The SystemAddress parameters are the IDs of the participating players.
 	// The IDs are assumed to be on the same side as they are named.
 	// If both players want to be on the same side, switchedSide
 	// decides which player is switched.
-	NetworkGame(RakServer& server,
-			PlayerID leftPlayer, PlayerID rightPlayer,
+	NetworkGame(RakPeer& server,
+			SystemAddress leftPlayer, SystemAddress rightPlayer,
 			std::string leftPlayerName, std::string rightPlayerName,
 			PlayerSide switchedSide = NO_PLAYER);
 
@@ -59,9 +59,9 @@ private:
 	void broadcastBitstream(RakNet::BitStream* stream, RakNet::BitStream* switchedstream);
 	void broadcastPhysicState();
 
-	RakServer& mServer;
-	PlayerID mLeftPlayer;
-	PlayerID mRightPlayer;
+	RakPeer& mServer;
+	SystemAddress mLeftPlayer;
+	SystemAddress mRightPlayer;
 	PlayerSide mSwitchedSide;
 	std::string mLeftPlayerName;
 	std::string mRightPlayerName;

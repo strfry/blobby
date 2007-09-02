@@ -22,12 +22,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <iostream>
 #include <cstring>
 
-#include "raknet/PacketEnumerations.h"
-#include "raknet/NetworkTypes.h"
+#include <BitStream.h>
+#include <MessageIdentifiers.h>
 
 enum MessageType
 {
-	ID_GENERIC_MESSAGE = ID_RESERVED9 + 1,
+	ID_GENERIC_MESSAGE = ID_USER_PACKET_ENUM,
 	ID_INPUT_UPDATE,
 	ID_PHYSIC_UPDATE,
 	ID_WIN_NOTIFICATION,
