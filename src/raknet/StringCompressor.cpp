@@ -1,40 +1,55 @@
-/* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
-/**
-* @file 
-* @brief StringCompressor class implementation 
-*
- * This file is part of RakNet Copyright 2003 Rakkarsoft LLC and Kevin Jenkins.
- *
- * Usage of Raknet is subject to the appropriate licence agreement.
- * "Shareware" Licensees with Rakkarsoft LLC are subject to the
- * shareware license found at
- * http://www.rakkarsoft.com/shareWareLicense.html which you agreed to
- * upon purchase of a "Shareware license" "Commercial" Licensees with
- * Rakkarsoft LLC are subject to the commercial license found at
- * http://www.rakkarsoft.com/sourceCodeLicense.html which you agreed
- * to upon purchase of a "Commercial license"
- * Custom license users are subject to the terms therein.
- * All other users are
- * subject to the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * Refer to the appropriate license agreement for distribution,
- * modification, and warranty rights.
-*/
+/// \file
+///
+/// This file is part of RakNet Copyright 2003 Kevin Jenkins.
+///
+/// Usage of RakNet is subject to the appropriate license agreement.
+/// Creative Commons Licensees are subject to the
+/// license found at
+/// http://creativecommons.org/licenses/by-nc/2.5/
+/// Single application licensees are subject to the license found at
+/// http://www.rakkarsoft.com/SingleApplicationLicense.html
+/// Custom license users are subject to the terms therein.
+/// GPL license users are subject to the GNU General Public
+/// License as published by the Free
+/// Software Foundation; either version 2 of the License, or (at your
+/// option) any later version.
+
 #include "StringCompressor.h"
-#include "HuffmanEncodingTree.h"
+#include "DS_HuffmanEncodingTree.h"
 #include "BitStream.h"
 #include <assert.h>
 #include <string.h>
 #include <memory.h>
 
-StringCompressor StringCompressor::instance;
-/**
-* @internal 
-* Generated from various chat logs on the internet.
-* Works well with english language. 
-*/
+StringCompressor* StringCompressor::instance=0;
+int StringCompressor::referenceCount=0;
+
+void StringCompressor::AddReference(void)
+{
+	if (++referenceCount==1)
+	{
+		instance = new StringCompressor;
+	}
+}
+void StringCompressor::RemoveReference(void)
+{
+	assert(referenceCount > 0);
+
+	if (referenceCount > 0)
+	{
+		if (--referenceCount==0)
+		{
+			delete instance;
+			instance=0;
+		}
+	}
+}
+
+StringCompressor* StringCompressor::Instance(void)
+{
+	return instance;
+}
+
 unsigned int englishCharacterFrequencies[ 256 ] =
 {
 	0,
@@ -297,18 +312,23 @@ unsigned int englishCharacterFrequencies[ 256 ] =
 
 StringCompressor::StringCompressor()
 {
+	DataStructures::Map<int, HuffmanEncodingTree *>::IMPLEMENT_DEFAULT_COMPARISON();
+
 	// Make a default tree immediately, since this is used for RPC possibly from multiple threads at the same time
-	GenerateHuffmanEncodingTree();
-}
+	HuffmanEncodingTree *huffmanEncodingTree = new HuffmanEncodingTree;
+	huffmanEncodingTree->GenerateFromFrequencyTable( englishCharacterFrequencies );
 
-void StringCompressor::GenerateHuffmanEncodingTree( void )
-{
-	huffmanEncodingTree = new HuffmanEncodingTree;
-	huffmanEncodingTree->GenerateFromFrequencyTable( englishCharacterFrequencies );	
+	huffmanEncodingTrees.Set(0, huffmanEncodingTree);
 }
-
-void StringCompressor::GenerateTreeFromStrings( unsigned char *input, unsigned inputLength )
+void StringCompressor::GenerateTreeFromStrings( unsigned char *input, unsigned inputLength, int languageID )
 {
+	HuffmanEncodingTree *huffmanEncodingTree;
+	if (huffmanEncodingTrees.Has(languageID))
+	{
+		huffmanEncodingTree = huffmanEncodingTrees.Get(languageID);
+		delete huffmanEncodingTree;
+	}
+
 	unsigned index;
 	unsigned int frequencyTable[ 256 ];
 
@@ -322,66 +342,67 @@ void StringCompressor::GenerateTreeFromStrings( unsigned char *input, unsigned i
 	for ( index = 0; index < inputLength; index++ )
 		frequencyTable[ input[ index ] ] ++;
 
-	// Delete the old tree, if there is one
-	if ( huffmanEncodingTree )
-		delete huffmanEncodingTree;
-
 	// Build the tree
 	huffmanEncodingTree = new HuffmanEncodingTree;
 	huffmanEncodingTree->GenerateFromFrequencyTable( frequencyTable );
+	huffmanEncodingTrees.Set(languageID, huffmanEncodingTree);
 }
 
 StringCompressor::~StringCompressor()
 {
-	if ( huffmanEncodingTree )
-		delete huffmanEncodingTree;
+	for (unsigned i=0; i < huffmanEncodingTrees.Size(); i++)
+		delete huffmanEncodingTrees[i];
 }
 
-void StringCompressor::EncodeString( char *input, int maxCharsToWrite, RakNet::BitStream *output )
+void StringCompressor::EncodeString( const char *input, int maxCharsToWrite, RakNet::BitStream *output, int languageID )
 {
+	HuffmanEncodingTree *huffmanEncodingTree;
+	if (huffmanEncodingTrees.Has(languageID)==false)
+		return;
+	huffmanEncodingTree=huffmanEncodingTrees.Get(languageID);
+
 	if ( input == 0 )
 	{
-		output->WriteCompressed( (unsigned short) 0 );
+		output->WriteCompressed( (unsigned int) 0 );
 		return ;
 	}
 
 	RakNet::BitStream encodedBitStream;
 
-	unsigned short stringBitLength;
+	unsigned int stringBitLength;
 
 	int charsToWrite;
 
-	if ( huffmanEncodingTree == 0 )
-		GenerateHuffmanEncodingTree();
-
-	if ( ( int ) strlen( input ) < maxCharsToWrite )
+	if ( maxCharsToWrite<=0 || ( int ) strlen( input ) < maxCharsToWrite )
 		charsToWrite = ( int ) strlen( input );
 	else
 		charsToWrite = maxCharsToWrite - 1;
 
 	huffmanEncodingTree->EncodeArray( ( unsigned char* ) input, charsToWrite, &encodedBitStream );
 
-	stringBitLength = ( unsigned short ) encodedBitStream.GetNumberOfBitsUsed();
+	stringBitLength = encodedBitStream.GetNumberOfBitsUsed();
 
 	output->WriteCompressed( stringBitLength );
 
 	output->WriteBits( encodedBitStream.GetData(), stringBitLength );
 }
 
-bool StringCompressor::DecodeString( char *output, int maxCharsToWrite, RakNet::BitStream *input )
+bool StringCompressor::DecodeString( char *output, int maxCharsToWrite, RakNet::BitStream *input, int languageID )
 {
-	unsigned short stringBitLength;
-	int bytesInStream;
+	HuffmanEncodingTree *huffmanEncodingTree;
+	if (huffmanEncodingTrees.Has(languageID)==false)
+		return false;
+	huffmanEncodingTree=huffmanEncodingTrees.Get(languageID);
 
-	if ( huffmanEncodingTree == 0 )
-		GenerateHuffmanEncodingTree();
+	unsigned int stringBitLength;
+	int bytesInStream;
 
 	output[ 0 ] = 0;
 
 	if ( input->ReadCompressed( stringBitLength ) == false )
 		return false;
 
-	if ( input->GetNumberOfUnreadBits() < stringBitLength )
+	if ( (unsigned) input->GetNumberOfUnreadBits() < stringBitLength )
 		return false;
 
 	bytesInStream = huffmanEncodingTree->DecodeArray( input, stringBitLength, maxCharsToWrite, ( unsigned char* ) output );
@@ -393,4 +414,3 @@ bool StringCompressor::DecodeString( char *output, int maxCharsToWrite, RakNet::
 
 	return true;
 }
-

@@ -806,3 +806,71 @@ void NetworkHostState::step()
 	}
 }
 
+NetworkLoginState::NetworkLoginState()
+	: mErrorCode(NO_ERROR)
+{
+}
+
+NetworkLoginState::~NetworkLoginState()
+{
+}
+
+void NetworkLoginState::step()
+{
+	IMGUI& imgui = IMGUI::getSingleton();
+
+	imgui.doCursor(true);
+	imgui.doImage(GEN_ID, Vector2(400.0, 300.0), "background");
+	imgui.doOverlay(GEN_ID, Vector2(0.0, 0.0), Vector2(800.0, 600.0));
+
+	if (NO_ERROR != mErrorCode)
+	{
+		imgui.doInactiveMode(true);
+	}
+
+	imgui.doText(GEN_ID, Vector2(70.0, 100.0), "Username:");
+	imgui.doEditbox(GEN_ID, Vector2(280.0, 100.0), 16, mUsername, mUsernamePos);
+	
+	imgui.doText(GEN_ID, Vector2(70.0, 150.0), "Password:");
+	imgui.doEditbox(GEN_ID, Vector2(280.0, 150.0), 16, mPassword, mPasswordPos, true);
+
+	if (imgui.doButton(GEN_ID, Vector2(100.0, 400.0), "OK"))
+	{
+		RakClient client;
+		if (client.Connect(MASTER_SERVER_HOSTNAME, MASTER_SERVER_PORT, 0, 0, 0))
+		{
+			RakNet::BitStream stream(32);
+			StringCompressor::Instance()->EncodeString(mUsername.c_str(), 16, &stream);
+			StringCompressor::Instance()->EncodeString(mPassword.c_str(), 16, &stream);
+
+			client.RPC("login", &stream, HIGH_PRIORITY, RELIABLE_ORDERED,
+					0, false, UNASSIGNED_NETWORK_ID);
+		}
+		else
+		{
+			mErrorCode = CONNECTION_FAILURE;
+		}
+	}
+
+	if (NO_ERROR != mErrorCode)
+	{
+		imgui.doInactiveMode(false);
+		imgui.doOverlay(GEN_ID, Vector2(100.0, 100.0), Vector2(200.0, 200.0));
+
+		std::string errordesc;
+
+		switch (mErrorCode)
+		{
+			case CONNECTION_FAILURE:
+				errordesc = "Could not connect to server";
+		}
+
+		imgui.doText(GEN_ID, Vector2(120.0, 120.0), errordesc);
+
+		if (imgui.doButton(GEN_ID, Vector2(150.0, 180.0), "OK"))
+		{
+			mErrorCode = NO_ERROR;
+		}
+	}
+}
+

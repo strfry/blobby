@@ -1,21 +1,20 @@
-/* rijndael-alg-fst.c   v2.0   August '99
- * Optimised ANSI C code
- * authors: v1.0: Antoon Bosselaers
- *          v2.0: Vincent Rijmen
- */
+// rijndael-alg-fst.c   v2.0   August '99
+// Optimised ANSI C code
+// authors: v1.0: Antoon Bosselaers
+//          v2.0: Vincent Rijmen
+
 
 /*
  *  taken from the 'aescrypt' project: www.sf.net/projects/aescrypt
  *  See LICENSE-EST for the license applicable to this file
  */
 
-/* 14.Dec.2005 Cirilo:  Removed silly hex keys; keys are now effectively unsigned char. */
 
+// 14.Dec.2005 Cirilo:  Removed silly hex keys; keys are now effectively unsigned char.
 
-// KevinJ - TODO - What the hell is this?  It causes DevCPP not to compile.   I don't know what the compiler flag is for
-// DEVCPP so I'm taking it out entirely
+// KevinJ - TODO - What the hell is __UNUS?  It causes DevCPP not to compile.   I don't know what this is for so I'm taking it out entirely
 /*
-#ifdef __GNUC__
+#if (defined(__GNUC__)  || defined(__GCCXML__))
 #define __UNUS	__attribute__((unused))
 #else
 */
@@ -25,14 +24,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "rijndael.h"
+#include "Rijndael.h"
 
-/* KevinJ - Added this to just generate a random initialization vector */
+// KevinJ - Added this to just generate a random initialization vector
 #include "Rand.h"
 
 #define SC	((BC - 4) >> 1)
 
-#include "rijndael-boxes.h"
+#include "Rijndael-Boxes.h"
 
 int ROUNDS;
 
@@ -60,9 +59,9 @@ static word8 shifts[3][4][2] = {
 }; 
 
 word8 mul(word8 a, word8 b) {
-   /* multiply two elements of GF(2^m)
-    * needed for MixColumn and InvMixColumn
-    */
+   // multiply two elements of GF(2^m)
+   // needed for MixColumn and InvMixColumn
+   
 	if (a && b)
 		return Alogtable[(Logtable[a] + Logtable[b])%255];
 	else
@@ -70,8 +69,7 @@ word8 mul(word8 a, word8 b) {
 }
 
 void KeyAddition(word8 a[4][4], word8 rk[4][4], word8 BC) {
-	/* Exor corresponding text input and round key input bytes
-	 */
+	// XOR corresponding text input and round key input bytes
 	int i, j;
 	
 	for(i = 0; i < BC; i++)
@@ -80,9 +78,9 @@ void KeyAddition(word8 a[4][4], word8 rk[4][4], word8 BC) {
 }
 
 void ShiftRow(word8 a[4][4], word8 d, word8 BC) {
-	/* Row 0 remains unchanged
-	 * The other three rows are shifted a variable amount
-	 */
+	// Row 0 remains unchanged
+	// The other three rows are shifted a variable amount
+	
 	word8 tmp[4];
 	int i, j;
 	
@@ -95,9 +93,9 @@ void ShiftRow(word8 a[4][4], word8 d, word8 BC) {
 }
 
 void Substitution(word8 a[4][4], word8 box[256], word8 BC) {
-	/* Replace every byte of the input by the byte at that place
-	 * in the nonlinear S-box
-	 */
+	// Replace every byte of the input by the byte at that place
+	// in the nonlinear S-box
+	
 	int i, j;
 	
 	for(i = 0; i < BC; i++)
@@ -106,8 +104,8 @@ void Substitution(word8 a[4][4], word8 box[256], word8 BC) {
 }
    
 void MixColumn(word8 a[4][4], word8 BC) {
-        /* Mix the four bytes of every column in a linear way
-	 */
+      // Mix the four bytes of every column in a linear way
+	
 	word8 b[4][4];
 	int i, j;
 		
@@ -123,9 +121,9 @@ void MixColumn(word8 a[4][4], word8 BC) {
 }
 
 void InvMixColumn(word8 a[4][4], word8 BC) {
-        /* Mix the four bytes of every column in a linear way
-	 * This is the opposite operation of Mixcolumn
-	 */
+  // Mix the four bytes of every column in a linear way
+	// This is the opposite operation of Mixcolumn
+	
 	int j;
 
 	for(j = 0; j < BC; j++)
@@ -139,9 +137,13 @@ void InvMixColumn(word8 a[4][4], word8 BC) {
 
 int rijndaelKeySched (word8 k[MAXKC][4], int keyBits __UNUS, word8 W[MAXROUNDS+1][4][4])
 {
-	/* Calculate the necessary round keys
-	 * The number of calculations depends on keyBits and blockBits
-	 */ 
+#ifdef _MSC_VER
+	#pragma warning( disable : 4100 ) // warning C4100: <variable name> : unreferenced formal parameter
+#endif
+
+	// Calculate the necessary round keys
+	// The number of calculations depends on keyBits and blockBits
+	 
 	int j, r, t, rconpointer = 0;
 	word8 tk[MAXKC][4];
 	int KC = ROUNDS - 6;
@@ -150,7 +152,7 @@ int rijndaelKeySched (word8 k[MAXKC][4], int keyBits __UNUS, word8 W[MAXROUNDS+1
 		*((word32*)tk[j]) = *((word32*)k[j]);
 	r = 0;
 	t = 0;
-	/* copy values into round key array */
+	// copy values into round key array
 	for(j = 0; (j < KC) && (r < (ROUNDS+1)); ) {
 		for (; (j < KC) && (t < 4); j++, t++)
 			*((word32*)W[r][t]) = *((word32*)tk[j]);
@@ -160,8 +162,8 @@ int rijndaelKeySched (word8 k[MAXKC][4], int keyBits __UNUS, word8 W[MAXROUNDS+1
 		}
 	}
 		
-	while (r < (ROUNDS+1)) { /* while not enough round key material calculated */
-		/* calculate new values */
+	while (r < (ROUNDS+1)) { // while not enough round key material calculated
+		// calculate new values
 		tk[0][0] ^= S[tk[KC-1][1]];
 		tk[0][1] ^= S[tk[KC-1][2]];
 		tk[0][2] ^= S[tk[KC-1][3]];
@@ -181,7 +183,7 @@ int rijndaelKeySched (word8 k[MAXKC][4], int keyBits __UNUS, word8 W[MAXROUNDS+1
 			for(j = KC/2 + 1; j < KC; j++)
 				*((word32*)tk[j]) ^= *((word32*)tk[j-1]);
 		}
-		/* copy values into round key array */
+		// copy values into round key array
 		for(j = 0; (j < KC) && (r < (ROUNDS+1)); ) {
 			for (; (j < KC) && (t < 4); j++, t++)
 				*((word32*)W[r][t]) = *((word32*)tk[j]);
@@ -197,6 +199,9 @@ int rijndaelKeySched (word8 k[MAXKC][4], int keyBits __UNUS, word8 W[MAXROUNDS+1
 
 int rijndaelKeyEnctoDec (int keyBits __UNUS, word8 W[MAXROUNDS+1][4][4])
 {
+#ifdef _MSC_VER
+	#pragma warning( disable : 4100 ) // warning C4100: <variable name> : unreferenced formal parameter
+#endif
 	int r;
 
 	for (r = 1; r < ROUNDS; r++) {
@@ -207,8 +212,8 @@ int rijndaelKeyEnctoDec (int keyBits __UNUS, word8 W[MAXROUNDS+1][4][4])
 
 int rijndaelEncrypt (word8 a[16], word8 b[16], word8 rk[MAXROUNDS+1][4][4])
 {
-	/* Encryption of one block. 
-	 */
+	// Encryption of one block. 
+	
 	int r;
    word8 temp[4][4];
 
@@ -254,7 +259,7 @@ int rijndaelEncrypt (word8 a[16], word8 b[16], word8 rk[MAXROUNDS+1][4][4])
            ^ *((word32*)T3[temp[1][2]]) 
            ^ *((word32*)T4[temp[2][3]]);
    }
-   /* last round is special */   
+   // last round is special   
 	*((word32*)temp[0]) = *((word32*)b) ^ *((word32*)rk[ROUNDS-1][0]);
 	*((word32*)temp[1]) = *((word32*)(b+4)) ^ *((word32*)rk[ROUNDS-1][1]);
 	*((word32*)temp[2]) = *((word32*)(b+8)) ^ *((word32*)rk[ROUNDS-1][2]);
@@ -285,15 +290,15 @@ int rijndaelEncrypt (word8 a[16], word8 b[16], word8 rk[MAXROUNDS+1][4][4])
 
 int rijndaelEncryptRound (word8 a[4][4], 
 		word8 rk[MAXROUNDS+1][4][4], int rounds)
-/* Encrypt only a certain number of rounds.
- * Only used in the Intermediate Value Known Answer Test.
- */
+// Encrypt only a certain number of rounds.
+// Only used in the Intermediate Value Known Answer Test.
+
 {
 	int r;
    word8 temp[4][4];
 
 
-	/* make number of rounds sane */
+	// make number of rounds sane
 	if (rounds > ROUNDS) rounds = ROUNDS;
 
 	*((word32*)a[0]) = *((word32*)a[0]) ^ *((word32*)rk[0][0]);
@@ -324,7 +329,7 @@ int rijndaelEncryptRound (word8 a[4][4],
 		*((word32*)a[3]) = *((word32*)temp[3]) ^ *((word32*)rk[r][3]);
    }
 	if (rounds == ROUNDS) {
-   	/* last round is special */   
+   	// last round is special   
    	temp[0][0] = T1[a[0][0]][1];
    	temp[0][1] = T1[a[1][1]][1];
    	temp[0][2] = T1[a[2][2]][1]; 
@@ -399,7 +404,7 @@ int rijndaelDecrypt (word8 a[16], word8 b[16], word8 rk[MAXROUNDS+1][4][4])
            ^ *((word32*)T7[temp[1][2]]) 
            ^ *((word32*)T8[temp[0][3]]);
    }
-   /* last round is special */   
+   // last round is special   
 	*((word32*)temp[0]) = *((word32*)b) ^ *((word32*)rk[1][0]);
 	*((word32*)temp[1]) = *((word32*)(b+4)) ^ *((word32*)rk[1][1]);
 	*((word32*)temp[2]) = *((word32*)(b+8)) ^ *((word32*)rk[1][2]);
@@ -431,29 +436,29 @@ int rijndaelDecrypt (word8 a[16], word8 b[16], word8 rk[MAXROUNDS+1][4][4])
 
 int rijndaelDecryptRound (word8 a[4][4],  
 	word8 rk[MAXROUNDS+1][4][4], int rounds)
-/* Decrypt only a certain number of rounds.
- * Only used in the Intermediate Value Known Answer Test.
- * Operations rearranged such that the intermediate values
- * of decryption correspond with the intermediate values
- * of encryption.
- */
+// Decrypt only a certain number of rounds.
+// Only used in the Intermediate Value Known Answer Test.
+// Operations rearranged such that the intermediate values
+// of decryption correspond with the intermediate values
+// of encryption.
+
 {
 	int r;
 	
 
-	/* make number of rounds sane */
+	// make number of rounds sane
 	if (rounds > ROUNDS) rounds = ROUNDS;
 
-        /* First the special round:
-	 *   without InvMixColumn
-	 *   with extra KeyAddition
-	 */
+        // First the special round:
+	//   without InvMixColumn
+	//   with extra KeyAddition
+	
 	KeyAddition(a,rk[ROUNDS],4);
 	Substitution(a,Si,4);
 	ShiftRow(a,1,4);              
 	
-	/* ROUNDS-1 ordinary rounds
-	 */
+	// ROUNDS-1 ordinary rounds
+	
 	for(r = ROUNDS-1; r > rounds; r--) {
 		KeyAddition(a,rk[r],4);
 		InvMixColumn(a,4);      
@@ -462,8 +467,8 @@ int rijndaelDecryptRound (word8 a[4][4],
 	}
 	
 	if (rounds == 0) {
-		/* End with the extra key addition
-		 */	
+		// End with the extra key addition
+			
 		KeyAddition(a,rk[0],4);
 	}    
 
@@ -476,7 +481,7 @@ int rijndaelDecryptRound (word8 a[4][4],
 int makeKey(keyInstance *key, BYTE direction, int keyByteLen, char *keyMaterial)
 {
 	word8 k[MAXKC][4];
-	int i, j, t;
+	int i;
 	int keyLen = keyByteLen*8;
 	
 	if (key == NULL) {
@@ -503,7 +508,7 @@ int makeKey(keyInstance *key, BYTE direction, int keyByteLen, char *keyMaterial)
 
 	ROUNDS = keyLen/32 + 6;
 
-	/* initialize key schedule: */
+	// initialize key schedule:
 	for(i = 0; i < key->keyLen/8; i++) {
 		k[i / 4][i % 4] = (word8) key->keyMaterial[i]; 
 	}
@@ -516,7 +521,7 @@ int makeKey(keyInstance *key, BYTE direction, int keyByteLen, char *keyMaterial)
 
 int cipherInit(cipherInstance *cipher, BYTE mode, char *IV)
 {
-	int i, j, t;
+	int i;
 	
 	if ((mode == MODE_ECB) || (mode == MODE_CBC) || (mode == MODE_CFB1)) {
 		cipher->mode = mode;
@@ -530,7 +535,7 @@ int cipherInit(cipherInstance *cipher, BYTE mode, char *IV)
 	}
 	else
 	{
-		/* KevinJ - Added this to just generate a random initialization vector */
+		// KevinJ - Added this to just generate a random initialization vector
 		for(i = 0; i < 16; i++)
 			cipher->IV[i]=(BYTE)randomMT();
 	}
@@ -622,7 +627,7 @@ int blockEncrypt(cipherInstance *cipher,
 				iv[3][0] = (iv[3][0] << 1) | (iv[3][1] >> 7);
 				iv[3][1] = (iv[3][1] << 1) | (iv[3][2] >> 7);
 				iv[3][2] = (iv[3][2] << 1) | (iv[3][3] >> 7);
-				iv[3][3] = (iv[3][3] << 1) | (outBuffer[k/8] >> (7-(k&7))) & 1;
+				iv[3][3] = (word8)((iv[3][3] << 1) | (outBuffer[k/8] >> (7-(k&7))) & 1);
 			}
 		}
 		break;
@@ -663,7 +668,7 @@ int blockDecrypt(cipherInstance *cipher,
 		break;
 		
 	case MODE_CBC:
-		/* first block */ 
+		// first block 
 
 		rijndaelDecrypt (input, block, key->keySched);
 #if STRICT_ALIGN
@@ -679,7 +684,7 @@ int blockDecrypt(cipherInstance *cipher,
   		*((word32*)(outBuffer+12)) = *((word32*)(block+12)) ^ *((word32*)(cipher->IV+12));
 #endif
 		
-		/* next blocks */
+		// next blocks
 		for (i = numBlocks-1; i > 0; i--) { 
 		
 			rijndaelDecrypt (input, block, key->keySched);
@@ -730,7 +735,7 @@ int blockDecrypt(cipherInstance *cipher,
 				iv[3][0] = (iv[3][0] << 1) | (iv[3][1] >> 7);
 				iv[3][1] = (iv[3][1] << 1) | (iv[3][2] >> 7);
 				iv[3][2] = (iv[3][2] << 1) | (iv[3][3] >> 7);
-				iv[3][3] = (iv[3][3] << 1) | (input[k/8] >> (7-(k&7))) & 1;
+				iv[3][3] = (word8)((iv[3][3] << 1) | (input[k/8] >> (7-(k&7))) & 1);
 				outBuffer[k/8] ^= (block[0] & 0x80) >> (k & 7);
 			}
 		}
@@ -754,9 +759,14 @@ int blockDecrypt(cipherInstance *cipher,
  *		TRUE - on success
  *		BAD_CIPHER_STATE - cipher in bad state (e.g., not initialized)
  */
+
 int cipherUpdateRounds(cipherInstance *cipher,
 	keyInstance *key, BYTE *input, int inputLen __UNUS, BYTE *outBuffer, int rounds)
 {
+#ifdef _MSC_VER
+	#pragma warning( disable : 4100 ) // warning C4100: <variable name> : unreferenced formal parameter
+#endif
+
 	int j;
 	word8 block[4][4];
 
@@ -766,7 +776,7 @@ int cipherUpdateRounds(cipherInstance *cipher,
 	}
 
 	for (j = 3; j >= 0; j--) {
-		/* parse input stream into rectangular array */
+		// parse input stream into rectangular array
   		*((word32*)block[j]) = *((word32*)(input+4*j));
 	}
 
@@ -783,7 +793,7 @@ int cipherUpdateRounds(cipherInstance *cipher,
 	} 
 
 	for (j = 3; j >= 0; j--) {
-		/* parse rectangular array into output ciphertext bytes */
+		// parse rectangular array into output ciphertext bytes
 		*((word32*)(outBuffer+4*j)) = *((word32*)block[j]);
 	}
 	

@@ -1,34 +1,27 @@
-/* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
-/**
-* @file
-* @brief Statistical Information Formatting Implementation 
-*
- * This file is part of RakNet Copyright 2003 Rakkarsoft LLC and Kevin Jenkins.
- *
- * Usage of Raknet is subject to the appropriate licence agreement.
- * "Shareware" Licensees with Rakkarsoft LLC are subject to the
- * shareware license found at
- * http://www.rakkarsoft.com/shareWareLicense.html which you agreed to
- * upon purchase of a "Shareware license" "Commercial" Licensees with
- * Rakkarsoft LLC are subject to the commercial license found at
- * http://www.rakkarsoft.com/sourceCodeLicense.html which you agreed
- * to upon purchase of a "Commercial license"
- * Custom license users are subject to the terms therein.
- * All other users are
- * subject to the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * Refer to the appropriate license agreement for distribution,
- * modification, and warranty rights.
-*/
+/// \file
+///
+/// This file is part of RakNet Copyright 2003 Kevin Jenkins.
+///
+/// Usage of RakNet is subject to the appropriate license agreement.
+/// Creative Commons Licensees are subject to the
+/// license found at
+/// http://creativecommons.org/licenses/by-nc/2.5/
+/// Single application licensees are subject to the license found at
+/// http://www.rakkarsoft.com/SingleApplicationLicense.html
+/// Custom license users are subject to the terms therein.
+/// GPL license users are subject to the GNU General Public
+/// License as published by the Free
+/// Software Foundation; either version 2 of the License, or (at your
+/// option) any later version.
+
 #include "RakNetStatistics.h"
 #include <stdio.h> // sprintf
 #include "BitStream.h" // BITS_TO_BYTES
+#include "GetTime.h"
 
 // Verbosity level currently supports 0 (low), 1 (medium), 2 (high)
 // Buffer must be hold enough to hold the output string.  See the source to get an idea of how many bytes will be output
-void StatisticsToString( RakNetStatisticsStruct *s, char *buffer, int verbosityLevel )
+void RAK_DLL_EXPORT StatisticsToString( RakNetStatistics *s, char *buffer, int verbosityLevel )
 {
 	if ( s == 0 )
 	{
@@ -50,6 +43,13 @@ void StatisticsToString( RakNetStatisticsStruct *s, char *buffer, int verbosityL
 
 	else if ( verbosityLevel == 1 )
 	{
+		RakNetTime time = RakNet::GetTime();
+		double elapsedTime;
+		double bpsSent;
+		double bpsReceived;
+		elapsedTime = (time-s->connectionStartTime) / 1000.0f;
+		bpsSent = (double) s->totalBitsSent / elapsedTime;
+		bpsReceived= (double) s->bitsReceived / elapsedTime;
 		// Verbosity level 1
 
 		sprintf( buffer,
@@ -66,7 +66,10 @@ void StatisticsToString( RakNetStatisticsStruct *s, char *buffer, int verbosityL
 			"Bytes received: %u\n"
 			"Acks received: %u\n"
 			"Duplicate acks received: %u\n"
-			"Window size: %u\n",
+			"Inst. KBits per second: %.1f\n"
+			"KBits per second sent:\t\t\t%.1f\n"
+			"KBits per second received:\t\t%.1f\n"
+			"Bandwith exceeded:\t\t\t%i\n",
 			s->messageSendBuffer[ SYSTEM_PRIORITY ] + s->messageSendBuffer[ HIGH_PRIORITY ] + s->messageSendBuffer[ MEDIUM_PRIORITY ] + s->messageSendBuffer[ LOW_PRIORITY ],
 			s->messagesSent[ SYSTEM_PRIORITY ] + s->messagesSent[ HIGH_PRIORITY ] + s->messagesSent[ MEDIUM_PRIORITY ] + s->messagesSent[ LOW_PRIORITY ],
 			BITS_TO_BYTES( s->totalBitsSent ),
@@ -80,10 +83,21 @@ void StatisticsToString( RakNetStatisticsStruct *s, char *buffer, int verbosityL
 			BITS_TO_BYTES( s->bitsReceived + s->bitsWithBadCRCReceived ),
 			s->acknowlegementsReceived,
 			s->duplicateAcknowlegementsReceived,
-			s->windowSize );
+			s->bitsPerSecond  / 1000.0,
+			bpsSent / 1000.0,
+			bpsReceived / 1000.0,
+			s->bandwidthExceeded);
 	}
 	else
 	{
+		RakNetTime time = RakNet::GetTime();
+		double elapsedTime;
+		double bpsSent;
+		double bpsReceived;
+		elapsedTime = (time-s->connectionStartTime) / 1000.0f;
+		bpsSent = (double) s->totalBitsSent / elapsedTime;
+		bpsReceived= (double) s->bitsReceived / elapsedTime;
+
 		// Verbosity level 2.
 		sprintf( buffer,
 			"Bytes sent:\t\t\t\t%u\n"
@@ -118,9 +132,11 @@ void StatisticsToString( RakNetStatisticsStruct *s, char *buffer, int verbosityL
 			"Ordered messages in of order:\t\t%u\n"
 			"Split messages waiting for reassembly:\t%u\n"
 			"Messages in internal output queue:\t%u\n"
-			"Window size:\t\t\t\t%u\n"
-			"Lossy window size\t\t\t%u\n"
-			"Connection start time:\t\t\t%u\n",
+			"Inst KBits per second:\t\t\t%.1f\n"
+			"Elapsed time (sec):\t\t\t%.1f\n"
+			"KBits per second sent:\t\t\t%.1f\n"
+			"KBits per second received:\t\t%.1f\n"
+			"Bandwith exceeded:\t\t\t%i\n",
 			BITS_TO_BYTES( s->totalBitsSent ),
 			s->messageSendBuffer[ SYSTEM_PRIORITY ], s->messageSendBuffer[ HIGH_PRIORITY ], s->messageSendBuffer[ MEDIUM_PRIORITY ], s->messageSendBuffer[ LOW_PRIORITY ],
 			s->messagesSent[ SYSTEM_PRIORITY ], s->messagesSent[ HIGH_PRIORITY ], s->messagesSent[ MEDIUM_PRIORITY ], s->messagesSent[ LOW_PRIORITY ],
@@ -153,8 +169,11 @@ void StatisticsToString( RakNetStatisticsStruct *s, char *buffer, int verbosityL
 			s->orderedMessagesInOrder,
 			s->messagesWaitingForReassembly,
 			s->internalOutputQueueSize,
-			s->windowSize,
-			s->lossySize,
-			s->connectionStartTime );
+			s->bitsPerSecond/1000.0,
+			elapsedTime,
+			bpsSent / 1000.0,
+			bpsReceived / 1000.0,
+			s->bandwidthExceeded
+			);
 	}
 }

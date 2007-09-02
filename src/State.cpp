@@ -252,12 +252,17 @@ void MainMenuState::step()
 	imgui.doImage(GEN_ID, Vector2(400.0, 300.0), "background");
 	imgui.doOverlay(GEN_ID, Vector2(0.0, 0.0), Vector2(800.0, 600.0));
 	imgui.doImage(GEN_ID, Vector2(250.0, 210.0), "gfx/titel.bmp");
-	if (imgui.doButton(GEN_ID, Vector2(484, 370.0), "network game"))
+	if (imgui.doButton(GEN_ID, Vector2(484.0f, 340.0f), "play online"))
+	{
+		delete mCurrentState;
+		mCurrentState = new NetworkLoginState();
+	}
+	else if (imgui.doButton(GEN_ID, Vector2(484, 370.0), "lan game"))
 	{
 		delete mCurrentState;
 		mCurrentState = new NetworkSearchState();
 	}
-	if (imgui.doButton(GEN_ID, Vector2(484.0, 400.0), "start"))
+	else if (imgui.doButton(GEN_ID, Vector2(484.0, 400.0), "start"))
 	{
 		delete mCurrentState;
 		try
@@ -273,26 +278,22 @@ void MainMenuState::step()
 			mCurrentState = new MainMenuState();
 		}
 	}
-
-	if (imgui.doButton(GEN_ID, Vector2(484.0, 430.0), "options"))
+	else if (imgui.doButton(GEN_ID, Vector2(484.0, 430.0), "options"))
 	{
 		delete mCurrentState;
 		mCurrentState = new OptionState();
 	}
-
-	if (imgui.doButton(GEN_ID, Vector2(484.0, 460.0), "watch replay"))
+	else if (imgui.doButton(GEN_ID, Vector2(484.0, 460.0), "watch replay"))
 	{
 		delete mCurrentState;
 		mCurrentState = new ReplayMenuState();
 	}
-
-	if (imgui.doButton(GEN_ID, Vector2(484.0, 490.0), "credits"))
+	else if (imgui.doButton(GEN_ID, Vector2(484.0, 490.0), "credits"))
 	{
 		delete mCurrentState;
 		mCurrentState = new CreditsState();
 	}
-
-	if (imgui.doButton(GEN_ID, Vector2(484.0, 520.0), "exit"))
+	else if (imgui.doButton(GEN_ID, Vector2(484.0, 520.0), "exit"))
 	{
 		RenderManager::getSingleton().deinit();
 		SoundManager::getSingleton().deinit();

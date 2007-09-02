@@ -38,6 +38,10 @@ const char AppTitle[] = "Blobby Volley 2 version 0.7";
 const float ROUND_START_SOUND_VOLUME = 0.2;
 const float BALL_HIT_PLAYER_SOUND_VOLUME = 0.4;
 
+const char MASTER_SERVER_HOSTNAME[] = "blobby.openanno.org";
+const unsigned short MASTER_SERVER_PORT = 12346;
+		
+
 // This is a temporary solution until a more advanced state management
 // is developed
 

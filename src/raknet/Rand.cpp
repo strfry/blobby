@@ -1,10 +1,6 @@
-/* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
 /**
-* @file 
-* @brief Random Value Generator Implementation 
 *
 * Grabbed by Kevin from http://www.math.keio.ac.jp/~matumoto/cokus.c
-
 * This is the ``Mersenne Twister'' random number generator MT19937, which
 * generates pseudorandom integers uniformly distributed in 0..(2^32 - 1)
 * starting from any odd seed in 0..(2^32 - 1).  This version is a recode
@@ -52,8 +48,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
-////#include "MemoryManager.h"
 
 //
 // uint32 must be an unsigned integer type capable of holding at least 32

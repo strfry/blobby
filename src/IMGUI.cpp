@@ -345,7 +345,7 @@ void IMGUI::resetSelection()
 	mButtonReset = true;
 }
 
-bool IMGUI::doEditbox(int id, const Vector2& position, int length, std::string& text, unsigned& cpos)
+bool IMGUI::doEditbox(int id, const Vector2& position, int length, std::string& text, unsigned& cpos, bool hideletters)
 {
 	// lenght does not actually work!
 	bool changed = false;
@@ -492,7 +492,13 @@ bool IMGUI::doEditbox(int id, const Vector2& position, int length, std::string& 
 	}
 
 	obj.pos2.x = SDL_GetTicks() % 1000 >= 500 ? cpos : -1.0;
-	obj.text = text;
+
+	if (hideletters)
+	{
+		obj.text = std::string(text.length(), '*');
+	} else {
+		obj.text = text;
+	}
 
 	mLastWidget = id;
 	mQueue->push(obj);

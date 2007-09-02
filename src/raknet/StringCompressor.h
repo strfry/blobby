@@ -1,109 +1,93 @@
-/* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
-/**
- * @file 
- * @brief Provide String Encoding Class 
- *
- * This file is part of RakNet Copyright 2003 Rakkarsoft LLC and Kevin Jenkins.
- *
- * Usage of Raknet is subject to the appropriate licence agreement.
- * "Shareware" Licensees with Rakkarsoft LLC are subject to the
- * shareware license found at
- * http://www.rakkarsoft.com/shareWareLicense.html which you agreed to
- * upon purchase of a "Shareware license" "Commercial" Licensees with
- * Rakkarsoft LLC are subject to the commercial license found at
- * http://www.rakkarsoft.com/sourceCodeLicense.html which you agreed
- * to upon purchase of a "Commercial license"
- * Custom license users are subject to the terms therein.
- * All other users are
- * subject to the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * Refer to the appropriate license agreement for distribution,
- * modification, and warranty rights.
- */
+/// \file
+/// \brief \b Compresses/Decompresses ASCII strings and writes/reads them to BitStream class instances.  You can use this to easily serialize and deserialize your own strings.
+///
+/// This file is part of RakNet Copyright 2003 Kevin Jenkins.
+///
+/// Usage of RakNet is subject to the appropriate license agreement.
+/// Creative Commons Licensees are subject to the
+/// license found at
+/// http://creativecommons.org/licenses/by-nc/2.5/
+/// Single application licensees are subject to the license found at
+/// http://www.rakkarsoft.com/SingleApplicationLicense.html
+/// Custom license users are subject to the terms therein.
+/// GPL license users are subject to the GNU General Public
+/// License as published by the Free
+/// Software Foundation; either version 2 of the License, or (at your
+/// option) any later version.
+
 #ifndef __STRING_COMPRESSOR_H
 #define __STRING_COMPRESSOR_H
 
-#include "BitStream.h"
+#include "Export.h"
+#include "DS_Map.h"
+
+/// Forward declaration
+namespace RakNet
+{
+	class BitStream;
+};
 
 class HuffmanEncodingTree;
 
-/**
- * This class provide compression for text in natural language. It is
- * based on frequencies table and an Huffman encoding algorithm. This
- * class follow the Singleton pattern. The default frequency table is
- * for english language. You should generate your first frequencies
- * table for the language in use in your application. 
- */
-class StringCompressor
+/// \brief Writes and reads strings to and from bitstreams.
+///
+/// Only works with ASCII strings.  The default compression is for English.
+/// You can call GenerateTreeFromStrings to compress and decompress other languages efficiently as well.
+class RAK_DLL_EXPORT StringCompressor
 {
-
 public:
-	/**
-	 * Destructor
-	 */
-	~StringCompressor();
-	/**
-	 * static function because only static functions can access static members
-	 * Singleton pattern 
-	 * @return the unique instance of the StringCompressor 
-	 * 
-	 * @todo Ensure there is no way to create a StringCompressor object 
-	 * 
-	 */
-	static inline StringCompressor* Instance()
-	{
-		return & instance;
-	}
 	
-	/**
-	 * Given an array of strings, such as a chat log, generate the optimal encoding tree for it.
-	 * This function is optional and if it is not called a default tree will be used instead.
-	 * @param input An array of byte 
-	 * @param inputLength The number of byte in the buffer 
-	 */
-	void GenerateTreeFromStrings( unsigned char *input, unsigned inputLength );
-	/**
-	 * Writes input to output, compressed.  Takes care of the null terminator for you
-	 * @param input a byte buffer 
-	 * @param maxCharsToWrite The size of @em input 
-	 * @param output The bitstream that will contain the data of the compressed string 
-	 */
-	void EncodeString( char *input, int maxCharsToWrite, RakNet::BitStream *output );
-	/**
-	 * Writes input to output, uncompressed.  Takes care of the null terminator for you.
-	 * maxCharsToWrite should be the allocated size of output
-	 * @param[out] output a byte buffer previously allocated.
-	 * @param maxCharsToWrite The amount of byte available to store the result. There should be 
-	 * enought space in @em output to decode all the data 
-	 * @param input The bitstream containing the data to process. 
-	 */
-	bool DecodeString( char *output, int maxCharsToWrite, RakNet::BitStream *input );
+	/// Destructor	
+	~StringCompressor();
+	
+	/// static function because only static functions can access static members
+	/// The RakPeer constructor adds a reference to this class, so don't call this until an instance of RakPeer exists, or unless you call AddReference yourself.
+	/// \return the unique instance of the StringCompressor 
+	static StringCompressor* Instance(void);
+
+	/// Given an array of strings, such as a chat log, generate the optimal encoding tree for it.
+	/// This function is optional and if it is not called a default tree will be used instead.
+	/// \param[in] input An array of bytes which should point to text.
+	/// \param[in] inputLength Length of \a input
+	/// \param[in] languageID An identifier for the language / string table to generate the tree for.  English is automatically created with ID 0 in the constructor.
+	void GenerateTreeFromStrings( unsigned char *input, unsigned inputLength, int languageID );
+	
+ 	/// Writes input to output, compressed.  Takes care of the null terminator for you.
+	/// \param[in] input Pointer to an ASCII string
+	/// \param[in] maxCharsToWrite The max number of bytes to write of \a input.  Use 0 to mean no limit.
+	/// \param[out] output The bitstream to write the compressed string to
+	/// \param[in] languageID Which language to use
+	void EncodeString( const char *input, int maxCharsToWrite, RakNet::BitStream *output, int languageID=0 );
+	
+	/// Writes input to output, uncompressed.  Takes care of the null terminator for you.
+	/// \param[out] output A block of bytes to receive the output
+	/// \param[in] maxCharsToWrite Size, in bytes, of \a output .  A NULL terminator will always be appended to the output string.  If the maxCharsToWrite is not large enough, the string will be truncated.
+	/// \param[in] input The bitstream containing the compressed string
+	/// \param[in] languageID Which language to use
+	bool DecodeString( char *output, int maxCharsToWrite, RakNet::BitStream *input, int languageID=0 );
+
+	/// Used so I can allocate and deallocate this singleton at runtime
+	static void AddReference(void);
+	
+	/// Used so I can allocate and deallocate this singleton at runtime
+	static void RemoveReference(void);
 	
 private:
-	/**
-	 * Create Huffman frequencies Tree used for both encoding and decoding 
-	 */
-	void GenerateHuffmanEncodingTree( void );
-	/**
-	 * Default Constructor 
-	 */
+	
+	/// Private Constructor	
 	StringCompressor();
-	/**
-	 * Singleton instance 
-	 */
-	static StringCompressor instance;
-	/**
-	 * Huffman frequencies Tree
-	 */
-	HuffmanEncodingTree *huffmanEncodingTree;
+	
+	/// Singleton instance
+	static StringCompressor *instance;
+	
+	/// Pointer to the huffman encoding trees.
+	DataStructures::Map<int, HuffmanEncodingTree *> huffmanEncodingTrees;
+	
+	static int referenceCount;
 };
 
-/**
- * Provide a shorcut to access to the unique instance of the 
- * string compressor singleton. 
- */
+/// Define to more easily reference the string compressor instance.
+/// The RakPeer constructor adds a reference to this class, so don't call this until an instance of RakPeer exists, or unless you call AddReference yourself.
 #define stringCompressor StringCompressor::Instance()
 
 #endif

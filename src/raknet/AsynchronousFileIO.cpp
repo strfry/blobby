@@ -1,27 +1,22 @@
-/* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
-/**
-* @file 
-* @brief Asynchronous IO mecanisms implementation.
-* 
- * This file is part of RakNet Copyright 2003 Rakkarsoft LLC and Kevin Jenkins.
- *
- * Usage of Raknet is subject to the appropriate licence agreement.
- * "Shareware" Licensees with Rakkarsoft LLC are subject to the
- * shareware license found at
- * http://www.rakkarsoft.com/shareWareLicense.html which you agreed to
- * upon purchase of a "Shareware license" "Commercial" Licensees with
- * Rakkarsoft LLC are subject to the commercial license found at
- * http://www.rakkarsoft.com/sourceCodeLicense.html which you agreed
- * to upon purchase of a "Commercial license"
- * Custom license users are subject to the terms therein.
- * All other users are
- * subject to the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * Refer to the appropriate license agreement for distribution,
- * modification, and warranty rights.
-*/
+/// \file
+///
+/// This file is part of RakNet Copyright 2003 Kevin Jenkins.
+///
+/// Usage of RakNet is subject to the appropriate license agreement.
+/// Creative Commons Licensees are subject to the
+/// license found at
+/// http://creativecommons.org/licenses/by-nc/2.5/
+/// Single application licensees are subject to the license found at
+/// http://www.rakkarsoft.com/SingleApplicationLicense.html
+/// Custom license users are subject to the terms therein.
+/// GPL license users are subject to the GNU General Public
+/// License as published by the Free
+/// Software Foundation; either version 2 of the License, or (at your
+/// option) any later version.
+
+// No longer used as I no longer support IO Completion ports
+/*
+
 #ifdef __USE_IO_COMPLETION_PORTS
 
 #include "AsynchronousFileIO.h"
@@ -32,7 +27,7 @@
 #include <assert.h>
 
 // All these are used for the Read callback.  For general Asynch file IO you would change these
-#include "NetworkTypes.h"
+#include "RakNetTypes.h"
 
 class RakPeer;
 
@@ -169,7 +164,7 @@ BOOL ReadAsynch( HANDLE handle, ExtendedOverlappedStruct *extended )
 
 		if ( dwErrCode != ERROR_IO_PENDING )
 		{
-#if defined(_WIN32) && defined(_DEBUG)
+#if defined(_WIN32) && !defined(_COMPATIBILITY_1) && defined(_DEBUG)
 			LPVOID messageBuffer;
 			FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 				NULL, dwErrCode, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
@@ -203,7 +198,7 @@ void WriteAsynch( HANDLE handle, ExtendedOverlappedStruct *extended )
 
 		if ( dwErrCode != ERROR_IO_PENDING )
 		{
-#if defined(_WIN32) && defined(_DEBUG)
+#if defined(_WIN32) && !defined(_COMPATIBILITY_1) && defined(_DEBUG)
 			LPVOID messageBuffer;
 			FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 				NULL, dwErrCode, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
@@ -251,7 +246,7 @@ unsigned __stdcall ThreadPoolFunc( LPVOID arguments )
 			if ( dwIOError != ERROR_OPERATION_ABORTED )
 			{
 				// Print all but this very common error message
-#if defined(_WIN32) && defined(_DEBUG)
+#if defined(_WIN32) && !defined(_COMPATIBILITY_1) && defined(_DEBUG)
 				LPVOID messageBuffer;
 				FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 					NULL, dwIOError, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
@@ -325,3 +320,4 @@ HANDLE_ERROR:
 }
 
 #endif
+*/

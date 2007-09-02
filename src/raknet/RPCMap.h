@@ -1,58 +1,47 @@
-/* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
-/**
- * @ingroup RAKNET_RPC 
- * @file 
- * @brief Internal Stuff for RPC Handling 
- *
- * This file is part of RakNet Copyright 2003 Rakkarsoft LLC and Kevin Jenkins.
- *
- * Usage of Raknet is subject to the appropriate licence agreement.
- * "Shareware" Licensees with Rakkarsoft LLC are subject to the
- * shareware license found at
- * http://www.rakkarsoft.com/shareWareLicense.html which you agreed to
- * upon purchase of a "Shareware license" "Commercial" Licensees with
- * Rakkarsoft LLC are subject to the commercial license found at
- * http://www.rakkarsoft.com/sourceCodeLicense.html which you agreed
- * to upon purchase of a "Commercial license"
- * Custom license users are subject to the terms therein.
- * All other users are
- * subject to the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * Refer to the appropriate license agreement for distribution,
- * modification, and warranty rights.
- */
+/// \file
+/// \brief \b [Internal] A container class for a list of RPCNodes
+///
+/// \ingroup RAKNET_RPC
+///
+/// This file is part of RakNet Copyright 2003 Kevin Jenkins.
+///
+/// Usage of RakNet is subject to the appropriate license agreement.
+/// Creative Commons Licensees are subject to the
+/// license found at
+/// http://creativecommons.org/licenses/by-nc/2.5/
+/// Single application licensees are subject to the license found at
+/// http://www.rakkarsoft.com/SingleApplicationLicense.html
+/// Custom license users are subject to the terms therein.
+/// GPL license users are subject to the GNU General Public
+/// License as published by the Free
+/// Software Foundation; either version 2 of the License, or (at your
+/// option) any later version.
+
 #ifndef __RPC_MAP
 #define __RPC_MAP
 
 #include "RPCNode.h"
-#include "ArrayList.h"
-#include "NetworkTypes.h"
+#include "DS_List.h"
+#include "RakNetTypes.h"
+#include "Export.h"
 
-/**
- * @ingroup RAKNET_RPC 
- * @note You should not use this class directly. It is used internally in the 
- * RPC Subsystem 
- * 
- * @brief Maps index to RPC node
- * 
- * An RPC Node corresponds to one register function. 
- */
-struct  RPCMap
+/// \ingroup RAKNET_RPC 
+/// \internal
+/// \brief A container class for a list of RPCNodes
+struct RAK_DLL_EXPORT RPCMap
 {
 public:
 	RPCMap();
 	~RPCMap();
 	void Clear(void);
     RPCNode *GetNodeFromIndex(RPCIndex index);
-	RPCNode *GetNodeFromFunctionName(char *uniqueIdentifier);
-	RPCIndex GetIndexFromFunctionName(char *uniqueIdentifier);
-	void AddIdentifierWithFunction(char *uniqueIdentifier, void *functionPointer, bool isPointerToMember);
-	void AddIdentifierAtIndex(char *uniqueIdentifier, RPCIndex insertionIndex);
-	void RemoveNode(char *uniqueIdentifier);
+	RPCNode *GetNodeFromFunctionName(const char *uniqueIdentifier);
+	RPCIndex GetIndexFromFunctionName(const char *uniqueIdentifier);
+	void AddIdentifierWithFunction(const char *uniqueIdentifier, void *functionPointer, bool isPointerToMember);
+	void AddIdentifierAtIndex(const char *uniqueIdentifier, RPCIndex insertionIndex);
+	void RemoveNode(const char *uniqueIdentifier);
 protected:
-	BasicDataStructures::List<RPCNode *> rpcSet;
+	DataStructures::List<RPCNode *> rpcSet;
 };
 
 #endif

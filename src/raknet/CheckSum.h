@@ -1,34 +1,26 @@
-/* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
-/**
- * @file
- * @brief CheckSum class declaration 
- * 
- * From http://www.flounder.com/checksum.htm
- */
+/// \file
+/// \brief \b [Internal] Generates and validates checksums
+///
+/// \note I didn't write this, but took it from http://www.flounder.com/checksum.htm
+///
+
 #ifndef __CHECKSUM_H
 #define __CHECKSUM_H
 
-/**
- * This class provide checksuming service. 
- * 
- */
-
+/// Generates and validates checksums
 class CheckSum
 {
 
 public:
-	/**
-	 * Default constructor
-	 */
+	
+ /// Default constructor
+	
 	CheckSum()
 	{
-		clear();
+		Clear();
 	}
 	
-	/**
-	 * Reset to an initial state. 
-	 */
-	void clear()
+	void Clear()
 	{
 		sum = 0;
 		r = 55665;
@@ -36,41 +28,16 @@ public:
 		c2 = 22719;
 	}
 	
-	/**
-	 * add data to the checksum 
-	 * @param w add a dword of data 
-	 */
+	void Add ( unsigned int w );
 	
-	void add ( unsigned int w )
 	
-	;
+	void Add ( unsigned short w );
 	
-	/**
-	 * add data to the checksum 
-	 * @param w a word of data.
-	 */
-	void add ( unsigned short w )
+	void Add ( unsigned char* b, unsigned int length );
 	
-	;
-	/**
-	 * add an array of byte to the checksum. 
-	 * @param b a pointer to the buffer.
-	 * @param length the size of the buffer. 
-	 */
-	void add ( unsigned char* b, unsigned int length )
+	void Add ( unsigned char b );
 	
-	;
-	/**
-	 * Add one byte of data for checksuming 
-	 * @param b a byte of data. 
-	 */
-	void add ( unsigned char b )
-	
-	;
-	/**
-	 * Get the checksum of the data. 
-	 */
-	unsigned int get ()
+	unsigned int Get ()
 	{
 		return sum;
 	}

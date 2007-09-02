@@ -1,4 +1,3 @@
-/* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
 /**
 * @file
 * @brief SocketLayer class implementation 
@@ -28,16 +27,21 @@
 
 #ifdef _WIN32
 #include <process.h>
+#define COMPATIBILITY_2_RECV_FROM_FLAGS 0
 typedef int socklen_t;
+#elif defined(_COMPATIBILITY_2)
+#include "Compatibility2Includes.h"
 #else
+#define COMPATIBILITY_2_RECV_FROM_FLAGS 0
 #include <string.h> // memcpy
 #include <unistd.h>
 #include <fcntl.h>
 #endif
 
 #include "ExtendedOverlappedPool.h"
-#ifdef __USE_IO_COMPLETION_PORTS
-#include "AsynchronousFileIO.h"
+
+#ifdef _MSC_VER
+#pragma warning( push )
 #endif
 
 bool SocketLayer::socketLayerStarted = false;
@@ -47,15 +51,15 @@ WSADATA SocketLayer::winsockInfo;
 SocketLayer SocketLayer::I;
 
 #ifdef _WIN32
-extern void __stdcall ProcessNetworkPacket( unsigned int binaryAddress, unsigned short port, const char *data, int length, RakPeer *rakPeer );
+extern void __stdcall ProcessNetworkPacket( const unsigned int binaryAddress, const unsigned short port, const char *data, const int length, RakPeer *rakPeer, unsigned connectionSocketIndex );
 #else
-extern void ProcessNetworkPacket( unsigned int binaryAddress, unsigned short port, const char *data, int length, RakPeer *rakPeer );
+extern void ProcessNetworkPacket( const unsigned int binaryAddress, const unsigned short port, const char *data, const int length, RakPeer *rakPeer, unsigned connectionSocketIndex );
 #endif
 
 #ifdef _WIN32
-extern void __stdcall ProcessPortUnreachable( unsigned int binaryAddress, unsigned short port, RakPeer *rakPeer );
+extern void __stdcall ProcessPortUnreachable( const unsigned int binaryAddress, const unsigned short port, RakPeer *rakPeer );
 #else
-extern void ProcessPortUnreachable( unsigned int binaryAddress, unsigned short port, RakPeer *rakPeer );
+extern void ProcessPortUnreachable( const unsigned int binaryAddress, const unsigned short port, RakPeer *rakPeer );
 #endif
 
 #ifdef _DEBUG
@@ -70,7 +74,7 @@ SocketLayer::SocketLayer()
 
 		if ( WSAStartup( MAKEWORD( 2, 2 ), &winsockInfo ) != 0 )
 		{
-#if defined(_WIN32) && defined(_DEBUG)
+#if defined(_WIN32) && !defined(_COMPATIBILITY_1) && defined(_DEBUG)
 			DWORD dwIOError = GetLastError();
 			LPVOID messageBuffer;
 			FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -111,7 +115,7 @@ SOCKET SocketLayer::Connect( SOCKET writeSocket, unsigned int binaryAddress, uns
 
 	if ( connect( writeSocket, ( struct sockaddr * ) & connectSocketAddress, sizeof( struct sockaddr ) ) != 0 )
 	{
-#if defined(_WIN32) && defined(_DEBUG)
+#if defined(_WIN32) && !defined(_COMPATIBILITY_1) && defined(_DEBUG)
 		DWORD dwIOError = GetLastError();
 		LPVOID messageBuffer;
 		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -127,25 +131,20 @@ SOCKET SocketLayer::Connect( SOCKET writeSocket, unsigned int binaryAddress, uns
 	return writeSocket;
 }
 
+#ifdef _MSC_VER
 #pragma warning( disable : 4100 ) // warning C4100: <variable name> : unreferenced formal parameter
+#endif
 SOCKET SocketLayer::CreateBoundSocket( unsigned short port, bool blockingSocket, const char *forceHostAddress )
 {
 	SOCKET listenSocket;
 	sockaddr_in listenerSocketAddress;
 	int ret;
 
-#ifdef __USE_IO_COMPLETION_PORTS
-
-	if ( blockingSocket == false )
-		listenSocket = WSASocket( AF_INET, SOCK_DGRAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED );
-	else
-#endif
-
-		listenSocket = socket( AF_INET, SOCK_DGRAM, 0 );
+	listenSocket = socket( AF_INET, SOCK_DGRAM, 0 );
 
 	if ( listenSocket == INVALID_SOCKET )
 	{
-#if defined(_WIN32) && defined(_DEBUG)
+#if defined(_WIN32) && !defined(_COMPATIBILITY_1) && defined(_DEBUG)
 		DWORD dwIOError = GetLastError();
 		LPVOID messageBuffer;
 		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -164,7 +163,7 @@ SOCKET SocketLayer::CreateBoundSocket( unsigned short port, bool blockingSocket,
 
 	if ( setsockopt( listenSocket, SOL_SOCKET, SO_REUSEADDR, ( char * ) & sock_opt, sizeof ( sock_opt ) ) == -1 )
 	{
-#if defined(_WIN32) && defined(_DEBUG)
+#if defined(_WIN32) && !defined(_COMPATIBILITY_1) && defined(_DEBUG)
 		DWORD dwIOError = GetLastError();
 		LPVOID messageBuffer;
 		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -175,32 +174,64 @@ SOCKET SocketLayer::CreateBoundSocket( unsigned short port, bool blockingSocket,
 		//Free the buffer.
 		LocalFree( messageBuffer );
 #endif
-
 	}
 
+	// This doubles the max throughput rate
+	sock_opt=1024*256;
+	setsockopt(listenSocket, SOL_SOCKET, SO_RCVBUF, ( char * ) & sock_opt, sizeof ( sock_opt ) );
+	
+	// This doesn't make much difference: 10% maybe
+	sock_opt=1024*16;
+	setsockopt(listenSocket, SOL_SOCKET, SO_SNDBUF, ( char * ) & sock_opt, sizeof ( sock_opt ) );
+
+	#if defined(_WIN32) && !defined(_COMPATIBILITY_1) && defined(_DEBUG)
+	// If this assert hit you improperly linked against WSock32.h
+	assert(IP_DONTFRAGMENT==14);
+	#endif
+
+	// TODO - I need someone on dialup to test this with :(
+	// Path MTU Detection
+	/*
+	if ( setsockopt( listenSocket, IPPROTO_IP, IP_DONTFRAGMENT, ( char * ) & sock_opt, sizeof ( sock_opt ) ) == -1 )
+	{
+#if defined(_WIN32) && !defined(_COMPATIBILITY_1) && defined(_DEBUG)
+		DWORD dwIOError = GetLastError();
+		LPVOID messageBuffer;
+		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL, dwIOError, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
+			( LPTSTR ) & messageBuffer, 0, NULL );
+		// something has gone wrong here...
+		printf( "setsockopt(IP_DONTFRAGMENT) failed:Error code - %d\n%s", dwIOError, messageBuffer );
+		//Free the buffer.
+		LocalFree( messageBuffer );
+#endif
+	}
+	*/
+
+#ifndef _COMPATIBILITY_2
 	//Set non-blocking
 #ifdef _WIN32
 	unsigned long nonblocking = 1;
-
+// http://www.die.net/doc/linux/man/man7/ip.7.html
 	if ( ioctlsocket( listenSocket, FIONBIO, &nonblocking ) != 0 )
 	{
 		assert( 0 );
 		return INVALID_SOCKET;
 	}
-
 #else
 	if ( fcntl( listenSocket, F_SETFL, O_NONBLOCK ) != 0 )
 	{
 		assert( 0 );
 		return INVALID_SOCKET;
 	}
-
+#endif
 #endif
 
 	// Set broadcast capable
+	sock_opt=1;
 	if ( setsockopt( listenSocket, SOL_SOCKET, SO_BROADCAST, ( char * ) & sock_opt, sizeof( sock_opt ) ) == -1 )
 	{
-#if defined(_WIN32) && defined(_DEBUG)
+#if defined(_WIN32) && !defined(_COMPATIBILITY_1) && defined(_DEBUG)
 		DWORD dwIOError = GetLastError();
 		LPVOID messageBuffer;
 		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -220,7 +251,7 @@ SOCKET SocketLayer::CreateBoundSocket( unsigned short port, bool blockingSocket,
 	// Fill in the rest of the address structure
 	listenerSocketAddress.sin_family = AF_INET;
 
-	if (forceHostAddress)
+	if (forceHostAddress && forceHostAddress[0])
 	{
 		listenerSocketAddress.sin_addr.s_addr = inet_addr( forceHostAddress );
 	}
@@ -234,7 +265,7 @@ SOCKET SocketLayer::CreateBoundSocket( unsigned short port, bool blockingSocket,
 
 	if ( ret == SOCKET_ERROR )
 	{
-#if defined(_WIN32) && defined(_DEBUG)
+#if defined(_WIN32) && !defined(_COMPATIBILITY_1) && defined(_DEBUG)
 		DWORD dwIOError = GetLastError();
 		LPVOID messageBuffer;
 		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -252,9 +283,9 @@ SOCKET SocketLayer::CreateBoundSocket( unsigned short port, bool blockingSocket,
 	return listenSocket;
 }
 
+#if !defined(_COMPATIBILITY_1) && !defined(_COMPATIBILITY_2)
 const char* SocketLayer::DomainNameToIP( const char *domainName )
 {
-
 	struct hostent * phe = gethostbyname( domainName );
 
 	if ( phe == 0 || phe->h_addr_list[ 0 ] == 0 )
@@ -269,76 +300,26 @@ const char* SocketLayer::DomainNameToIP( const char *domainName )
 
 	return inet_ntoa( addr );
 }
+#endif
 
-void SocketLayer::Write( SOCKET writeSocket, const char* data, int length )
+void SocketLayer::Write( const SOCKET writeSocket, const char* data, const int length )
 {
 #ifdef _DEBUG
 	assert( writeSocket != INVALID_SOCKET );
 #endif
-#ifdef __USE_IO_COMPLETION_PORTS
-
-	ExtendedOverlappedStruct* eos = ExtendedOverlappedPool::Instance()->GetPointer();
-	memset( &( eos->overlapped ), 0, sizeof( OVERLAPPED ) );
-	memcpy( eos->data, data, length );
-	eos->length = length;
-
-	//AsynchronousFileIO::Instance()->PostWriteCompletion(ccs);
-	WriteAsynch( ( HANDLE ) writeSocket, eos );
-#else
 
 	send( writeSocket, data, length, 0 );
-#endif
 }
-
-// Start an asynchronous read using the specified socket.
-#pragma warning( disable : 4100 ) // warning C4100: <variable name> : unreferenced formal parameter
-bool SocketLayer::AssociateSocketWithCompletionPortAndRead( SOCKET readSocket, unsigned int binaryAddress, unsigned short port, RakPeer *rakPeer )
-{
-#ifdef __USE_IO_COMPLETION_PORTS
-	assert( readSocket != INVALID_SOCKET );
-
-	ClientContextStruct* ccs = new ClientContextStruct;
-	ccs->handle = ( HANDLE ) readSocket;
-
-	ExtendedOverlappedStruct* eos = ExtendedOverlappedPool::Instance()->GetPointer();
-	memset( &( eos->overlapped ), 0, sizeof( OVERLAPPED ) );
-	eos->binaryAddress = binaryAddress;
-	eos->port = port;
-	eos->rakPeer = rakPeer;
-	eos->length = MAXIMUM_MTU_SIZE;
-
-	bool b = AsynchronousFileIO::Instance()->AssociateSocketWithCompletionPort( readSocket, ( DWORD ) ccs );
-
-	if ( !b )
-	{
-		ExtendedOverlappedPool::Instance()->ReleasePointer( eos );
-		delete ccs;
-		return false;
-	}
-
-	BOOL success = ReadAsynch( ( HANDLE ) readSocket, eos );
-
-	if ( success == FALSE )
-		return false;
-
-#endif
-
-	return true;
-}
-
-int SocketLayer::RecvFrom( SOCKET s, RakPeer *rakPeer, int *errorCode )
+int SocketLayer::RecvFrom( const SOCKET s, RakPeer *rakPeer, int *errorCode, unsigned connectionSocketIndex )
 {
 	int len;
 	char data[ MAXIMUM_MTU_SIZE ];
 	sockaddr_in sa;
-	unsigned short portnum;
 
 	socklen_t len2 = sizeof( struct sockaddr_in );
 	sa.sin_family = AF_INET;
 
 #ifdef _DEBUG
-
-	portnum = 0;
 	data[ 0 ] = 0;
 	len = 0;
 	sa.sin_addr.s_addr = 0;
@@ -350,7 +331,7 @@ int SocketLayer::RecvFrom( SOCKET s, RakPeer *rakPeer, int *errorCode )
 		return SOCKET_ERROR;
 	}
 
-	len = recvfrom( s, data, MAXIMUM_MTU_SIZE, 0, ( sockaddr* ) & sa, ( socklen_t* ) & len2 );
+	len = recvfrom( s, data, MAXIMUM_MTU_SIZE, COMPATIBILITY_2_RECV_FROM_FLAGS, ( sockaddr* ) & sa, ( socklen_t* ) & len2 );
 
 	// if (len>0)
 	//  printf("Got packet on port %i\n",ntohs(sa.sin_port));
@@ -368,11 +349,13 @@ int SocketLayer::RecvFrom( SOCKET s, RakPeer *rakPeer, int *errorCode )
 
 	if ( len != SOCKET_ERROR )
 	{
+	//	printf("recvfrom\n");
+		unsigned short portnum;
 		portnum = ntohs( sa.sin_port );
 		//strcpy(ip, inet_ntoa(sa.sin_addr));
 		//if (strcmp(ip, "0.0.0.0")==0)
 		// strcpy(ip, "127.0.0.1");
-		ProcessNetworkPacket( sa.sin_addr.s_addr, portnum, data, len, rakPeer );
+		ProcessNetworkPacket( sa.sin_addr.s_addr, portnum, data, len, rakPeer, connectionSocketIndex );
 
 		return 1;
 	}
@@ -380,7 +363,7 @@ int SocketLayer::RecvFrom( SOCKET s, RakPeer *rakPeer, int *errorCode )
 	{
 		*errorCode = 0;
 
-#if defined(_WIN32) && defined(_DEBUG)
+#if defined(_WIN32) && !defined(_COMPATIBILITY_1) && defined(_DEBUG)
 
 		DWORD dwIOError = WSAGetLastError();
 
@@ -394,6 +377,8 @@ int SocketLayer::RecvFrom( SOCKET s, RakPeer *rakPeer, int *errorCode )
 //			printf( "A previous send operation resulted in an ICMP Port Unreachable message.\n" );
 #endif
 
+
+			unsigned short portnum=0;
 			ProcessPortUnreachable(sa.sin_addr.s_addr, portnum, rakPeer);
 			// *errorCode = dwIOError;
 			return SOCKET_ERROR;
@@ -421,6 +406,9 @@ int SocketLayer::RecvFrom( SOCKET s, RakPeer *rakPeer, int *errorCode )
 	return 0; // no data
 }
 
+#ifdef _MSC_VER
+#pragma warning( disable : 4702 ) // warning C4702: unreachable code
+#endif
 int SocketLayer::SendTo( SOCKET s, const char *data, int length, unsigned int binaryAddress, unsigned short port )
 {
 	if ( s == INVALID_SOCKET )
@@ -436,15 +424,13 @@ int SocketLayer::SendTo( SOCKET s, const char *data, int length, unsigned int bi
 
 	do
 	{
-
+		// TODO - use WSASendTo which is faster.
 		len = sendto( s, data, length, 0, ( const sockaddr* ) & sa, sizeof( struct sockaddr_in ) );
 	}
-
 	while ( len == 0 );
 
 	if ( len != SOCKET_ERROR )
 		return 0;
-
 
 #if defined(_WIN32)
 
@@ -457,16 +443,15 @@ int SocketLayer::SendTo( SOCKET s, const char *data, int length, unsigned int bi
 #endif
 
 	}
-
-	else
+	else if ( dwIOError != WSAEWOULDBLOCK )
 	{
-#if defined(_DEBUG)
+#if defined(_WIN32) && !defined(_COMPATIBILITY_1) && defined(_DEBUG)
 		LPVOID messageBuffer;
 		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 			NULL, dwIOError, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
 			( LPTSTR ) & messageBuffer, 0, NULL );
 		// something has gone wrong here...
-		printf( "recvfrom failed:Error code - %d\n%s", dwIOError, messageBuffer );
+		printf( "sendto failed:Error code - %d\n%s", dwIOError, messageBuffer );
 
 		//Free the buffer.
 		LocalFree( messageBuffer );
@@ -477,7 +462,6 @@ int SocketLayer::SendTo( SOCKET s, const char *data, int length, unsigned int bi
 	return dwIOError;
 #endif
 
-	#pragma warning( disable : 4702 ) // warning C4702: unreachable code
 	return 1; // error
 }
 
@@ -487,14 +471,65 @@ int SocketLayer::SendTo( SOCKET s, const char *data, int length, char ip[ 16 ], 
 	binaryAddress = inet_addr( ip );
 	return SendTo( s, data, length, binaryAddress, port );
 }
+int SocketLayer::SendToTTL1( SOCKET s, const char *data, int length, char ip[ 16 ], unsigned short port )
+{
+#if !defined(_COMPATIBILITY_1)
+	int oldTTL;
+	socklen_t opLen=sizeof(oldTTL);
+	// Get the current TTL
+	if (getsockopt(s, IPPROTO_IP, IP_TTL, ( char * ) & oldTTL, &opLen ) == -1)
+	{
+#if defined(_WIN32) && defined(_DEBUG)
+		DWORD dwIOError = GetLastError();
+		LPVOID messageBuffer;
+		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL, dwIOError, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
+			( LPTSTR ) & messageBuffer, 0, NULL );
+		// something has gone wrong here...
+		printf( "getsockopt(IPPROTO_IP,IP_TTL) failed:Error code - %d\n%s", dwIOError, messageBuffer );
+		//Free the buffer.
+		LocalFree( messageBuffer );
+#endif
+	}
 
+	// Set to TTL
+	int newTTL=1;
+	if (setsockopt(s, IPPROTO_IP, IP_TTL, ( char * ) & newTTL, sizeof ( newTTL ) ) == -1)
+	{
+
+#if defined(_WIN32) && defined(_DEBUG)
+		DWORD dwIOError = GetLastError();
+		LPVOID messageBuffer;
+		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL, dwIOError, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
+			( LPTSTR ) & messageBuffer, 0, NULL );
+		// something has gone wrong here...
+		printf( "setsockopt(IPPROTO_IP,IP_TTL) failed:Error code - %d\n%s", dwIOError, messageBuffer );
+		//Free the buffer.
+		LocalFree( messageBuffer );
+#endif
+	}
+
+	// Send
+	int res = SendTo(s,data,length,ip,port);
+
+	// Restore the old TTL
+	setsockopt(s, IPPROTO_IP, IP_TTL, ( char * ) & oldTTL, opLen );
+
+	return res;
+#else
+	return 0;
+#endif
+}
+
+#if !defined(_COMPATIBILITY_1) && !defined(_COMPATIBILITY_2)
 void SocketLayer::GetMyIP( char ipList[ 10 ][ 16 ] )
 {
 	char ac[ 80 ];
 
 	if ( gethostname( ac, sizeof( ac ) ) == SOCKET_ERROR )
 	{
-#if defined(_WIN32) && defined(_DEBUG)
+	#if defined(_WIN32) && !defined(_COMPATIBILITY_1) && defined(_DEBUG)
 		DWORD dwIOError = GetLastError();
 		LPVOID messageBuffer;
 		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -504,18 +539,16 @@ void SocketLayer::GetMyIP( char ipList[ 10 ][ 16 ] )
 		printf( "gethostname failed:Error code - %d\n%s", dwIOError, messageBuffer );
 		//Free the buffer.
 		LocalFree( messageBuffer );
-#endif
+	#endif
 
 		return ;
 	}
-
-	//cout << "Host name is " << ac << "." << endl;
 
 	struct hostent *phe = gethostbyname( ac );
 
 	if ( phe == 0 )
 	{
-#if defined(_WIN32) && defined(_DEBUG)
+#if defined(_WIN32) && !defined(_COMPATIBILITY_1) && defined(_DEBUG)
 		DWORD dwIOError = GetLastError();
 		LPVOID messageBuffer;
 		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -541,4 +574,32 @@ void SocketLayer::GetMyIP( char ipList[ 10 ][ 16 ] )
 		strcpy( ipList[ i ], inet_ntoa( addr ) );
 	}
 }
+#endif
 
+unsigned short SocketLayer::GetLocalPort ( SOCKET s )
+{
+	sockaddr_in sa;
+	socklen_t len = sizeof(sa);
+	if (getsockname(s, (sockaddr*)&sa, &len)!=0)
+	{
+#if defined(_WIN32) && !defined(_COMPATIBILITY_1) && defined(_DEBUG)
+		DWORD dwIOError = GetLastError();
+		LPVOID messageBuffer;
+		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL, dwIOError, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
+			( LPTSTR ) & messageBuffer, 0, NULL );
+		// something has gone wrong here...
+		printf( "gethostbyname failed:Error code - %d\n%s", dwIOError, messageBuffer );
+
+		//Free the buffer.
+		LocalFree( messageBuffer );
+#endif
+		return 0;
+	}
+	return ntohs(sa.sin_port);
+}
+
+
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif

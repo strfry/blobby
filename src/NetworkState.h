@@ -56,6 +56,32 @@ private:
 	unsigned mServerBoxPosition;
 };
 
+class NetworkLoginState : public State
+{
+public:
+	NetworkLoginState();
+	~NetworkLoginState();
+	virtual void step();
+
+private:
+	std::string mUsername;
+	std::string mPassword;
+
+	unsigned mUsernamePos;
+	unsigned mPasswordPos;
+
+	bool mRegistering;
+
+	enum ErrorCode
+	{
+		NO_ERROR = 0,
+		UNKNOWN_USERNAME,
+		WRONG_PASSWORD,
+		USERNAME_EXISTS,
+		CONNECTION_FAILURE,
+	} mErrorCode;
+};
+
 class NetworkGameState : public State
 {
 public:

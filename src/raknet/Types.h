@@ -1,83 +1,80 @@
-/* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
-/**
-* @file 
-* @brief Compatibility Layer and fundamental tools and types 
-* 
-* @verbatim
-* Fundamental tools & types
-*
-* Catid(cat02e@fsu.edu)
-*
-* 8/9/2004 Added SINGLE/ARRAY_RELEASE
-* 8/5/2004 Added COMPILER_ preprocessors
-*    class NoCopies
-* 8/1/2004 Removed mask stuff
-* 7/29/2004 Added swapLE, swapBE, getLE, getBE
-* 7/28/2004 Automatic and AutoArray now compile in dev-c++
-*    Added pre-processor conditions to support 
-*    other compilers
-*    Removed GETWORD and GETDWORD
-* 7/15/2004 Now using COM_RELEASE throughout CatGL3
-* 6/22/2004 Removed triple and pair
-* 6/12/2004 AutoDeallocate -> Automatic, AutoArray
-* 6/9/2004 OBJCLR
-* 5/2/2004 class AutoDeallocate
-* 5/1/2004 IS_POWER_OF_2, next_highest_power_of_2
-* 4/30/2004 Merged character manip macros
-* 2/23/2004 CEIL*
-*    Removed MEMCOPY32 and MEMCLEAR32,
-*    memcpy and memset are now faster
-*    MAKE_MASK
-* 2/10/2004 LITTLE_ENDIAN
-*    COUNT1BITS32
-*    AT_LEAST_2_BITS
-*    LEAST_SIGNIFICANT_BIT
-* X-mas/2003 [u/s]int?? -> [u/s]??
-* 7/3/2003 Added template triple, point->pair
-* 6/15/2003 Added template rect, point
-* 3/30/2003 Added RO?8, RO?16 and ?int64
-*    Added MEMCOPY32 and MEMCLEAR32
-* 3/12/2003 Added GETWORD and GETDWORD
-* 1/16/2003 Formalized this library.
-*
-* Tabs: 4 spaces
-* Dist: public
-* @endverbatim
-*/
+/// \file Types.h
+/// \brief Used for types used by RSA
+/// 
+/// @verbatim
+/// Fundamental tools & types
+///
+/// Catid(cat02e@fsu.edu)
+///
+/// 8/9/2004 Added SINGLE/ARRAY_RELEASE
+/// 8/5/2004 Added COMPILER_ preprocessors
+///    class NoCopies
+/// 8/1/2004 Removed mask stuff
+/// 7/29/2004 Added swapLE, swapBE, getLE, getBE
+/// 7/28/2004 Automatic and AutoArray now compile in dev-c++
+///    Added pre-processor conditions to support 
+///    other compilers
+///    Removed GETWORD and GETDWORD
+/// 7/15/2004 Now using COM_RELEASE throughout CatGL3
+/// 6/22/2004 Removed triple and pair
+/// 6/12/2004 AutoDeallocate -> Automatic, AutoArray
+/// 6/9/2004 OBJCLR
+/// 5/2/2004 class AutoDeallocate
+/// 5/1/2004 IS_POWER_OF_2, next_highest_power_of_2
+/// 4/30/2004 Merged character manip macros
+/// 2/23/2004 CEIL*
+///    Removed MEMCOPY32 and MEMCLEAR32,
+///    memcpy and memset are now faster
+///    MAKE_MASK
+/// 2/10/2004 LITTLE_ENDIAN
+///    COUNT1BITS32
+///    AT_LEAST_2_BITS
+///    LEAST_SIGNIFICANT_BIT
+/// X-mas/2003 [u/s]int?? -> [u/s]??
+/// 7/3/2003 Added template triple, point->pair
+/// 6/15/2003 Added template rect, point
+/// 3/30/2003 Added RO?8, RO?16 and ?int64
+///    Added MEMCOPY32 and MEMCLEAR32
+/// 3/12/2003 Added GETWORD and GETDWORD
+/// 1/16/2003 Formalized this library.
+///
+/// Tabs: 4 spaces
+/// Dist: public
+/// @endverbatim
+///
 
 #ifndef TYPES_H
 #define TYPES_H
 
-/**
-* @brief Compatibility and Fundamental Tools and Types.  This
-* namespace contains compatibility tools and types and also
-* fundamental class. 
-* @section sec_compiler Compiler detection 
-* Things to consider for each compiler:
-*
-* - BIG_ENDIAN / LITTLE_ENDIAN
-* - MULTITHREADED
-* - DEBUG
-* - HASINT64
-* - Basic types {u8-u64, s8-s64, f32, f64}
-* - WIN32
-* - ASSEMBLY_INTEL_SYNTAX / ASSEMBLY_ATT_SYNTAX, ASSEMBLY_BLOCK
-* - INLINE
-* - NO_TEMPLATE_INLINE_ASSEMBLY
-* - Fixes
-* 
-* Set depending which compiler is being used:
-*
-* - COMPILER_MSVC
-* - COMPILER_GCC
-* - COMPILER_BORLANDC
-*/
+/// @brief Compatibility and Fundamental Tools and Types.  This
+/// namespace contains compatibility tools and types and also
+/// fundamental class. 
+/// @section sec_compiler Compiler detection 
+/// Things to consider for each compiler:
+///
+/// - BIG_ENDIAN / LITTLE_ENDIAN
+/// - MULTITHREADED
+/// - DEBUG
+/// - HASINT64
+/// - Basic types {u8-u64, s8-s64, f32, f64}
+/// - WIN32
+/// - ASSEMBLY_INTEL_SYNTAX / ASSEMBLY_ATT_SYNTAX, ASSEMBLY_BLOCK
+/// - INLINE
+/// - NO_TEMPLATE_INLINE_ASSEMBLY
+/// - Fixes
+/// 
+/// Set depending which compiler is being used:
+///
+/// - COMPILER_MSVC
+/// - COMPILER_GCC
+/// - COMPILER_BORLANDC
 
 // CB: Something strange happens with the system includes on
 // Linux and BIG_ENDIAN ends up defined at some point, so
 // we need to use HOST_ENDIAN_IS_BIG instead. This code is
 // a copy of code further down, but keeps the def outside
 // the cat namespace
+
 #if !defined(HOST_ENDIAN_IS_BIG) && !defined(HOST_ENDIAN_IS_LITTLE)
 #if defined(__sparc) || defined(__sparc__) || defined(__powerpc__) || \
 	defined(__ppc__) || defined(__hppa) || defined(_MIPSEB) || defined(_POWER) || \
@@ -91,7 +88,7 @@
 
 # define HOST_ENDIAN_IS_BIG
 
-#elif defined(__i386__) || defined(i386) || defined(intel) || defined(_M_IX86) || \
+#elif defined(__i386__) || defined(i386) || defined(intel) || defined(_M_IX86) || defined(_M_X64) || \
 	defined(__amd64) || defined(__amd64__)	|| \
 	defined(__alpha__) || defined(__alpha) || defined(__ia64) || defined(__ia64__) || \
 	defined(_M_ALPHA) || defined(ns32000) || defined(__ns32000__) || defined(sequent) || \
@@ -128,7 +125,7 @@ namespace cat
 # define BIG_ENDIAN
 
 #elif defined(__i386__) || defined(i386) || defined(intel) || defined(_M_IX86) || \
-	defined(__amd64) || defined(__amd64__)	|| \
+	defined(__amd64) || defined(__amd64__)	|| defined(_M_X64) || \
 	defined(__alpha__) || defined(__alpha) || defined(__ia64) || defined(__ia64__) || \
 	defined(_M_ALPHA) || defined(ns32000) || defined(__ns32000__) || defined(sequent) || \
 	defined(MIPSEL) || defined(_MIPSEL) || defined(sun386) || defined(__sun386__)
@@ -168,7 +165,7 @@ namespace cat
 
 # error "Intel : I don't know your compiler"
 
-#elif defined(__GNUC__) // GNU C++
+#elif (defined(__GNUC__)  || defined(__GCCXML__)) // GNU C++
 
 #define COMPILER_GCC
 
@@ -232,7 +229,7 @@ namespace cat
 #  define MULTITHREADED
 # endif
 
-# if defined(__DEBUG)
+# if defined(_DEBUG)
 #  define DEBUG
 # endif
 
@@ -268,7 +265,7 @@ namespace cat
 #  define MULTITHREADED
 # endif
 
-# if defined(__DEBUG)
+# if defined(_DEBUG)
 #  define DEBUG
 # endif
 
@@ -316,8 +313,10 @@ namespace cat
 	typedef signed __int64 s64;
 # endif
 
+#if !defined(_M_X64)
 # define ASSEMBLY_INTEL_SYNTAX
 # define ASSEMBLY_BLOCK __asm
+#endif
 
 # if (_MSC_VER <= 1200)
 #  pragma warning(disable : 4786) // truncation to 255 chars
@@ -614,9 +613,9 @@ and has at least one block.
 
 /**
 * Safe null-terminated string -> char buffer copy
-* @param dest the resulting string 
-* @param src the string to copy 
-* @param size the number of char to copy 
+* \param dest the resulting string 
+* \param src the string to copy 
+* \param size the number of char to copy 
 */
 #define STRNCPY(dest, src, size) { \
 	strncpy(dest, src, size); \
@@ -693,14 +692,14 @@ Bump 'n' to the next unit of 'width'.
 /*
 Quick character manipulation
 */
-#define IS_ALPHA(ch) ( (((u8)(ch) & 0xc0) == 0x40) && ((((u8)(ch) - 1) & 0x1f) <= 0x19) )
+//#define IS_ALPHA(ch) ( (((u8)(ch) & 0xc0) == 0x40) && ((((u8)(ch) - 1) & 0x1f) <= 0x19) )
 
-#define IS_NUM(ch) ( ((u8)(ch) - 0x30) < 10 )
+//#define IS_NUM(ch) ( ((u8)(ch) - 0x30) < 10 )
 
-#define IS_ALPHANUM(ch) ( IS_ALPHA(ch) || IS_NUM(ch) )
+//#define IS_ALPHANUM(ch) ( IS_ALPHA(ch) || IS_NUM(ch) )
 
-#define TO_LOWER(ch) (char)( (ch) | 0x20 ) /* must be upper/lower-case alpha */
-#define TO_UPPER(ch) (char)( (ch) & (~0x20) ) /* must be upper/lower-case alpha */
+//#define TO_LOWER(ch) (char)( (ch) | 0x20 ) /* must be upper/lower-case alpha */
+//#define TO_UPPER(ch) (char)( (ch) & (~0x20) ) /* must be upper/lower-case alpha */
 
 
 #endif // TYPES_H

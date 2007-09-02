@@ -1,34 +1,35 @@
-/* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
-/**
- * @file BigTypes.h
- * @brief Provide Big Integer class 
- * 
- *
- * (128)2^7-bit to (32768)2^14-bit signed 2's complement & unsigned extended arithmetic
- *
- * catid(cat02e@fsu.edu)
- *
- * 7/30/2004 Fixed VS6 compat
- * 7/28/2004 Fixed macros so they can be used outside of the big namespace
- *    Now using pre-processor definitions from types.h for inline assembly
- * 7/26/2004 Removed a lot of assembly, made add/sub assembly optional
- * 7/25/2004 Merged the wrapper class Int<T> from older code
- * 7/24/2004 Replaced trivial assembly code with std:: functions
- *    Refined some assembly code with Art of Assembly chapter 9
- *    Added binary ops
- * 7/23/2004 Finished assembly coding
- *    Removed Int<T> class, for now
- *    Added old C++ code back in with USEASSEMBLY
- * 7/22/2004 Signed arithmetic (needed for ext. Euclidean algo)
- *    Cleaned up coding style
- *    Began rewriting parts in assembly
- * 7/21/2004 Began writing
- *
- * Tabs: 4 spaces
- * Dist: public
- */
+/// \file
+/// \brief \b [Internal] Used for RSA generation.
+///
+/// This file is part of RakNet Copyright 2003 Kevin Jenkins.
+///
+/// (128)2^7-bit to (32768)2^14-bit signed 2's complement & unsigned extended arithmetic
+///
+/// catid(cat02e@fsu.edu)
+///
+/// 7/30/2004 Fixed VS6 compat
+/// 7/28/2004 Fixed macros so they can be used outside of the big namespace
+///    Now using pre-processor definitions from types.h for inline assembly
+/// 7/26/2004 Removed a lot of assembly, made add/sub assembly optional
+/// 7/25/2004 Merged the wrapper class Int<T> from older code
+/// 7/24/2004 Replaced trivial assembly code with std:: functions
+///    Refined some assembly code with Art of Assembly chapter 9
+///    Added binary ops
+/// 7/23/2004 Finished assembly coding
+///    Removed Int<T> class, for now
+///    Added old C++ code back in with USEASSEMBLY
+/// 7/22/2004 Signed arithmetic (needed for ext. Euclidean algo)
+///    Cleaned up coding style
+///    Began rewriting parts in assembly
+/// 7/21/2004 Began writing
+///
+/// Tabs: 4 spaces
+/// Dist: public
+
 #ifndef BIGTYPES_H
 #define BIGTYPES_H
+
+#if !defined(_COMPATIBILITY_1)
 
 #include "Types.h"
 
@@ -38,11 +39,10 @@
 # include <string>
 #endif
 
-/**
- * @brief Big Data Type Definition 
- * 
- * Provide Big Data Type functionnalities for the RakNet Libraries 
- */
+
+#ifdef _MSC_VER
+#pragma warning( push )
+#endif
 
 namespace big
 {
@@ -313,6 +313,9 @@ namespace big
 	BIGTWOTYPES INLINE void usetlow( Bigger &a, T &b )
 	{
 		memcpy( a, b, sizeof( T ) );
+#ifdef _MSC_VER
+#pragma warning( disable : 4318 ) // warning C4318: passing constant zero as the length to memset
+#endif
 		memset( a + BIGWORDCOUNT( T ), 0, sizeof( Bigger ) - sizeof( T ) );
 	}
 	
@@ -1740,7 +1743,11 @@ namespace big
 	
 	BIGONETYPE BIGINTFAST Int<T>::operator%=( T &n )
 	{
+#if (defined(__GNUC__)  || defined(__GCCXML__))
+		smodulus( raw, n, raw );
+#else
 		modulus( raw, n, raw );
+#endif
 		return *this;
 	}
 	
@@ -1808,7 +1815,10 @@ namespace big
 #endif // BIG_USES_STRINGS
 }
 
+#endif // #if !defined(_COMPATIBILITY_1)
+
 #endif // BIGTYPES_H
 
-
-
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif

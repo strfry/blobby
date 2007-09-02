@@ -1,42 +1,47 @@
-/* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
-/*
-Performant RSA en/decryption with 256-bit to 16384-bit modulus
-
-catid(cat02e@fsu.edu)
-
-7/30/2004 Fixed VS6 compat
-7/26/2004 Now internally generates private keys
-simpleModExp() is faster for encryption than MontyModExp
-CRT-MontyModExp is faster for decryption than CRT-SimpleModExp
-7/25/2004 Implemented Montgomery modular exponentation
-Implemented CRT modular exponentation optimization
-7/21/2004 Did some pre-lim coding
-
-Best performance on my 1.8 GHz P4 (mobile):
-1024-bit generate key : 30 seconds
-1024-bit set private key : 100 ms (pre-compute this step)
-1024-bit encryption : 200 usec
-1024-bit decryption : 400 ms
-
-TODO
-There's a bug in MonModExp() that restricts us to k-1 bits
-
-Tabs: 4 spaces
-Dist: public
-*/
+///
+/// \brief \b [Internal] SHA-1 computation class
+///
+/// Performant RSA en/decryption with 256-bit to 16384-bit modulus
+///
+/// catid(cat02e@fsu.edu)
+///
+/// 7/30/2004 Fixed VS6 compat
+/// 7/26/2004 Now internally generates private keys
+/// simpleModExp() is faster for encryption than MontyModExp
+/// CRT-MontyModExp is faster for decryption than CRT-SimpleModExp
+/// 7/25/2004 Implemented Montgomery modular exponentation
+/// Implemented CRT modular exponentation optimization
+/// 7/21/2004 Did some pre-lim coding
+///
+/// Best performance on my 1.8 GHz P4 (mobile):
+/// 1024-bit generate key : 30 seconds
+/// 1024-bit set private key : 100 ms (pre-compute this step)
+/// 1024-bit encryption : 200 usec
+/// 1024-bit decryption : 400 ms
+///
+/// \todo There's a bug in MonModExp() that restricts us to k-1 bits
+///
+/// Tabs: 4 spaces
+/// Dist: public
 
 #ifndef RSACRYPT_H
 #define RSACRYPT_H
 
-#define RSASUPPORTGENPRIME
+#if !defined(_COMPATIBILITY_1)
 
-// Can't go under 256 or you'll need to disable the USEASSEMBLY macro in bigtypes.h
-// That's because the assembly assumes at least 128-bit data to work on
-// #define RSA_BIT_SIZE big::u512
+#define RSASUPPORTGENPRIME
+#include "Export.h"
+/// Can't go under 256 or you'll need to disable the USEASSEMBLY macro in bigtypes.h
+/// That's because the assembly assumes at least 128-bit data to work on
+/// #define RSA_BIT_SIZE big::u512
 #define RSA_BIT_SIZE big::u256
 
 #include "BigTypes.h"
 #include "Rand.h" //Giblet - added missing include for randomMT()
+
+#ifdef _MSC_VER
+#pragma warning( push )
+#endif
 
 namespace big
 {
@@ -133,7 +138,9 @@ namespace big
 		if ( isZero( a ) )
 			return ;
 
+#ifdef _MSC_VER
 #pragma warning( disable : 4127 ) // warning C4127: conditional expression is constant
+#endif
 		while ( true )
 		{
 			umodulo( c, a, c );
@@ -238,8 +245,9 @@ namespace big
 				;
 			return ;
 		}
-
+#ifdef _MSC_VER
 #pragma warning( disable : 4127 ) // warning C4127: conditional expression is constant
+#endif
 		while ( true )
 		{
 			// x[2] = x[0] - x[1] * q (mod b0)
@@ -518,7 +526,7 @@ namespace big
 	}
 	}
 	}
-	*/ 
+	*/
 	// directly compute a^-1 s.t. a^-1 a (mod b) = 1, a < b, GCD(a, b)
 	BIGONETYPE void computeModularInverse( T &a0, T &b0, T &ap )
 	{
@@ -542,7 +550,9 @@ namespace big
 
 			;
 
+#ifdef _MSC_VER
 #pragma warning( disable : 4127 ) // warning C4127: conditional expression is constant
+#endif
 		while ( true )
 		{
 			// {q, a} = a / b
@@ -672,7 +682,7 @@ namespace big
 	udivide(r, n, n, r);
 	takelow(np, n);
 	}
-	*/ 
+	*/
 	// Montgomery product u = a * b (mod n)
 	BIGONETYPE void MonPro( T &ap, T &bp, T &n, T &np, T &u_out )
 	{
@@ -724,8 +734,7 @@ namespace big
 
 		takelow( Mp, dM ); // M' = M r (mod n)
 
-		/*
-		i may be wrong, but it seems to me that the squaring
+		/*	i may be wrong, but it seems to me that the squaring
 		results in a constant until we hit the first set bit
 		this could save a lot of time, but it needs to be proven
 		*/
@@ -783,7 +792,9 @@ start_squaring:
 	}
 
 	// indirectly calculates x = C ^ d (mod n) using the Chinese Remainder Thm
+#ifdef _MSC_VER
 	#pragma warning( disable : 4100 ) // warning C4100: <variable name> : unreferenced formal parameter
+#endif
 	BIGTWOTYPES void CRTModExp( Bigger &x, Bigger &C, Bigger &d, T &p, T &q, T &pInverse, T &pnp, T &pxp, T &qnp, T &qxp )
 	{
 		// d1 = d mod (p - 1)
@@ -929,8 +940,7 @@ start_squaring:
 			1583, 1597, 1601, 1607, 1609, 1613, 1619, 1621
 	};
 
-	/*
-	modified Rabin-Miller primality test (added small primes)
+	/*modified Rabin-Miller primality test (added small primes)
 
 	When picking a value for insurance, note that the probability of failure
 	of the test to detect a composite number is at most 4^(-insurance), so:
@@ -996,7 +1006,7 @@ start_squaring:
 			T a;
 			int index;
 
-			for ( index = 0; index < sizeof( a ) / sizeof( a[ 0 ] ); index++ )
+			for ( index = 0; index < (int) sizeof( a ) / (int) sizeof( a[ 0 ] ); index++ )
 				a[ index ] = randomMT();
 
 			umodulo( a, n1, a );
@@ -1035,7 +1045,7 @@ start_squaring:
 		{
 			int index;
 
-			for ( index = 0; index < sizeof( n ) / sizeof( n[ 0 ] ); index++ )
+			for ( index = 0; index < (int) sizeof( n ) / (int) sizeof( n[ 0 ] ); index++ )
 				n[ index ] = randomMT();
 
 			n[ BIGWORDCOUNT( T ) - 1 ] |= WORDHIGHBIT;
@@ -1052,7 +1062,7 @@ start_squaring:
 
 	//////// RSACrypt class ////////
 
-	BIGONETYPE class RSACrypt
+	BIGONETYPE class RAK_DLL_EXPORT RSACrypt
 	{
 		// public key
 		T e, n;
@@ -1235,4 +1245,11 @@ start_squaring:
 	};
 }
 
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif
+
+#endif // #if !defined(_COMPATIBILITY_1)
+
 #endif // RSACRYPT_H
+

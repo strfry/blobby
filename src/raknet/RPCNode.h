@@ -1,68 +1,50 @@
-/* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
-/**
- * @ingroup RAKNET_RPC 
- * @file 
- * @brief Internal Stuff for RPC Handling 
- *
- * This file is part of RakNet Copyright 2003 Rakkarsoft LLC and Kevin Jenkins.
- *
- * Usage of Raknet is subject to the appropriate licence agreement.
- * "Shareware" Licensees with Rakkarsoft LLC are subject to the
- * shareware license found at
- * http://www.rakkarsoft.com/shareWareLicense.html which you agreed to
- * upon purchase of a "Shareware license" "Commercial" Licensees with
- * Rakkarsoft LLC are subject to the commercial license found at
- * http://www.rakkarsoft.com/sourceCodeLicense.html which you agreed
- * to upon purchase of a "Commercial license"
- * Custom license users are subject to the terms therein.
- * All other users are
- * subject to the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * Refer to the appropriate license agreement for distribution,
- * modification, and warranty rights.
- */
- 
-#include "NetworkTypes.h"
+/// \file
+/// \brief \b [Internal] Holds information related to a RPC
+///
+/// \ingroup RAKNET_RPC
+///
+/// This file is part of RakNet Copyright 2003 Kevin Jenkins.
+///
+/// Usage of RakNet is subject to the appropriate license agreement.
+/// Creative Commons Licensees are subject to the
+/// license found at
+/// http://creativecommons.org/licenses/by-nc/2.5/
+/// Single application licensees are subject to the license found at
+/// http://www.rakkarsoft.com/SingleApplicationLicense.html
+/// Custom license users are subject to the terms therein.
+/// GPL license users are subject to the GNU General Public
+/// License as published by the Free
+/// Software Foundation; either version 2 of the License, or (at your
+/// option) any later version.
 
 #ifndef __RPC_NODE
 #define __RPC_NODE
 
+#include "RakNetTypes.h"
+#include "Export.h"
+
 class RakPeerInterface;
 
-/**
- * @defgroup RAKNET_RPC Remote Procedure Call Subsystem 
- * @brief Remote Function Invocation 
- * 
- * The Remote Procedure Call Subsystem provide ability to call
- * function on a remote host knowing its name and its parameters. 
- * 
- */
 
-/**
- * @ingroup RAKNET_RPC 
- * @note You should not use this class directly. It is used internally in the 
- * RPC Subsystem 
- * 
- * @brief Map registered procedure inside of a peer.  
- * 
- * An RPC Node corresponds to one register function. 
- */
+/// \defgroup RAKNET_RPC Remote Procedure Call Subsystem 
+/// \brief A system to call C or object member procudures on other systems, and even to return return values.
 
-struct RPCNode
+/// \ingroup RAKNET_RPC 
+/// \internal
+/// 
+/// \brief Map registered procedure inside of a peer.  
+/// 
+struct RAK_DLL_EXPORT RPCNode
 {
-	/**
-	 * A unique identifier 
-	 */
+ 
+ 	/// String identifier of the RPC
 	char *uniqueIdentifier;
-	/**
-	 * A pointer to the function to be called 
-	 */
+	
+ /// Force casting of member functions to void *
 	union
 	{
 		void ( *staticFunctionPointer ) ( RPCParameters *rpcParms );
-		#ifdef __GNUC__
+		#if (defined(__GNUC__)  || defined(__GCCXML__))
   		void (*memberFunctionPointer)(void* _this, RPCParameters *rpcParms);
 		#else
 		void (__cdecl *memberFunctionPointer)(void* _this, RPCParameters *rpcParms);
@@ -70,9 +52,8 @@ struct RPCNode
 
 		void *functionPointer;
 	};
-	/**
-	* Is a member function pointer?
-	*/
+	
+	/// Is this a member function pointer?  True if so.  If false it's a regular C function.
 	bool isPointerToMember;
 };
 

@@ -1,45 +1,46 @@
-/* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
-/**
- * @file GetTime.cpp 
- * 
- * This file is part of RakNet Copyright 2003 Rakkarsoft LLC and Kevin Jenkins.
- *
- * Usage of Raknet is subject to the appropriate licence agreement.
- * "Shareware" Licensees with Rakkarsoft LLC are subject to the
- * shareware license found at
- * http://www.rakkarsoft.com/shareWareLicense.html which you agreed to
- * upon purchase of a "Shareware license" "Commercial" Licensees with
- * Rakkarsoft LLC are subject to the commercial license found at
- * http://www.rakkarsoft.com/sourceCodeLicense.html which you agreed
- * to upon purchase of a "Commercial license"
- * Custom license users are subject to the terms therein.
- * All other users are
- * subject to the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * Refer to the appropriate license agreement for distribution,
- * modification, and warranty rights.
- */
+/// \file
+///
+/// This file is part of RakNet Copyright 2003 Kevin Jenkins.
+///
+/// Usage of RakNet is subject to the appropriate license agreement.
+/// Creative Commons Licensees are subject to the
+/// license found at
+/// http://creativecommons.org/licenses/by-nc/2.5/
+/// Single application licensees are subject to the license found at
+/// http://www.rakkarsoft.com/SingleApplicationLicense.html
+/// Custom license users are subject to the terms therein.
+/// GPL license users are subject to the GNU General Public
+/// License as published by the Free
+/// Software Foundation; either version 2 of the License, or (at your
+/// option) any later version.
+
 #include "GetTime.h"
-#ifdef _WIN32
+#ifdef _COMPATIBILITY_1
+#include "Compatibility1Includes.h" // Developers of a certain platform will know what to do here.
+#elif defined(_WIN32)
 #include <windows.h>
+#elif defined(_COMPATIBILITY_2)
+#include "Compatibility2Includes.h"
+#include <sys/time.h>
+#include <unistd.h>
 #else
 #include <sys/time.h>
+#include <unistd.h>
 #endif
 
-unsigned int RakNet::GetTime( void )
-{
+static bool initialized=false;
 #ifdef _WIN32
-	static LARGE_INTEGER yo;
-	static LONGLONG counts;
+static LARGE_INTEGER yo;
 #else
-	
-	static timeval tp, initialTime;
+static timeval tp, initialTime;
 #endif
-	
-	static bool initialized = false;
-	
+
+RakNetTime RakNet::GetTime( void )
+{
+	return (RakNetTime)(GetTimeNS()/1000);
+}
+RakNetTimeNS RakNet::GetTimeNS( void )
+{
 	if ( initialized == false )
 	{
 #ifdef _WIN32
@@ -47,28 +48,55 @@ unsigned int RakNet::GetTime( void )
 		// The original code shifted right 10 bits
 		//counts = yo.QuadPart >> 10;
 		// It gives the wrong value since 2^10 is not 1000
-		counts = yo.QuadPart / 1000;
+		//	counts = yo.QuadPart;// / 1000;
 #else
-		
 		gettimeofday( &initialTime, 0 );
 #endif
-		
+
 		initialized = true;
 	}
-	
+
+	static RakNetTimeNS lastVal=(RakNetTimeNS)0;
+	RakNetTimeNS curTime;
+
 #ifdef _WIN32
 	LARGE_INTEGER PerfVal;
-	
+
 	QueryPerformanceCounter( &PerfVal );
-	
-	return ( unsigned int ) ( PerfVal.QuadPart / counts );
-	
+
+	__int64 quotient, remainder;
+	quotient=((PerfVal.QuadPart) / yo.QuadPart);
+	remainder=((PerfVal.QuadPart) % yo.QuadPart);
+	curTime = (RakNetTimeNS) quotient*(RakNetTimeNS)1000000 + (remainder*(RakNetTimeNS)1000000 / yo.QuadPart);
+
 #else
-	
 	gettimeofday( &tp, 0 );
-	
-	// Seconds to ms and microseconds to ms
-	return ( tp.tv_sec - initialTime.tv_sec ) * 1000 + ( tp.tv_usec - initialTime.tv_usec ) / 1000;
-	
+
+	curTime = ( tp.tv_sec - initialTime.tv_sec ) * (RakNetTimeNS) 1000000 + ( tp.tv_usec - initialTime.tv_usec );
 #endif
+
+	// To workaround http://support.microsoft.com/kb/274323 where the timer can sometimes jump forward by hours or days
+	// Call it twice and hope that fixes it
+	if (lastVal!=(RakNetTimeNS)0 && (curTime < lastVal || curTime-lastVal>(RakNetTimeNS)1000*(RakNetTimeNS)1000*(RakNetTimeNS)60*(RakNetTimeNS)1))
+	{
+#ifdef _WIN32
+		LARGE_INTEGER PerfVal;
+
+		QueryPerformanceCounter( &PerfVal );
+
+		__int64 quotient, remainder;
+		quotient=((PerfVal.QuadPart) / yo.QuadPart);
+		remainder=((PerfVal.QuadPart) % yo.QuadPart);
+		curTime = (RakNetTimeNS) quotient*(RakNetTimeNS)1000000 + (remainder*(RakNetTimeNS)1000000 / yo.QuadPart);
+
+#else
+		gettimeofday( &tp, 0 );
+
+		curTime = ( tp.tv_sec - initialTime.tv_sec ) * (RakNetTimeNS) 1000000 + ( tp.tv_usec - initialTime.tv_usec );
+#endif
+
+	}
+
+	lastVal=curTime;
+	return curTime;
 }

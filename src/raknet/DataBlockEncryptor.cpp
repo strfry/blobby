@@ -1,34 +1,26 @@
-/* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
-/**
-* @file 
-* @brief DataBlockEncryptor Class Implementation  
-*
- * This file is part of RakNet Copyright 2003 Rakkarsoft LLC and Kevin Jenkins.
- *
- * Usage of Raknet is subject to the appropriate licence agreement.
- * "Shareware" Licensees with Rakkarsoft LLC are subject to the
- * shareware license found at
- * http://www.rakkarsoft.com/shareWareLicense.html which you agreed to
- * upon purchase of a "Shareware license" "Commercial" Licensees with
- * Rakkarsoft LLC are subject to the commercial license found at
- * http://www.rakkarsoft.com/sourceCodeLicense.html which you agreed
- * to upon purchase of a "Commercial license"
- * Custom license users are subject to the terms therein.
- * All other users are
- * subject to the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * Refer to the appropriate license agreement for distribution,
- * modification, and warranty rights.
-*/
+/// \file
+///
+/// This file is part of RakNet Copyright 2003 Kevin Jenkins.
+///
+/// Usage of RakNet is subject to the appropriate license agreement.
+/// Creative Commons Licensees are subject to the
+/// license found at
+/// http://creativecommons.org/licenses/by-nc/2.5/
+/// Single application licensees are subject to the license found at
+/// http://www.rakkarsoft.com/SingleApplicationLicense.html
+/// Custom license users are subject to the terms therein.
+/// GPL license users are subject to the GNU General Public
+/// License as published by the Free
+/// Software Foundation; either version 2 of the License, or (at your
+/// option) any later version.
+
 #include "DataBlockEncryptor.h"
 #include "CheckSum.h"
 #include "GetTime.h"
 #include "Rand.h"
 #include <assert.h>
 #include <string.h>
-#include "rijndael.h"
+#include "Rijndael.h"
 #include "Types.h"
 
 DataBlockEncryptor::DataBlockEncryptor()
@@ -108,9 +100,9 @@ void DataBlockEncryptor::Encrypt( unsigned char *input, int inputLength, unsigne
 		*( output + sizeof( checkSum ) + sizeof( randomChar ) + sizeof( encodedPad ) + index ) = (unsigned char) randomMT();
 
 	// Calculate the checksum on the data
-	checkSumCalculator.add( output + sizeof( checkSum ), inputLength + sizeof( randomChar ) + sizeof( encodedPad ) + paddingBytes );
+	checkSumCalculator.Add( output + sizeof( checkSum ), inputLength + sizeof( randomChar ) + sizeof( encodedPad ) + paddingBytes );
 
-	checkSum = checkSumCalculator.get();
+	checkSum = checkSumCalculator.Get();
 
 	// Write checksum
 #ifdef HOST_ENDIAN_IS_BIG
@@ -199,9 +191,9 @@ bool DataBlockEncryptor::Decrypt( unsigned char *input, int inputLength, unsigne
 	*outputLength = inputLength - sizeof( randomChar ) - sizeof( checkSum ) - sizeof( encodedPad ) - paddingBytes;
 
 	// Calculate the checksum on the data.
-	checkSumCalculator.add( input + sizeof( checkSum ), *outputLength + sizeof( randomChar ) + sizeof( encodedPad ) + paddingBytes );
+	checkSumCalculator.Add( input + sizeof( checkSum ), *outputLength + sizeof( randomChar ) + sizeof( encodedPad ) + paddingBytes );
 
-	if ( checkSum != checkSumCalculator.get() )
+	if ( checkSum != checkSumCalculator.Get() )
 		return false;
 
 	// Read the data

@@ -1,9 +1,6 @@
-/* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
 /**
 * @file 
-* @brief Provide implementation of the CheckSum class 
-* 
-* From http://www.flounder.com/checksum.htm
+* @brief CheckSum implementation from http://www.flounder.com/checksum.htm
 * 
 */
 #include "CheckSum.h"
@@ -18,7 +15,7 @@
 *   Adds the bytes of the unsigned int to the CheckSum
 ****************************************************************************/
 
-void CheckSum::add ( unsigned int value )
+void CheckSum::Add ( unsigned int value )
 {
 	union
 	{
@@ -30,7 +27,7 @@ void CheckSum::add ( unsigned int value )
 	data.value = value;
 
 	for ( unsigned int i = 0; i < sizeof( data.bytes ); i++ )
-		add ( data.bytes[ i ] )
+		Add ( data.bytes[ i ] )
 
 		;
 } // CheckSum::add(unsigned int)
@@ -45,7 +42,7 @@ void CheckSum::add ( unsigned int value )
 *   Adds the bytes of the unsigned short value to the CheckSum
 ****************************************************************************/
 
-void CheckSum::add ( unsigned short value )
+void CheckSum::Add ( unsigned short value )
 {
 	union
 	{
@@ -57,7 +54,7 @@ void CheckSum::add ( unsigned short value )
 	data.value = value;
 
 	for ( unsigned int i = 0; i < sizeof( data.bytes ); i++ )
-		add ( data.bytes[ i ] )
+		Add ( data.bytes[ i ] )
 
 		;
 } // CheckSum::add(unsigned short)
@@ -72,7 +69,7 @@ void CheckSum::add ( unsigned short value )
 *   Adds the byte to the CheckSum
 ****************************************************************************/
 
-void CheckSum::add ( unsigned char value )
+void CheckSum::Add ( unsigned char value )
 {
 	unsigned char cipher = (unsigned char)( value ^ ( r >> 8 ) );
 	r = ( cipher + r ) * c1 + c2;
@@ -91,10 +88,10 @@ void CheckSum::add ( unsigned char value )
 *   Adds the bytes to the CheckSum
 ****************************************************************************/
 
-void CheckSum::add ( unsigned char *b, unsigned int length )
+void CheckSum::Add ( unsigned char *b, unsigned int length )
 {
 	for ( unsigned int i = 0; i < length; i++ )
-		add ( b[ i ] )
+		Add ( b[ i ] )
 
 		;
 } // CheckSum::add(LPunsigned char, unsigned int)

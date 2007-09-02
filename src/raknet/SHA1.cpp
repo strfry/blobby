@@ -1,7 +1,5 @@
-/* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
 /**
-* @file 
-* @brief SHA-1 Hash key computation implementation
+* @brief SHA-1 Hash key computation
 *
 * 100% free public domain implementation of the SHA-1
 * algorithm by Dominik Reichl <Dominik.Reichl@tiscali.de>

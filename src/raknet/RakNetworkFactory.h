@@ -1,87 +1,71 @@
-	/* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
-/**
- * @file
- * @brief RakNetworkFactory class is a factory for communication End Point.
- * 
- * This file is part of RakNet Copyright 2003 Rakkarsoft LLC and Kevin Jenkins.
- *
- * Usage of Raknet is subject to the appropriate licence agreement.
- * "Shareware" Licensees with Rakkarsoft LLC are subject to the
- * shareware license found at
- * http://www.rakkarsoft.com/shareWareLicense.html which you agreed to
- * upon purchase of a "Shareware license" "Commercial" Licensees with
- * Rakkarsoft LLC are subject to the commercial license found at
- * http://www.rakkarsoft.com/sourceCodeLicense.html which you agreed
- * to upon purchase of a "Commercial license"
- * Custom license users are subject to the terms therein.
- * All other users are
- * subject to the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * Refer to the appropriate license agreement for distribution,
- * modification, and warranty rights.
- */
+/// \file
+/// \brief Factory class for RakNet objects
+///
+/// This file is part of RakNet Copyright 2003 Kevin Jenkins.
+///
+/// Usage of RakNet is subject to the appropriate license agreement.
+/// Creative Commons Licensees are subject to the
+/// license found at
+/// http://creativecommons.org/licenses/by-nc/2.5/
+/// Single application licensees are subject to the license found at
+/// http://www.rakkarsoft.com/SingleApplicationLicense.html
+/// Custom license users are subject to the terms therein.
+/// GPL license users are subject to the GNU General Public
+/// License as published by the Free
+/// Software Foundation; either version 2 of the License, or (at your
+/// option) any later version.
 
 #ifndef __RAK_NETWORK_FACTORY_H
 #define __RAK_NETWORK_FACTORY_H
 
-class RakClientInterface;
-
-class RakServerInterface;
+#include "Export.h"
 
 class RakPeerInterface;
-
-#ifdef _WIN32
-#define RAK_DLL_EXPORT __declspec(dllexport)
-#else 
-// Unix needs no export, but for name mangling, keep the function name
-// clean. If you omit the 'extern "C"', the .so names will be
-// compiler dependent.
-#define RAK_DLL_EXPORT extern "C"
-#endif
-
-#if defined(DLL_EXPORTS) || defined(_USRDLL)
+class ConsoleServer;
+class ReplicaManager;
+class LogCommandParser;
+class PacketLogger;
+class RakNetCommandParser;
+class RakNetTransport;
+class TelnetTransport;
+class PacketConsoleLogger;
+class PacketFileLogger;
+class Router;
+class ConnectionGraph;
 
 class RAK_DLL_EXPORT RakNetworkFactory
-#else 
-//class __declspec( dllimport ) RakNetworkFactor
-/**
-* @brief Communication End Point Provider
-*
-* This class is in charge of creating and managing Peers. You should always
-* pass throught this class to get a communication End Point.
-*/
-
-class RakNetworkFactory
-#endif
 {
-
 public:
-	/**
-	 * Returns a new instance of the network client.
-	 */
-	static RakClientInterface* GetRakClientInterface( void );
-	/**
-	 * Returns a new instance of the network server.
-	 */
-	static RakServerInterface* GetRakServerInterface( void );
-	/**
-	 * Returns a new instance of the network server.
-	 */
+	// For DLL's, these are user classes that you might want to new and delete.
+	// You can't instantiate exported classes directly in your program.  The instantiation
+	// has to take place inside the DLL.  So these functions will do the news and deletes for you.
+	// if you're using the source or static library you don't need these functions, but can use them if you want.
 	static RakPeerInterface* GetRakPeerInterface( void );
-	/**
-	 * Destroys an instance of the network client.
-	 */
-	static void DestroyRakClientInterface( RakClientInterface* i );
-	/**
-	 * Destroys an instance of the network server.
-	 */
-	static void DestroyRakServerInterface( RakServerInterface* i );
-	/**
-	 * Destroys an instance of the network server.
-	 */
+	static ConsoleServer* GetConsoleServer( void );
+	static ReplicaManager* GetReplicaManager( void );
+	static LogCommandParser* GetLogCommandParser( void );
+	static PacketLogger* GetPacketLogger( void );
+	static RakNetCommandParser* GetRakNetCommandParser( void );
+	static RakNetTransport* GetRakNetTransport( void );
+	static TelnetTransport* GetTelnetTransport( void );
+	static PacketConsoleLogger* GetPacketConsoleLogger( void );
+	static PacketFileLogger* GetPacketFileLogger( void );
+	static Router* GetRouter( void );
+	static ConnectionGraph* GetConnectionGraph( void );
+
+	// To delete the object returned by the Get functions above.
 	static void DestroyRakPeerInterface( RakPeerInterface* i );
+	static void DestroyConsoleServer( ConsoleServer* i);
+	static void DestroyReplicaManager( ReplicaManager* i);
+	static void DestroyLogCommandParser( LogCommandParser* i);
+	static void DestroyPacketLogger( PacketLogger* i);
+	static void DestroyRakNetCommandParser(  RakNetCommandParser* i );
+	static void DestroyRakNetTransport(  RakNetTransport* i );
+	static void DestroyTelnetTransport(  TelnetTransport* i );
+	static void DestroyPacketConsoleLogger(  PacketConsoleLogger* i );
+	static void DestroyPacketFileLogger(  PacketFileLogger* i );
+	static void DestroyRouter(  Router* i );
+	static void DestroyConnectionGraph(  ConnectionGraph* i );
 };
 
 #endif

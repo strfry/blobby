@@ -1,3 +1,19 @@
+/// \file
+///
+/// This file is part of RakNet Copyright 2003 Kevin Jenkins.
+///
+/// Usage of RakNet is subject to the appropriate license agreement.
+/// Creative Commons Licensees are subject to the
+/// license found at
+/// http://creativecommons.org/licenses/by-nc/2.5/
+/// Single application licensees are subject to the license found at
+/// http://www.rakkarsoft.com/SingleApplicationLicense.html
+/// Custom license users are subject to the terms therein.
+/// GPL license users are subject to the GNU General Public
+/// License as published by the Free
+/// Software Foundation; either version 2 of the License, or (at your
+/// option) any later version.
+
 #include "RPCMap.h"
 #include <string.h>
 
@@ -12,45 +28,45 @@ void RPCMap::Clear(void)
 {
 	unsigned i;
 	RPCNode *node;
-	for (i=0; i < rpcSet.size(); i++)
+	for (i=0; i < rpcSet.Size(); i++)
 	{
 		node=rpcSet[i];
 		if (node)
 		{
 			delete [] node->uniqueIdentifier;
 			delete node;
-		}		
+		}
 	}
-	rpcSet.clear();
+	rpcSet.Clear();
 }
 RPCNode *RPCMap::GetNodeFromIndex(RPCIndex index)
 {
-	if ((unsigned)index < rpcSet.size())
+	if ((unsigned)index < rpcSet.Size())
 		return rpcSet[(unsigned)index];
 	return 0;
 }
-RPCNode *RPCMap::GetNodeFromFunctionName(char *uniqueIdentifier)
+RPCNode *RPCMap::GetNodeFromFunctionName(const char *uniqueIdentifier)
 {
 	unsigned index;
 	index=(unsigned)GetIndexFromFunctionName(uniqueIdentifier);
-	if (index!=UNDEFINED_RPC_INDEX)
+	if ((RPCIndex)index!=UNDEFINED_RPC_INDEX)
 		return rpcSet[index];
 	return 0;
 }
-RPCIndex RPCMap::GetIndexFromFunctionName(char *uniqueIdentifier)
+RPCIndex RPCMap::GetIndexFromFunctionName(const char *uniqueIdentifier)
 {
 	unsigned index;
-	for (index=0; index < rpcSet.size(); index++)
+	for (index=0; index < rpcSet.Size(); index++)
 		if (rpcSet[index] && strcmp(rpcSet[index]->uniqueIdentifier, uniqueIdentifier)==0)
 			return (RPCIndex) index;
 	return UNDEFINED_RPC_INDEX;
 }
 
 // Called from the user thread for the local system
-void RPCMap::AddIdentifierWithFunction(char *uniqueIdentifier, void *functionPointer, bool isPointerToMember)
+void RPCMap::AddIdentifierWithFunction(const char *uniqueIdentifier, void *functionPointer, bool isPointerToMember)
 {
 #ifdef _DEBUG
-	assert(rpcSet.size()+1 < MAX_RPC_MAP_SIZE); // If this hits change the typedef of RPCIndex to use an unsigned short
+	assert(rpcSet.Size()+1 < MAX_RPC_MAP_SIZE); // If this hits change the typedef of RPCIndex to use an unsigned short
 	assert(uniqueIdentifier && uniqueIdentifier[0]);
 	assert(functionPointer);
 #endif
@@ -59,7 +75,7 @@ void RPCMap::AddIdentifierWithFunction(char *uniqueIdentifier, void *functionPoi
 	RPCNode *node;
 
 	existingNodeIndex=GetIndexFromFunctionName(uniqueIdentifier);
-	if (existingNodeIndex!=UNDEFINED_RPC_INDEX) // Insert at any free spot.
+	if ((RPCIndex)existingNodeIndex!=UNDEFINED_RPC_INDEX) // Insert at any free spot.
 	{
 		// Trying to insert an identifier at any free slot and that identifier already exists
 		// The user should not insert nodes that already exist in the list
@@ -76,19 +92,19 @@ void RPCMap::AddIdentifierWithFunction(char *uniqueIdentifier, void *functionPoi
 	node->isPointerToMember=isPointerToMember;
 
 	// Insert into an empty spot if possible
-	for (index=0; index < rpcSet.size(); index++)
+	for (index=0; index < rpcSet.Size(); index++)
 	{
 		if (rpcSet[index]==0)
 		{
-			rpcSet.replace(node, 0, index);
+			rpcSet.Replace(node, 0, index);
 			return;
 		}
 	}
 
-	rpcSet.insert(node); // No empty spots available so just add to the end of the list
+	rpcSet.Insert(node); // No empty spots available so just add to the end of the list
 
 }
-void RPCMap::AddIdentifierAtIndex(char *uniqueIdentifier, RPCIndex insertionIndex)
+void RPCMap::AddIdentifierAtIndex(const char *uniqueIdentifier, RPCIndex insertionIndex)
 {
 #ifdef _DEBUG
 	assert(uniqueIdentifier && uniqueIdentifier[0]);
@@ -102,7 +118,7 @@ void RPCMap::AddIdentifierAtIndex(char *uniqueIdentifier, RPCIndex insertionInde
 	if (existingNodeIndex==insertionIndex)
 		return; // Already there
 
-	if (existingNodeIndex!=UNDEFINED_RPC_INDEX)
+	if ((RPCIndex)existingNodeIndex!=UNDEFINED_RPC_INDEX)
 	{
 		// Delete the existing one
 		oldNode=rpcSet[existingNodeIndex];
@@ -117,7 +133,7 @@ void RPCMap::AddIdentifierAtIndex(char *uniqueIdentifier, RPCIndex insertionInde
 	node->functionPointer=0;
 
 	// Insert at a user specified spot
-	if (insertionIndex < rpcSet.size())
+	if (insertionIndex < rpcSet.Size())
 	{
 		// Overwrite what is there already
 		oldNode=rpcSet[insertionIndex];
@@ -131,11 +147,11 @@ void RPCMap::AddIdentifierAtIndex(char *uniqueIdentifier, RPCIndex insertionInde
 	else
 	{
 		// Insert after the end of the list and use 0 as a filler for the empty spots
-		rpcSet.replace(node, 0, insertionIndex);
+		rpcSet.Replace(node, 0, insertionIndex);
 	}
 }
 
-void RPCMap::RemoveNode(char *uniqueIdentifier)
+void RPCMap::RemoveNode(const char *uniqueIdentifier)
 {
 	unsigned index;
 	index=GetIndexFromFunctionName(uniqueIdentifier);

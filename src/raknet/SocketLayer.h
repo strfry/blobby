@@ -1,36 +1,31 @@
-/* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
-/**
- * @file
- * @brief Socket Layer Abstraction 
- * 
- * This file is part of RakNet Copyright 2003 Rakkarsoft LLC and Kevin Jenkins.
- *
- * Usage of Raknet is subject to the appropriate licence agreement.
- * "Shareware" Licensees with Rakkarsoft LLC are subject to the
- * shareware license found at
- * http://www.rakkarsoft.com/shareWareLicense.html which you agreed to
- * upon purchase of a "Shareware license" "Commercial" Licensees with
- * Rakkarsoft LLC are subject to the commercial license found at
- * http://www.rakkarsoft.com/sourceCodeLicense.html which you agreed
- * to upon purchase of a "Commercial license"
- * Custom license users are subject to the terms therein.
- * All other users are
- * subject to the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * Refer to the appropriate license agreement for distribution,
- * modification, and warranty rights.
- */
+/// \file
+/// \brief \b [Internal] Encapsulates Berkely sockets
+///
+/// This file is part of RakNet Copyright 2003 Kevin Jenkins.
+///
+/// Usage of RakNet is subject to the appropriate license agreement.
+/// Creative Commons Licensees are subject to the
+/// license found at
+/// http://creativecommons.org/licenses/by-nc/2.5/
+/// Single application licensees are subject to the license found at
+/// http://www.rakkarsoft.com/SingleApplicationLicense.html
+/// Custom license users are subject to the terms therein.
+/// GPL license users are subject to the GNU General Public
+/// License as published by the Free
+/// Software Foundation; either version 2 of the License, or (at your
+/// option) any later version.
+
+
 #ifndef __SOCKET_LAYER_H
 #define __SOCKET_LAYER_H
 
-#ifdef _WIN32
-#ifdef __USE_IO_COMPLETION_PORTS
-#include <winSock2.h> // DON'T FORGET TO INLCLUDE Ws2_32.lib to your project!
-#else
-#include <winsock.h>
-#endif
+#ifdef _COMPATIBILITY_1
+#include "Compatibility1Includes.h"
+#elif defined(_WIN32)
+// IP_DONTFRAGMENT is different between winsock 1 and winsock 2.  Therefore, Winsock2.h must be linked againt Ws2_32.lib
+// winsock.h must be linked against WSock32.lib.  If these two are mixed up the flag won't work correctly
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #else
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -38,149 +33,116 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h> 
-/**
-* typename for communication endpoint
-*/
+/// Unix/Linux uses ints for sockets
 typedef int SOCKET;
-/**
-* Invalid socket
-*/
 #define INVALID_SOCKET -1 
-/**
-* Socket error
-*/
 #define SOCKET_ERROR -1
 #endif
 #include "ClientContextStruct.h"
 
 class RakPeer;
 
-/**
- * the SocketLayer provide platform independent Socket implementation
- */
-
+// A platform independent implementation of Berkeley sockets, with settings used by RakNet
 class SocketLayer
 {
 
 public:
-	/**
-	 * Default Constructor
-	 */
+	
+	/// Default Constructor
 	SocketLayer();
-	/**
-	 * Destructor 
-	 */
+	
+	/// Destructor	
 	~SocketLayer();
-	/**
-	 * Get Singleton Instance of the Socket Layer unique object. 
-	 * @return unique instance 
-	 */
+	
+	// Get the singleton instance of the Socket Layer.
+	/// \return unique instance 
 	static inline SocketLayer* Instance()
 	{
 		return & I;
 	}
 	
-	/**
-	 * Create a socket connected to a remote host 
-	 * @param writeSocket The local socket 
-	 * @param binaryAddress The address of the remote host 
-	 * @param port the remote port 
-	 * @return A new socket used for communication 
-	 * @todo
-	 * Check for the binary address byte order 
-	 * 
-	 */
+	// Connect a socket to a remote host.
+	/// \param[in] writeSocket The local socket.
+	/// \param[in] binaryAddress The address of the remote host.
+	/// \param[in] port the remote port.
+	/// \return A new socket used for communication.
 	SOCKET Connect( SOCKET writeSocket, unsigned int binaryAddress, unsigned short port );
-	/**
-	 * Creates a socket to listen for incoming connections on the specified port
-	 * @param port the port number 
-	 * @param blockingSocket 
-	 * @return A new socket used for accepting clients 
-	 */
-	SOCKET CreateBoundSocket( unsigned short port, bool blockingSocket, const char *forceHostAddress );
-	const char* DomainNameToIP( const char *domainName );
-#ifdef __USE_IO_COMPLETION_PORTS
-	/**
-	 * Associate a socket to the completion port mecanism. 
-	 * @param socket the socket
-	 * @param completionKey the completion port group identifier 
-	 * @note Windows version only
-	 */
-	void AssociateSocketWithCompletionPort( SOCKET socket, ClientContextStruct* completionKey );
-#endif
-	/**
-	 * Start an asynchronous read using the specified socket.  The
-	 * callback will use the specified PlayerID (associated with this
-	 * socket) and call either the client or the server callback (one or
-	 * the other should be 0)
-	 */
-	bool AssociateSocketWithCompletionPortAndRead( SOCKET readSocket, unsigned int binaryAddress, unsigned short port, RakPeer* rakPeer );
-	/**
-	 * Does a writing operation on a socket.
-	 * It Send a packet to a peer throught the network.
-	 * The socket must be connected
-	 * @param writeSocket the socket to use to do the communication 
-	 * @param data a byte buffer containing the data 
-	 * @param length the size of the byte buffer  
-	 */
-	void Write( SOCKET writeSocket, const char* data, int length );
-	/**
-	 * Read data from a socket 
-	 * @param s the socket 
-	 * @param rakPeer 
-	 * @param errorCode An error code if an error occured 
-	 * @return Returns true if you successfully read data
-	 * @todo check the role of RakPeer 
-	 * 
-	 */
-	int RecvFrom( SOCKET s, RakPeer *rakPeer, int *errorCode );
-	/**
-	 * Retrieve all local IP address in a printable format 
-	 * @param ipList An array of ip address in dot format.
-	 */
-	void GetMyIP( char ipList[ 10 ][ 16 ] );
-	/**
-	 * Send data to a peer. The socket should not be connected to a remote host. 
-	 * @param s the socket 
-	 * @param data the byte buffer to send 
-	 * @param length The length of the @em data 
-	 * @param ip The address of the remote host in dot format 
-	 * @param port The port number used by the remote host 
-	 * @return 0 on success. 
-	 * 
-	 * @todo check return value 
-	 */
-	int SendTo( SOCKET s, const char *data, int length, char ip[ 16 ], unsigned short port );
-	/**
-	 * Send data to a peer. The socket should not be connected to a remote host. 
-	 * @param s the socket 
-	 * @param data the byte buffer to send 
-	 * @param length The length of the @em data 
-	 * @param binaryAddress The peer address in binary format. 
-	 * @param port The port number used by the remote host 
-	 * @return 0 on success. 
-	 * 
-	 * @todo check return value 
-	 */
-	int SendTo( SOCKET s, const char *data, int length, unsigned int binaryAddress, unsigned short port );
 	
+	// Creates a bound socket to listen for incoming connections on the specified port
+	/// \param[in] port the port number 
+	/// \param[in] blockingSocket 
+	/// \return A new socket used for accepting clients 
+	SOCKET CreateBoundSocket( unsigned short port, bool blockingSocket, const char *forceHostAddress );
+
+	#if !defined(_COMPATIBILITY_1)
+	const char* DomainNameToIP( const char *domainName );
+	#endif
+	
+	/// Start an asynchronous read using the specified socket.  The callback will use the specified SystemAddress (associated with this socket) and call either the client or the server callback (one or
+	/// the other should be 0)
+	/// \note Was used for depreciated IO completion ports.	
+	bool AssociateSocketWithCompletionPortAndRead( SOCKET readSocket, unsigned int binaryAddress, unsigned short port, RakPeer* rakPeer );
+	
+	/// Write \a data of length \a length to \a writeSocket
+	/// \param[in] writeSocket The socket to write to
+	/// \param[in] data The data to write
+	/// \param[in] length The length of \a data	
+	void Write( const SOCKET writeSocket, const char* data, const int length );
+	
+	/// Read data from a socket 
+	/// \param[in] s the socket 
+	/// \param[in] rakPeer The instance of rakPeer containing the recvFrom C callback
+	/// \param[in] errorCode An error code if an error occured .
+	/// \param[in] connectionSocketIndex Which of the sockets in RakPeer we are using
+	/// \return Returns true if you successfully read data, false on error.
+	int RecvFrom( const SOCKET s, RakPeer *rakPeer, int *errorCode, unsigned connectionSocketIndex );
+	
+#if !defined(_COMPATIBILITY_1)
+	/// Retrieve all local IP address in a string format.
+	/// \param[in] ipList An array of ip address in dotted notation.
+	void GetMyIP( char ipList[ 10 ][ 16 ] );
+#endif
+	
+	/// Call sendto (UDP obviously)
+	/// \param[in] s the socket
+	/// \param[in] data The byte buffer to send 
+	/// \param[in] length The length of the \a data in bytes
+	/// \param[in] ip The address of the remote host in dotted notation.
+	/// \param[in] port The port number to send to.
+	/// \return 0 on success, nonzero on failure.
+	int SendTo( SOCKET s, const char *data, int length, char ip[ 16 ], unsigned short port );
+
+	/// Call sendto (UDP obviously), however, the time to live for the packet is set to 1
+	/// It won't reach the recipient, except on a LAN
+	/// However, this is good for opening routers / firewalls
+	/// \param[in] s the socket
+	/// \param[in] data The byte buffer to send 
+	/// \param[in] length The length of the \a data in bytes
+	/// \param[in] ip The address of the remote host in dotted notation.
+	/// \param[in] port The port number to send to.
+	/// \return 0 on success, nonzero on failure.
+	int SendToTTL1( SOCKET s, const char *data, int length, char ip[ 16 ], unsigned short port );
+
+	/// Call sendto (UDP obviously)
+	/// \param[in] s the socket
+	/// \param[in] data The byte buffer to send 
+	/// \param[in] length The length of the \a data in bytes
+	/// \param[in] binaryAddress The address of the remote host in binary format.
+	/// \param[in] port The port number to send to.
+	/// \return 0 on success, nonzero on failure.
+	int SendTo( SOCKET s, const char *data, int length, unsigned int binaryAddress, unsigned short port );
+
+	/// Returns the local port, useful when passing 0 as the startup port.
+	/// \param[in] s The socket whose port we are referring to
+	/// \return The local port
+	unsigned short GetLocalPort ( SOCKET s );
+
 private:
-	/**
-	 * Tel whether or not the socket layer is already active 
-	 */
+	
 	static bool socketLayerStarted;
 #ifdef _WIN32
-	/**
-	 * @todo Document this 
-	 * 
-	 * @note Windows port only
-	 * 
-	 */
 	static WSADATA winsockInfo;
 #endif
-	/**
-	 * Singleton instance 
-	 */
 	static SocketLayer I;
 };
 
