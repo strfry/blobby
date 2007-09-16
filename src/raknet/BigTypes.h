@@ -29,7 +29,7 @@
 #ifndef BIGTYPES_H
 #define BIGTYPES_H
 
-#if !defined(_COMPATIBILITY_1)
+#if !defined(_CONSOLE_1)
 
 #include "Types.h"
 
@@ -1815,7 +1815,7 @@ namespace big
 #endif // BIG_USES_STRINGS
 }
 
-#endif // #if !defined(_COMPATIBILITY_1)
+#endif // #if !defined(_CONSOLE_1)
 
 #endif // BIGTYPES_H
 

@@ -355,6 +355,10 @@ bool IMGUI::doEditbox(int id, const Vector2& position, int length, std::string& 
 	obj.type = EDITBOX;
 	obj.lenght = length;
 
+	cpos = std::min((size_t)cpos, text.length());
+
+	if (!mInactive)
+	{
 		Vector2 mousepos = InputManager::getSingleton()->position();
 		if (mousepos.x > position.x &&
 			mousepos.y > position.y &&
@@ -370,8 +374,6 @@ bool IMGUI::doEditbox(int id, const Vector2& position, int length, std::string& 
 			}
 		}
 
-	if (!mInactive)
-	{
 		if (mActiveButton == 0 && !mButtonReset)
 			mActiveButton = id;
 

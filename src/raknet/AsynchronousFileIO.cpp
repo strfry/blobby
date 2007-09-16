@@ -164,7 +164,7 @@ BOOL ReadAsynch( HANDLE handle, ExtendedOverlappedStruct *extended )
 
 		if ( dwErrCode != ERROR_IO_PENDING )
 		{
-#if defined(_WIN32) && !defined(_COMPATIBILITY_1) && defined(_DEBUG)
+#if defined(_WIN32) && !defined(_CONSOLE_1) && defined(_DEBUG)
 			LPVOID messageBuffer;
 			FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 				NULL, dwErrCode, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
@@ -198,7 +198,7 @@ void WriteAsynch( HANDLE handle, ExtendedOverlappedStruct *extended )
 
 		if ( dwErrCode != ERROR_IO_PENDING )
 		{
-#if defined(_WIN32) && !defined(_COMPATIBILITY_1) && defined(_DEBUG)
+#if defined(_WIN32) && !defined(_CONSOLE_1) && defined(_DEBUG)
 			LPVOID messageBuffer;
 			FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 				NULL, dwErrCode, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
@@ -246,7 +246,7 @@ unsigned __stdcall ThreadPoolFunc( LPVOID arguments )
 			if ( dwIOError != ERROR_OPERATION_ABORTED )
 			{
 				// Print all but this very common error message
-#if defined(_WIN32) && !defined(_COMPATIBILITY_1) && defined(_DEBUG)
+#if defined(_WIN32) && !defined(_CONSOLE_1) && defined(_DEBUG)
 				LPVOID messageBuffer;
 				FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 					NULL, dwIOError, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language

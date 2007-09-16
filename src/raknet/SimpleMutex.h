@@ -18,8 +18,8 @@
 #ifndef __SIMPLE_MUTEX_H
 #define __SIMPLE_MUTEX_H
 
-#ifdef _COMPATIBILITY_1
-#include "Compatibility1Includes.h"
+#ifdef _CONSOLE_1
+#include "Console1Includes.h"
 #elif defined(_WIN32)
 #include <windows.h>
 #else

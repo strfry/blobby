@@ -1,11 +1,9 @@
 #include "FileList.h"
 #include <assert.h>
-#ifndef _COMPATIBILITY_2
-	#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(_WIN32) || defined(__CYGWIN__)
 	#include <io.h>
-	#elif !defined ( __APPLE__ ) && !defined ( __APPLE_CC__ ) && !defined ( __PPC__ )
+#elif !defined ( __APPLE__ ) && !defined ( __APPLE_CC__ ) && !defined ( __PPC__ )
 	#include <sys/io.h>
-	#endif
 #endif
 #include <stdio.h>
 #include "DS_Queue.h"
@@ -24,12 +22,11 @@
 #define MAX_FILENAME_LENGTH 512
 
 // alloca
-#ifdef _COMPATIBILITY_1
+#ifdef _CONSOLE_1
 #elif defined(_WIN32)
 #include <malloc.h>
-#elif defined(_COMPATIBILITY_2)
-#include "Compatibility2Includes.h"
 #else
+#include <alloca.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -70,7 +67,7 @@ void FileList::AddFile(const char *filepath, const char *filename, unsigned char
 	fseek(fp, 0, SEEK_END);
 	int length = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
-#if !defined(_COMPATIBILITY_1)
+#if !defined(_CONSOLE_1)
 	bool usedAlloca=false;
 	if (length < MAX_ALLOCA_STACK_ALLOCATION)
 	{
@@ -87,7 +84,7 @@ void FileList::AddFile(const char *filepath, const char *filename, unsigned char
 	AddFile(filename, data, length, length, context);
 	fclose(fp);
 
-#if !defined(_COMPATIBILITY_1)
+#if !defined(_CONSOLE_1)
 	if (usedAlloca==false)
 #endif
 		delete [] data;
@@ -140,7 +137,6 @@ void FileList::AddFile(const char *filename, const char *data, const unsigned da
 }
 void FileList::AddFilesFromDirectory(const char *applicationDirectory, const char *subDirectory, bool writeHash, bool writeData, bool recursive, unsigned char context)
 {
-#ifndef _COMPATIBILITY_2
 	DataStructures::Queue<char*> dirList;
 	char root[260];
 	char fullPath[520];
@@ -255,7 +251,6 @@ void FileList::AddFilesFromDirectory(const char *applicationDirectory, const cha
 		_findclose(dir);
 		delete [] dirSoFar;
 	}
-#endif
 }
 void FileList::Clear(void)
 {

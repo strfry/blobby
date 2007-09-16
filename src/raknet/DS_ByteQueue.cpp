@@ -1,6 +1,6 @@
 #include "DS_ByteQueue.h"
 #include <string.h> // Memmove
-//#include <malloc.h> // PS3 doesn't have this
+//#include <malloc.h> // Use stdlib.h rather than malloc.h for a console
 #include <stdlib.h> // realloc
 #include <stdio.h>
 

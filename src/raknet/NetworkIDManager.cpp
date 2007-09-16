@@ -17,7 +17,7 @@
 #include "NetworkIDManager.h"
 #include "NetworkIDObject.h"
 #include "RakAssert.h"
-#include <memory.h>
+#include <string.h> // For memset
 
 bool NetworkIDNode::operator==( const NetworkIDNode& right ) const
 {

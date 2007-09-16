@@ -19,8 +19,8 @@
 #ifndef __SOCKET_LAYER_H
 #define __SOCKET_LAYER_H
 
-#ifdef _COMPATIBILITY_1
-#include "Compatibility1Includes.h"
+#ifdef _CONSOLE_1
+#include "Console1Includes.h"
 #elif defined(_WIN32)
 // IP_DONTFRAGMENT is different between winsock 1 and winsock 2.  Therefore, Winsock2.h must be linked againt Ws2_32.lib
 // winsock.h must be linked against WSock32.lib.  If these two are mixed up the flag won't work correctly
@@ -74,7 +74,7 @@ public:
 	/// \return A new socket used for accepting clients 
 	SOCKET CreateBoundSocket( unsigned short port, bool blockingSocket, const char *forceHostAddress );
 
-	#if !defined(_COMPATIBILITY_1)
+	#if !defined(_CONSOLE_1)
 	const char* DomainNameToIP( const char *domainName );
 	#endif
 	
@@ -97,8 +97,9 @@ public:
 	/// \return Returns true if you successfully read data, false on error.
 	int RecvFrom( const SOCKET s, RakPeer *rakPeer, int *errorCode, unsigned connectionSocketIndex );
 	
-#if !defined(_COMPATIBILITY_1)
+#if !defined(_CONSOLE_1)
 	/// Retrieve all local IP address in a string format.
+	/// \param[in] s The socket whose port we are referring to
 	/// \param[in] ipList An array of ip address in dotted notation.
 	void GetMyIP( char ipList[ 10 ][ 16 ] );
 #endif

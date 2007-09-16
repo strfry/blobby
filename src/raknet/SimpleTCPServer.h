@@ -18,8 +18,8 @@
 #ifndef __SIMPLE_TCP_SERVER
 #define __SIMPLE_TCP_SERVER
 
-#ifdef _COMPATIBILITY_1
-#include "Compatibility1Includes.h"
+#ifdef _CONSOLE_1
+#include "Console1Includes.h"
 #elif defined(_WIN32)
 #include <winsock2.h>
 #include <ws2tcpip.h>

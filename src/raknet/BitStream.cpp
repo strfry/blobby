@@ -25,23 +25,15 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
-#ifdef _COMPATIBILITY_1
-#include "Compatibility1Includes.h"
+#ifdef _CONSOLE_1
+#include "Console1Includes.h"
 #elif defined(_WIN32)
 #include <winsock2.h> // htonl
+#elif defined(_CONSOLE_2)
+#include "Console2Includes.h"
 #else
 #include <arpa/inet.h>
 #endif
-
-// Was included for memset which now comes from string.h instead
-/*
-#if defined ( __APPLE__ ) || defined ( __APPLE_CC__ )
-	#include <malloc/malloc.h>
-#elif !defined(_COMPATIBILITY_2)
-	#include <malloc.h>
-#endif
-
-	*/
 
 // MSWin uses _copysign, others use copysign...
 #ifndef _WIN32

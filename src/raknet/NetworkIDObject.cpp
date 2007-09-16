@@ -18,11 +18,9 @@
 #include "NetworkIDManager.h"
 #include "RakAssert.h"
 
-#ifdef _COMPATIBILITY_1
+#ifdef _CONSOLE_1
 #elif defined(_WIN32)
 #include <malloc.h> // alloca
-#elif defined(_COMPATIBILITY_2)
-#include "Compatibility2Includes.h"
 #else
 #include <stdlib.h> // alloca
 #endif
@@ -166,7 +164,7 @@ void NetworkIDObject::SetParent( void *_parent )
 		NetworkIDNode *nodeArray;
 
 		bool usedAlloca=false;
-	#if !defined(_COMPATIBILITY_1)
+	#if !defined(_CONSOLE_1)
 		if (sizeof(NetworkIDNode) * size < MAX_ALLOCA_STACK_ALLOCATION)
 		{
 			nodeArray = (NetworkIDNode*) alloca(sizeof(NetworkIDNode) * size);

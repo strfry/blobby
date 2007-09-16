@@ -128,9 +128,7 @@ namespace DataStructures
 		enum Direction_Types
 		{
 			NOT_FOUND, LEFT, RIGHT, ROOT
-		}
-		
-		direction;
+		} direction;
 		unsigned int HeightRecursive( node* current );
 		unsigned int BinarySearchTree_size;
 		node*& Find( const BinarySearchTreeType& element, node** parent );

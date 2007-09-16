@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <vector>
 #include <list>
+#include <boost/shared_ptr.hpp>
 
 class RakPeer;
 class DuelMatch;
@@ -63,22 +64,40 @@ public:
 	virtual void step();
 
 private:
+	boost::shared_ptr<RakPeer> mClient;
+	
 	std::string mUsername;
 	std::string mPassword;
 
 	unsigned mUsernamePos;
 	unsigned mPasswordPos;
 
-	bool mRegistering;
-
-	enum ErrorCode
+	enum Code
 	{
 		NO_ERROR = 0,
-		UNKNOWN_USERNAME,
-		WRONG_PASSWORD,
+		CONNECTING,
+		WRONG_LOGINDATA,
 		USERNAME_EXISTS,
 		CONNECTION_FAILURE,
 	} mErrorCode;
+};
+
+class NetworkLobbyState : public State
+{
+public:
+	NetworkLobbyState(boost::shared_ptr<RakPeer> connection);
+	~NetworkLobbyState();
+
+	virtual void step();
+
+private:
+	static void updateGameList(RPCParameters* params);
+
+	boost::shared_ptr<RakPeer> mClient;
+
+	std::vector<std::string> mOpenGames;
+	std::vector<SystemAddress> mOpenGamesAddresses;
+	int mSelectedGame;
 };
 
 class NetworkGameState : public State

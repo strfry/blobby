@@ -193,6 +193,15 @@ enum
 	ID_DATABASE_UNKNOWN_TABLE,
 	/// LightweightDatabase plugin - Incorrect password
 	ID_DATABASE_INCORRECT_PASSWORD,
+
+	/// ReadyEvent plugin - Set the ready state for a particular system
+	ID_READY_EVENT_SET,
+	/// ReadyEvent plugin - Unset the ready state for a particular system
+	ID_READY_EVENT_UNSET,
+	/// All systems are in state ID_READY_EVENT_SET
+	ID_READY_EVENT_ALL_SET,
+	/// ReadyEvent plugin - Request of ready event state - used for pulling data when newly connecting
+	ID_READY_EVENT_QUERY,
 	
 	// For the user to use.  Start your first enumeration at this value.
 	ID_USER_PACKET_ENUM,

@@ -18,7 +18,7 @@
 #ifndef __CLIENT_CONTEXT_STRUCT_H
 #define __CLIENT_CONTEXT_STRUCT_H
 
-#ifdef _COMPATIBILITY_1
+#ifdef _CONSOLE_1
 #elif defined(_WIN32)
 //#include <windows.h>
 #endif

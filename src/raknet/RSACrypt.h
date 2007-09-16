@@ -27,7 +27,7 @@
 #ifndef RSACRYPT_H
 #define RSACRYPT_H
 
-#if !defined(_COMPATIBILITY_1)
+#if !defined(_CONSOLE_1)
 
 #define RSASUPPORTGENPRIME
 #include "Export.h"
@@ -1249,7 +1249,7 @@ start_squaring:
 #pragma warning( pop )
 #endif
 
-#endif // #if !defined(_COMPATIBILITY_1)
+#endif // #if !defined(_CONSOLE_1)
 
 #endif // RSACRYPT_H
 

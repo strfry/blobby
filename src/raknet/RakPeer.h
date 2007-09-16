@@ -754,7 +754,7 @@ protected:
 	unsigned short _minExtraPing, _extraPingVariance;
 #endif
 
-#if !defined(_COMPATIBILITY_1)
+#if !defined(_CONSOLE_1)
 	/// Encryption and security
 	big::RSACrypt<RSA_BIT_SIZE> rsacrypt;
 	big::u32 publicKeyE;

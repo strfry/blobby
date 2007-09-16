@@ -129,8 +129,10 @@ int main(int argc, char* argv[])
 	RenderManager *rmanager = 0;
 	SoundManager *smanager = 0;
 
+#ifdef NDEBUG
 	try
 	{
+#endif
 		UserConfig gameConfig;
 		gameConfig.loadFile("config.xml");
 		if(gameConfig.getString("device") == "SDL")
@@ -207,6 +209,7 @@ int main(int argc, char* argv[])
 			}
 			scontroller.update();
 		}
+#ifdef NDEBUG
 	}
 	catch (std::exception& e)
 	{
@@ -219,6 +222,7 @@ int main(int argc, char* argv[])
 		PHYSFS_deinit();
 		exit (EXIT_FAILURE);
 	}
+#endif
 
 	deinit();
 	exit(EXIT_SUCCESS);

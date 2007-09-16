@@ -19,6 +19,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <sstream>
 
+#include <MessageIdentifiers.h>
+#include <StringCompressor.h>
+
 #include "NetworkState.h"
 #include "NetworkMessage.h"
 #include "NetworkGame.h"
@@ -31,9 +34,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "IMGUI.h"
 #include "SoundManager.h"
 #include "LocalInputSource.h"
-#include "raknet/RakPeer.h"
-#include "raknet/StringCompressor.h"
-
 
 NetworkSearchState::NetworkSearchState()
 {
@@ -804,8 +804,17 @@ void NetworkHostState::step()
 }
 
 NetworkLoginState::NetworkLoginState()
-	: mErrorCode(NO_ERROR)
+	: mErrorCode(CONNECTING)
 {
+	mClient = boost::shared_ptr<RakPeer>(new RakPeer());
+
+	SocketDescriptor sockdesc(0, 0);
+	mClient->Startup(1, 0, &sockdesc, 1);
+	if (!mClient->Connect("localhost", MASTER_SERVER_PORT, 0, 0))
+	{
+		mErrorCode = CONNECTION_FAILURE;
+	}
+
 }
 
 NetworkLoginState::~NetworkLoginState()
@@ -814,6 +823,25 @@ NetworkLoginState::~NetworkLoginState()
 
 void NetworkLoginState::step()
 {
+	Packet* packet = 0;
+	while ((packet = mClient->Receive()))
+	{
+		switch(packet->data[0])
+		{
+			case ID_CONNECTION_REQUEST_ACCEPTED:
+				mErrorCode = NO_ERROR;
+				break;
+			case ID_CONNECTION_ATTEMPT_FAILED:
+			case ID_DISCONNECTION_NOTIFICATION:
+			case ID_CONNECTION_LOST:
+				mErrorCode = CONNECTION_FAILURE;
+				break;
+			default:
+				asm ("int $3");
+		}
+	}
+	mClient->DeallocatePacket(packet);
+
 	IMGUI& imgui = IMGUI::getSingleton();
 
 	imgui.doCursor(true);
@@ -833,29 +861,42 @@ void NetworkLoginState::step()
 
 	if (imgui.doButton(GEN_ID, Vector2(100.0, 400.0), "OK"))
 	{
-		RakPeer client;
-		if (client.Connect(MASTER_SERVER_HOSTNAME, MASTER_SERVER_PORT, 0, 0, 0))
-		{
-			RakNet::BitStream stream(32);
-			StringCompressor::Instance()->EncodeString(mUsername.c_str(), 16, &stream);
-			StringCompressor::Instance()->EncodeString(mPassword.c_str(), 16, &stream);
+		RakNet::BitStream stream(32);
+		StringCompressor::Instance()->EncodeString(mUsername.c_str(), 16, &stream);
+		StringCompressor::Instance()->EncodeString(mPassword.c_str(), 16, &stream);
 
-			RakNet::BitStream reply;
+		RakNet::BitStream reply;
 
-			client.RPC("login", &stream, HIGH_PRIORITY, RELIABLE_ORDERED,
-					0, UNASSIGNED_SYSTEM_ADDRESS, false,
-					0, UNASSIGNED_NETWORK_ID, &reply);
-		}
-		else
+		bool success = mClient->RPC("loginUser", &stream, HIGH_PRIORITY, RELIABLE,
+				0, UNASSIGNED_SYSTEM_ADDRESS, true,
+				0, UNASSIGNED_NETWORK_ID, &reply);
+		if (!success)
 		{
 			mErrorCode = CONNECTION_FAILURE;
 		}
+
+		bool authSuccess;
+		reply.Read(authSuccess);
+		if (authSuccess) {
+			boost::shared_ptr<RakPeer> clientcopy = mClient;
+			delete this;
+			mCurrentState = new NetworkLobbyState(clientcopy);
+		} else {
+			mErrorCode = WRONG_LOGINDATA; 
+		}
+	}
+
+	if (imgui.doButton(GEN_ID, Vector2(400.0, 400.0), "Cancel"))
+	{
+		delete this;
+		mCurrentState = new MainMenuState();
+		return;
 	}
 
 	if (NO_ERROR != mErrorCode)
 	{
 		imgui.doInactiveMode(false);
-		imgui.doOverlay(GEN_ID, Vector2(100.0, 100.0), Vector2(200.0, 200.0));
+		imgui.doOverlay(GEN_ID, Vector2(40.0, 180.0), Vector2(730.0, 320.0));
 
 		std::string errordesc;
 
@@ -863,14 +904,139 @@ void NetworkLoginState::step()
 		{
 			case CONNECTION_FAILURE:
 				errordesc = "Could not connect to server";
+				break;
+			case CONNECTING:
+				errordesc = "Connecting to server...";
+				break;
+			case WRONG_LOGINDATA:
+				errordesc = "Wrong username or password";
+				break;
 		}
 
-		imgui.doText(GEN_ID, Vector2(120.0, 120.0), errordesc);
+		imgui.doText(GEN_ID, Vector2(70.0, 210.0), errordesc);
 
-		if (imgui.doButton(GEN_ID, Vector2(150.0, 180.0), "OK"))
+		if (mErrorCode != CONNECTING)
 		{
-			mErrorCode = NO_ERROR;
+			if (imgui.doButton(GEN_ID, Vector2(360.0, 270.0), "OK"))
+			{
+				if (mErrorCode == CONNECTION_FAILURE) {
+					delete this;
+					mCurrentState = new MainMenuState();
+				} else {
+					mErrorCode = NO_ERROR;
+				}
+			}
 		}
+	}
+}
+
+NetworkLobbyState::NetworkLobbyState(boost::shared_ptr<RakPeer> connection)
+	: mClient(connection)
+{
+	mSelectedGame = -1;
+	REGISTER_STATIC_RPC(mClient, updateGameList);
+}
+
+NetworkLobbyState::~NetworkLobbyState()
+{
+	UNREGISTER_STATIC_RPC(mClient, updateGameList);
+}
+
+void NetworkLobbyState::step()
+{
+	IMGUI& imgui = IMGUI::getSingleton();
+
+	imgui.doCursor(true);
+	imgui.doImage(GEN_ID, Vector2(400.0, 300.0), "background");
+	imgui.doOverlay(GEN_ID, Vector2(0.0, 0.0), Vector2(800.0, 600.0));
+
+	imgui.doSelectbox(GEN_ID, Vector2(34.0, 50.0), Vector2(634.0, 550.0),
+			mOpenGames, mSelectedGame);
+
+	if (imgui.doButton(GEN_ID, Vector2(644.0, 60.0), "join") &&
+					mSelectedGame != -1)
+	{
+		SystemAddress address = mOpenGamesAddresses.at(mSelectedGame);
+		RakNet::BitStream requeststream;
+
+		requeststream.Write(address.binaryAddress);
+		requeststream.Write(address.port);
+
+		RakNet::BitStream reply;
+
+		bool success = mClient->RPC("joinGame", &requeststream,
+				HIGH_PRIORITY, RELIABLE, 0, 
+				UNASSIGNED_SYSTEM_ADDRESS, true, 0,
+				UNASSIGNED_NETWORK_ID, &reply);
+
+		bool gotgame;
+		reply.Read(gotgame);
+
+		if (success && gotgame)
+		{
+			delete this;
+			mCurrentState = new NetworkGameState(address.ToString(false), address.port);
+		}
+	}
+	else if (imgui.doButton(GEN_ID, Vector2(644, 120.0), "create"))
+	{
+		RakNet::BitStream reply;
+		bool success = mClient->RPC("createGame", 0, HIGH_PRIORITY, RELIABLE,
+				0, UNASSIGNED_SYSTEM_ADDRESS, true, 0,
+				UNASSIGNED_NETWORK_ID, &reply);
+
+		if (!success) return;
+
+		uint32_t ipaddr;
+		uint16_t port;
+		reply.Read(ipaddr);
+		reply.Read(port);
+		SystemAddress gameserver = {
+			ipaddr, port
+		};
+
+		delete this;
+		mCurrentState = new NetworkGameState(gameserver.ToString(false), gameserver.port);
+
+	}
+	else if (imgui.doButton(GEN_ID, Vector2(644.0, 210.0), "cancel"))
+	{
+		delete this;
+		mCurrentState = new MainMenuState();
+	}
+}
+
+void NetworkLobbyState::updateGameList(RPCParameters* params)
+{
+	assert(typeid(*mCurrentState) == typeid(NetworkLobbyState));
+	RakNet::BitStream stream(params->input, params->numberOfBitsOfData, false);
+
+	NetworkLobbyState* state = static_cast<NetworkLobbyState*>(mCurrentState);
+
+	state->mOpenGames.clear();
+	state->mOpenGamesAddresses.clear();
+
+	int numGames;
+	stream.Read(numGames);
+	numGames = std::max(numGames, 128); // Rejected ridiculously high values
+
+	state->mOpenGames.reserve(numGames);
+	state->mOpenGamesAddresses.reserve(numGames);
+
+	for (int i = 0; i < numGames; i++)
+	{
+		char username[16];
+		StringCompressor::Instance()->DecodeString(username, 16, &stream);
+		state->mOpenGames.push_back(username);
+
+		uint32_t ipaddr;
+		uint16_t port;
+		stream.Read(ipaddr);
+		stream.Read(port);
+		SystemAddress gameaddr = {
+			ipaddr, port
+		};
+		state->mOpenGamesAddresses.push_back(gameaddr);
 	}
 }
 

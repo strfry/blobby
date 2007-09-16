@@ -5,6 +5,9 @@
 #if (defined(__GNUC__)  || defined(__GCCXML__)) && !defined(__WIN32)
 #include "_FindFirst.h"
 #include "DS_List.h"
+// Not supported on a console
+// #include <fnmatch.h>
+#include <string.h>
 
 static DataStructures::List< _findinfo_t* > fileInfo;
 
@@ -60,7 +63,10 @@ long _findfirst(const char *name, _finddata_t *f)
 		if(entry == 0)
 			break;
 
-		if(fnmatch(fi->filter,entry->d_name, 200) == 0)
+		
+		// Commented code not supported on a console
+	//	if(fnmatch(fi->filter,entry->d_name, 200) == 0)
+		if (strcasecmp(fi->filter,entry->d_name)==0)
 		{
 			strcpy(f->name, entry->d_name);
 			break;
@@ -88,7 +94,9 @@ int _findnext(long h, _finddata_t *f)
 		if(entry == 0)
 			return -1;
 
-		if(fnmatch(fi->filter,entry->d_name, 200) == 0)
+		// Commented code not supported on a console
+		//	if(fnmatch(fi->filter,entry->d_name, 200) == 0)
+		if(strcasecmp(fi->filter,entry->d_name) == 0)
 		{
 			strcpy(f->name, entry->d_name);
 			if (entry->d_type == DT_REG)

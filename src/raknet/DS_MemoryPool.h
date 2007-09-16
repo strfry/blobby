@@ -2,7 +2,8 @@
 #define __MEMORY_POOL_H
 
 #ifndef __APPLE__
-#include <malloc.h>
+// Use stdlib and not malloc for compatibility
+#include <stdlib.h>
 #endif
 #include <assert.h>
 #include "Export.h"

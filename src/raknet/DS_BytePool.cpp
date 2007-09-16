@@ -1,5 +1,9 @@
 #include "DS_BytePool.h"
 #include <assert.h>
+#ifndef __APPLE__
+// Use stdlib and not malloc for compatibility
+#include <stdlib.h>
+#endif
 
 using namespace DataStructures;
 

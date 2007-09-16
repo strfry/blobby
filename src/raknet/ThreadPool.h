@@ -273,7 +273,7 @@ bool ThreadPool<InputType, OutputType>::StartThreads(int numThreads, int stackSi
 	{
 #ifdef _WIN32
 		HANDLE threadHandle;
-#ifdef _COMPATIBILITY_1
+#ifdef _CONSOLE_1
 		threadHandle = ( HANDLE ) _beginthreadex( NULL, 0, WorkerThread<InputType, OutputType>, this, 0, &threadId );
 #else
 		threadHandle = ( HANDLE ) _beginthreadex( NULL, stackSize, WorkerThread<InputType, OutputType>, this, 0, &threadId );

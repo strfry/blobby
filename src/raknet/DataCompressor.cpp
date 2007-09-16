@@ -1,7 +1,7 @@
 #include "DataCompressor.h"
 #include "DS_HuffmanEncodingTree.h"
 #include <assert.h>
-#include <string.h> // Use string.h rather than memory.h for the PS3
+#include <string.h> // Use string.h rather than memory.h for a console
 
 void DataCompressor::Compress( unsigned char *userData, unsigned sizeInBytes, RakNet::BitStream * output )
 {

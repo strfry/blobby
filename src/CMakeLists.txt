@@ -37,8 +37,9 @@ set (blobby_SRC ${common_SRC}
 	Vector.h
 	)
 	
-set (blobby-server_SRC ${common_SRC}
-	DedicatedServer.cpp DedicatedServer.h
+set (blobby-masterserver_SRC ${common_SRC}
+	MasterServer.cpp MasterServer.h
+	NetworkGameServer.cpp NetworkGameServer.h
 	)
 
 find_package(PhysFS REQUIRED)
@@ -50,8 +51,8 @@ if (OPENGL_FOUND)
 endif (OPENGL_FOUND)
 
 add_executable(blobby ${blobby_SRC})
-add_executable(blobby-server ${blobby-server_SRC})
+add_executable(blobby-masterserver ${blobby-masterserver_SRC})
 
 target_link_libraries(blobby lua raknet tinyxml ${PHYSFS_LIBRARY} ${SDL_LIBRARY} ${OPENGL_LIBRARIES})
 
-target_link_libraries(blobby-server raknet tinyxml ${PHYSFS_LIBRARY} ${SDL_LIBRARY})
+target_link_libraries(blobby-masterserver raknet tinyxml  ${PHYSFS_LIBRARY} ${SDL_LIBRARY})
