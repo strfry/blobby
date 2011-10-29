@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #pragma once
 
+/// \todo update this description
 // This class can control the game speed and the displayed FPS.
 // It is updated once a frame and waits the necessary time.
 // A distinction is made between game FPS and real FPS.
@@ -41,25 +42,24 @@ public:
 // This reports whether a framedrop is necessary to hold the real FPS
 	bool doFramedrop() const;
 
-//gives the caller the fps of the drawed frames:
-	int getFPS() const { return mFPS; }
-	void setDrawFPS(bool draw) { mDrawFPS = draw; }  //help methods
-	bool getDrawFPS() const { return mDrawFPS; }
-
 // This updates everything and waits the necessary time	
 	void update();
 
 	static void setMainInstance(SpeedController* inst) { mMainInstance = inst; }
 	static SpeedController* getMainInstance() { return mMainInstance; }
+
 private:
 	float mGameFPS;
-	float mRealFPS;
-	int mFPS;
-	int mFPSCounter;
 	bool mFramedrop;
-	bool mDrawFPS;
+	
+	
 	static SpeedController* mMainInstance;
 	int mOldTicks;
+	
+	// new variables, which were statis in old code
+	int mCounter;
+	int mLastTicks;
+	int mBeginSecond;
 
 };
 
