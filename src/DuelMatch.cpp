@@ -159,7 +159,7 @@ void DuelMatch::unpause()
 	mPaused = false;
 }
 
-PlayerSide DuelMatch::winningPlayer()
+PlayerSide DuelMatch::winningPlayer() const
 {
 	return mLogic->getWinningPlayer();
 }

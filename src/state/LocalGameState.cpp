@@ -54,7 +54,6 @@ LocalGameState::LocalGameState()
 	
 	UserConfig gameConfig;
 	gameConfig.loadFile("config.xml");
-	SpeedController::getMainInstance()->setGameSpeed((float)gameConfig.getInteger("gamefps"));
 	
 	SoundManager::getSingleton().playSound("sounds/pfiff.wav", ROUND_START_SOUND_VOLUME);
 

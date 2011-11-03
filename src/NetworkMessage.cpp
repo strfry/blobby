@@ -51,7 +51,8 @@ ServerInfo::ServerInfo(const std::string& playername)
 	memset(this, 0, sizeof(ServerInfo));
 	strncpy(name, std::string(playername + "'s game").c_str(), sizeof(name) - 1);
 	strncpy(description, "client hosted game", sizeof(description) - 1);
-	gamespeed = (int)SpeedController::getMainInstance()->getGameSpeed();
+	/// \todo we need to load the gamespeed from somewhere else
+	gamespeed = (int)SpeedController::getMainInstance()->getSpeed();
 }
 
 void ServerInfo::writeToBitstream(RakNet::BitStream& stream)

@@ -502,7 +502,7 @@ void NetworkGameState::step()
 				// read gamespeed
 				int speed;
 				stream.Read(speed);
-				SpeedController::getMainInstance()->setGameSpeed(speed);
+				/// \todo we must set the match speed!!!!
 				
 				// read playername
 				stream.Read(charName, sizeof(charName));
@@ -606,7 +606,7 @@ void NetworkGameState::step()
 	PlayerInput input = mNetworkState == PLAYING ?
 		mLocalInput->getInput() : PlayerInput();
 
-	presentGame(*mFakeMatch);
+	presentGame(mFakeMatch);
 	rmanager->setBlobColor(LEFT_PLAYER, mLeftPlayer.getColor());
 	rmanager->setBlobColor(RIGHT_PLAYER, mRightPlayer.getColor());
 

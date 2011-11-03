@@ -861,7 +861,7 @@ MiscOptionsState::~MiscOptionsState()
 			mOptionConfig.setString("background", mBackgrounds[mBackground]);
 		mOptionConfig.saveFile("config.xml");
 	}
-	SpeedController::getMainInstance()->setDrawFPS(mOptionConfig.getBool("showfps"));
+	//SpeedController::getMainInstance()->setDrawFPS(mOptionConfig.getBool("showfps"));
 	BloodManager::getSingleton().enable(mOptionConfig.getBool("blood"));
 	SoundManager::getSingleton().setVolume(mOptionConfig.getFloat("global_volume"));
 	SoundManager::getSingleton().setMute(mOptionConfig.getBool("mute"));
@@ -906,7 +906,7 @@ void MiscOptionsState::step()
 	if (imgui.doButton(GEN_ID, Vector2(484.0, 120.0), TextManager::getSingleton()->getString(TextManager::OP_FPS)))
 	{
 		mShowFPS = !mShowFPS;
-		SpeedController::getMainInstance()->setDrawFPS(mShowFPS);
+		//SpeedController::getMainInstance()->setDrawFPS(mShowFPS);
 	}
 	if (mShowFPS)
 	{

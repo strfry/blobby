@@ -101,9 +101,6 @@ void State::presentGame(const DuelMatch& match)
 MainMenuState::MainMenuState()
 {
 	IMGUI::getSingleton().resetSelection();
-	
-	// set main menu fps
-	SpeedController::getMainInstance()->setGameSpeed(75);
 }
 
 MainMenuState::~MainMenuState()

@@ -33,23 +33,23 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 class SpeedController
 {
 public:
-	SpeedController(float gameFPS);
+	SpeedController(float FPS, unsigned int thread);
 	~SpeedController();
 	
-	void setGameSpeed(float fps);
-	float getGameSpeed() const{return mGameFPS;}
+	void setSpeed(float fps);
+	float getSpeed() const{return mFPS;}
 
 // This reports whether a framedrop is necessary to hold the real FPS
-	bool doFramedrop() const;
+	bool requireFramedrop() const;
 
 // This updates everything and waits the necessary time	
-	void update();
+	void wait();
 
 	static void setMainInstance(SpeedController* inst) { mMainInstance = inst; }
 	static SpeedController* getMainInstance() { return mMainInstance; }
 
 private:
-	float mGameFPS;
+	float mFPS;
 	bool mFramedrop;
 	
 	
@@ -61,6 +61,8 @@ private:
 	int mLastTicks;
 	int mBeginSecond;
 
+	// thread ID this speed controller belongs to
+	unsigned int mThread;
 };
 
 

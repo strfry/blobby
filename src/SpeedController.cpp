@@ -17,17 +17,17 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
-#include <iostream>
 #include "SpeedController.h"
 
 #include <SDL/SDL.h>
+#include <cassert>
+#include <algorithm>
 
 SpeedController* SpeedController::mMainInstance = NULL;
 
-SpeedController::SpeedController(float gameFPS) : mCounter(0)
+SpeedController::SpeedController(float FPS, unsigned int thread) : mCounter(0), mThread(thread),
+																mFPS(FPS), mFramedrop(false)
 {
-	mGameFPS = gameFPS;
-	mFramedrop = false;
 	mOldTicks = SDL_GetTicks();
 	mLastTicks = mOldTicks;
 	mBeginSecond = mLastTicks;
@@ -37,27 +37,31 @@ SpeedController::~SpeedController()
 {
 }
 
-void SpeedController::setGameSpeed(float fps)
+void SpeedController::setSpeed(float fps)
 {
+	/// \todo do we still need this check?
 	if (fps < 5)
 		fps = 5;
-	mGameFPS = fps;
+	mFPS = fps;
 }
 
-bool SpeedController::doFramedrop() const
+bool SpeedController::requireFramedrop() const
 {
 	return mFramedrop;
 }
 
-void SpeedController::update()
+void SpeedController::wait()
 {
+	
+	assert(mThread == SDL_ThreadID());
+	
 	mFramedrop = false;
 	
 	// calculate how many ms per frame
-	int rateTicks = std::max(int(1000 / mGameFPS), 1);
+	int rateTicks = std::max(int(1000 / mFPS), 1);
 
 	// when all steps are done for this second, wait till second is done
-	if (mCounter == mGameFPS)
+	if (mCounter == mFPS)
 	{
 		const int delta = SDL_GetTicks() - mBeginSecond;
 		int wait = 1000 - delta;
