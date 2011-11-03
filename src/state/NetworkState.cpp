@@ -606,7 +606,7 @@ void NetworkGameState::step()
 	PlayerInput input = mNetworkState == PLAYING ?
 		mLocalInput->getInput() : PlayerInput();
 
-	presentGame(mFakeMatch);
+	presentGame(*mFakeMatch);
 	rmanager->setBlobColor(LEFT_PLAYER, mLeftPlayer.getColor());
 	rmanager->setBlobColor(RIGHT_PLAYER, mRightPlayer.getColor());
 

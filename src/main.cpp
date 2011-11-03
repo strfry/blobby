@@ -173,9 +173,9 @@ int main(int argc, char* argv[])
 		else
 			rmanager->showShadow(false);
 
-		SpeedController scontroller(gameConfig.getFloat("gamefps"));
+		SpeedController scontroller(gameConfig.getFloat("gamefps"), SDL_ThreadID());
 		SpeedController::setMainInstance(&scontroller);
-		scontroller.setDrawFPS(gameConfig.getBool("showfps"));
+		//scontroller.setDrawFPS(gameConfig.getBool("showfps"));
 
 		smanager = SoundManager::createSoundManager();
 		smanager->init();
@@ -202,7 +202,8 @@ int main(int argc, char* argv[])
 				State::getCurrentState()->step();
 			rmanager = &RenderManager::getSingleton(); //RenderManager may change
 			//draw FPS:
-			if (scontroller.getDrawFPS())
+			/// \todo use config var instead of speed controlles variables
+			/*if (scontroller.getDrawFPS())
 			{
 				// We need to ensure that the title bar is only set
 				// when the framerate changed, because setting the
@@ -217,16 +218,16 @@ int main(int argc, char* argv[])
 					rmanager->setTitle(tmp.str());
 				}
 				lastfps = newfps;
-			}
+			}*/
 
-			if (!scontroller.doFramedrop())
+			if (!scontroller.requireFramedrop())
 			{
 				rmanager->draw();
 				IMGUI::getSingleton().end();
 				BloodManager::getSingleton().step();
 				rmanager->refresh();
 			}
-			scontroller.update();
+			scontroller.wait();
 		}
 	}
 	catch (std::exception& e)
