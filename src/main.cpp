@@ -173,9 +173,7 @@ int main(int argc, char* argv[])
 		else
 			rmanager->showShadow(false);
 
-		SpeedController scontroller(gameConfig.getFloat("gamefps"), SDL_ThreadID());
-		SpeedController::setMainInstance(&scontroller);
-		//scontroller.setDrawFPS(gameConfig.getBool("showfps"));
+		SpeedController scontroller(BLOBBY_GRAPHIC_FPS, SDL_ThreadID());
 
 		smanager = SoundManager::createSoundManager();
 		smanager->init();
@@ -202,23 +200,35 @@ int main(int argc, char* argv[])
 				State::getCurrentState()->step();
 			rmanager = &RenderManager::getSingleton(); //RenderManager may change
 			//draw FPS:
-			/// \todo use config var instead of speed controlles variables
-			/*if (scontroller.getDrawFPS())
+			/// \todo is getBool slow? do we need to cache this information?
+			if (gameConfig.getBool("showfps"))
 			{
 				// We need to ensure that the title bar is only set
 				// when the framerate changed, because setting the
 				// title can ne quite resource intensive on some
 				// windows manager, like for example metacity.
 				static int lastfps = 0;
-				int newfps = scontroller.getFPS();
-				if (newfps != lastfps)
+				static int fpsCounter = 0;
+				static int oldTicks = 0;
+								
+				if (scontroller.getLastFrameTime() >= oldTicks + 1000)
 				{
-					std::stringstream tmp;
-					tmp << AppTitle << "    FPS: " << newfps;
-					rmanager->setTitle(tmp.str());
+					oldTicks = scontroller.getLastFrameTime();
+					
+					if (fpsCounter != lastfps)
+					{
+						std::stringstream tmp;
+						tmp << AppTitle << "    FPS: " << fpsCounter;
+						rmanager->setTitle(tmp.str());
+					}
+					lastfps = fpsCounter;
+					
+					fpsCounter = 0;
 				}
-				lastfps = newfps;
-			}*/
+				
+				if (!scontroller.requireFramedrop())
+					fpsCounter++;
+			}
 
 			if (!scontroller.requireFramedrop())
 			{

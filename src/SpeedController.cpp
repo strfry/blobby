@@ -28,8 +28,7 @@ SpeedController* SpeedController::mMainInstance = NULL;
 SpeedController::SpeedController(float FPS, unsigned int thread) : mCounter(0), mThread(thread),
 																mFPS(FPS), mFramedrop(false)
 {
-	mOldTicks = SDL_GetTicks();
-	mLastTicks = mOldTicks;
+	mLastTicks = SDL_GetTicks();
 	mBeginSecond = mLastTicks;
 }
 
@@ -92,22 +91,11 @@ void SpeedController::wait()
 	// (draw) next frame
 	mCounter++;
 
-	//calculate the FPS of drawn frames:
-	//if (mDrawFPS)
-	//{
-	//	if (lastTicks >= mOldTicks + 1000)
-	//	{
-	//		mOldTicks = lastTicks;
-	//		mFPS = mFPSCounter;
-	//		mFPSCounter = 0;
-	//	}
-	//
-	//	if (!mFramedrop)
-	//		mFPSCounter++;
-	//}
-
 	//update for next call:
 	mLastTicks = SDL_GetTicks();
 }
 
-
+unsigned int SpeedController::getLastFrameTime() const
+{
+	return mLastTicks;
+}

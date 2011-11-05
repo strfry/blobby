@@ -33,6 +33,8 @@ const int BLOBBY_PORT = 1234;
 const int BLOBBY_VERSION_MAJOR = 0;
 const int BLOBBY_VERSION_MINOR = 92;
 
+const int BLOBBY_GRAPHIC_FPS = 60;
+
 const char AppTitle[] = "Blobby Volley 2 version 0.9c";
 
 const float ROUND_START_SOUND_VOLUME = 0.2;

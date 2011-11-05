@@ -44,8 +44,9 @@ public:
 
 // This updates everything and waits the necessary time	
 	void wait();
+	
+	unsigned int getLastFrameTime() const;
 
-	static void setMainInstance(SpeedController* inst) { mMainInstance = inst; }
 	static SpeedController* getMainInstance() { return mMainInstance; }
 
 private:
@@ -54,7 +55,6 @@ private:
 	
 	
 	static SpeedController* mMainInstance;
-	int mOldTicks;
 	
 	// new variables, which were statis in old code
 	int mCounter;
