@@ -23,6 +23,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <cassert>
 #include <algorithm>
 
+/// this makes it possible to run a thread with >= 1000fps, 
+/// usefull for benchmarking bots
+const int TICK_FACTOR = 100;
+
 SpeedController* SpeedController::mMainInstance = NULL;
 
 SpeedController::SpeedController(float FPS, unsigned int thread) : mCounter(0), mThread(thread),
@@ -57,7 +61,7 @@ void SpeedController::wait()
 	mFramedrop = false;
 	
 	// calculate how many ms per frame
-	int rateTicks = std::max(int(1000 / mFPS), 1);
+	int rateTicks = std::max(int(TICK_FACTOR * 1000 / mFPS), 1);
 
 	// when all steps are done for this second, wait till second is done
 	if (mCounter == mFPS)
@@ -78,10 +82,10 @@ void SpeedController::wait()
 	const int delta = SDL_GetTicks() - mBeginSecond;
 	
 	// check if time/rate (desired number of frames) <= number of frames
-	if (delta / rateTicks <= mCounter)
+	if (delta / rateTicks * TICK_FACTOR <= mCounter)
 	{
 		// find out when the next frame has to be done and calculate timedifference, use as wait
-		int wait = ((mCounter+1)*rateTicks) - delta;
+		int wait = ((mCounter+1)* rateTicks/TICK_FACTOR) - delta;
 		
 		// do wait
 		if (wait > 0)
