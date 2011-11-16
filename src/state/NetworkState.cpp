@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "LocalInputSource.h"
 #include "raknet/RakServer.h"
 #include "RakNetPacket.h"
+#include "DuelMatch.h"
 // We don't need the stringcompressor
 
 NetworkSearchState::NetworkSearchState()
@@ -325,7 +326,7 @@ NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port):
 	else
 		mNetworkState = CONNECTION_FAILED;
 
-	mFakeMatch = new DuelMatch(0, 0, true, true);
+	mFakeMatch = new DuelMatch(0, 0, true, true, 0);
 	// game is not started until two players are connected 
 	mFakeMatch->pause();
 	
@@ -606,7 +607,7 @@ void NetworkGameState::step()
 	PlayerInput input = mNetworkState == PLAYING ?
 		mLocalInput->getInput() : PlayerInput();
 
-	presentGame(*mFakeMatch);
+	presentGame(mFakeMatch);
 	rmanager->setBlobColor(LEFT_PLAYER, mLeftPlayer.getColor());
 	rmanager->setBlobColor(RIGHT_PLAYER, mRightPlayer.getColor());
 

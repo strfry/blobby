@@ -259,8 +259,8 @@ PlayerInput ScriptedInputSource::getInput()
 	}
 	
 	// ball position and velocity update
-	mBallPositions.push_back(mMatch->getBallPosition());
-	mBallVelocities.push_back(mMatch->getBallVelocity());
+	mBallPositions.push_back(mMatch->getWorld().getBall());
+	mBallVelocities.push_back(mMatch->getWorld().getBallVelocity());
 	
 	// adapt current delay
 	char action = rand() % 8;
@@ -287,7 +287,7 @@ PlayerInput ScriptedInputSource::getInput()
 	
 	int error = 0;
 	
-	if (!mMatch->getBallActive() && mSide == 
+	if (!mMatch->getWorld().getBallActive() && mSide == 
 			// if no player is serving player, assume the left one is
 			(mMatch->getServingPlayer() == NO_PLAYER ? LEFT_PLAYER : mMatch->getServingPlayer() ))
 	{
@@ -296,7 +296,7 @@ PlayerInput ScriptedInputSource::getInput()
 		lua_pushboolean(mState, !mMatch->getBallDown());
 		error = lua_pcall(mState, 1, 0, 0);
 	}
-	else if (!mMatch->getBallActive() && mCurrentSource->mSide != 
+	else if (!mMatch->getWorld().getBallActive() && mCurrentSource->mSide != 
 			(mMatch->getServingPlayer() == NO_PLAYER ? LEFT_PLAYER : mMatch->getServingPlayer() ))
 	{
 		lua_getglobal(mState, "OnOpponentServe");

@@ -59,38 +59,38 @@ void State::setCurrentState(State* newState){
 	mCurrentState = newState;
 }
 
-void State::presentGame(const DuelMatch& match)
+void State::presentGame(const DuelMatch* match)
 {
 	RenderManager& rmanager = RenderManager::getSingleton();
 	SoundManager& smanager = SoundManager::getSingleton();
 	
-	rmanager.setScore(match.getScore(LEFT_PLAYER), match.getScore(RIGHT_PLAYER),
-		match.getServingPlayer() == LEFT_PLAYER, match.getServingPlayer() == RIGHT_PLAYER);
+	rmanager.setScore(match->getScore(LEFT_PLAYER), match->getScore(RIGHT_PLAYER),
+		match->getServingPlayer() == LEFT_PLAYER, match->getServingPlayer() == RIGHT_PLAYER);
 		
-	rmanager.setBlob(LEFT_PLAYER, match.getBlobPosition(LEFT_PLAYER),
-							match.getWorld().getBlobState(LEFT_PLAYER));
-	rmanager.setBlob(RIGHT_PLAYER, match.getBlobPosition(RIGHT_PLAYER),
-							match.getWorld().getBlobState(RIGHT_PLAYER));
+	rmanager.setBlob(LEFT_PLAYER, match->getBlobPosition(LEFT_PLAYER),
+							match->getWorld().getBlobState(LEFT_PLAYER));
+	rmanager.setBlob(RIGHT_PLAYER, match->getBlobPosition(RIGHT_PLAYER),
+							match->getWorld().getBlobState(RIGHT_PLAYER));
 	
-	rmanager.setBall(match.getBallPosition(), match.getWorld().getBallRotation());
+	rmanager.setBall(match->getBallPosition(), match->getWorld().getBallRotation());
 			
-	rmanager.setTime(match.getClock().getTimeString());
+	rmanager.setTime(match->getClock().getTimeString());
 			
-	int events = match.getEvents();
+	int events = match->getEvents();
 	if(events & DuelMatch::EVENT_LEFT_BLOBBY_HIT)
 	{
-		smanager.playSound("sounds/bums.wav", match.getWorld().lastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
-		Vector2 hitPos = match.getBallPosition() +
-				(match.getBlobPosition(LEFT_PLAYER) - match.getBallPosition()).normalise().scale(31.5);
-		BloodManager::getSingleton().spillBlood(hitPos, match.getWorld().lastHitIntensity(), 0);
+		smanager.playSound("sounds/bums.wav", match->getWorld().lastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
+		Vector2 hitPos = match->getBallPosition() +
+				(match->getBlobPosition(LEFT_PLAYER) - match->getBallPosition()).normalise().scale(31.5);
+		BloodManager::getSingleton().spillBlood(hitPos, match->getWorld().lastHitIntensity(), 0);
 	}
 	
 	if (events & DuelMatch::EVENT_RIGHT_BLOBBY_HIT)
 	{
-		smanager.playSound("sounds/bums.wav", match.getWorld().lastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
-		Vector2 hitPos = match.getBallPosition() +
-				(match.getBlobPosition(RIGHT_PLAYER) - match.getBallPosition()).normalise().scale(31.5);
-		BloodManager::getSingleton().spillBlood(hitPos, match.getWorld().lastHitIntensity(), 1);
+		smanager.playSound("sounds/bums.wav", match->getWorld().lastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
+		Vector2 hitPos = match->getBallPosition() +
+				(match->getBlobPosition(RIGHT_PLAYER) - match->getBallPosition()).normalise().scale(31.5);
+		BloodManager::getSingleton().spillBlood(hitPos, match->getWorld().lastHitIntensity(), 1);
 	}
 	
 	if (events & DuelMatch::EVENT_ERROR)
@@ -252,7 +252,7 @@ void ReplayMenuState::loadCurrentReplay()
 	{
 		mReplayRecorder->load(std::string("replays/" + mReplayFiles[mSelectedReplay] + ".bvr"));
 		mReplaying = true;
-		mReplayMatch = new DuelMatch(0, 0, true, false);
+		mReplayMatch = new DuelMatch(0, 0, true, false, 0);
 		mReplayMatch->setServingPlayer(mReplayRecorder->getServingPlayer());
 		RenderManager::getSingleton().setPlayernames(
 			mReplayRecorder->getPlayerName(LEFT_PLAYER), mReplayRecorder->getPlayerName(RIGHT_PLAYER));
@@ -280,11 +280,11 @@ void ReplayMenuState::step()
 			mReplayMatch->step();
 		}
 		
-		presentGame(*mReplayMatch);
+		presentGame(mReplayMatch);
 		rmanager->setBlobColor(LEFT_PLAYER, mLeftPlayer.getColor());
 		rmanager->setBlobColor(RIGHT_PLAYER, mRightPlayer.getColor());
 
-		PlayerSide side = mReplayMatch->winningPlayer();
+		PlayerSide side = mReplayMatch->getWinningPlayer();
 		if (side != NO_PLAYER)
 		{
 			std::stringstream tmp;

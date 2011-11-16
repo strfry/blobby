@@ -30,7 +30,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "TextManager.h"
 #include "SpeedController.h"
 #include "Blood.h"
-#include "threadinterface.h"
 #include "ThreadSentEvent.h"
 #include "BlobbyThread.h"
 #include <ctime>
