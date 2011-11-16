@@ -21,8 +21,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <deque>
 #include <map>
+#include <boost/noncopyable.hpp>
 
 struct SDL_mutex;
+
+enum ThreadEvents
+{
+	TE_MATCH_PAUSE = 1	// boolean: pause/unpause
+};
+
 
 struct ThreadSentEvent
 {
@@ -45,15 +52,20 @@ struct ThreadSentEvent
 };
 
 
-class ThreadEventManager
+class ThreadEventManager : public boost::noncopyable
 {
 	/// \todo SDL_Thread* mit abspeichern und verwalten?
 	public:
 		ThreadEventManager(unsigned int t);
-	
+		// change this to make it only possible to delete TEM when thread is destroyed
+		~ThreadEventManager();
+		
 		bool hasEvents() const;
 		ThreadSentEvent popEvent();
-		void send(ThreadSentEvent event, unsigned long target);
+		void send(ThreadSentEvent event, unsigned long target) const;
+		static void sendEventFromCallingThread(ThreadSentEvent ev, unsigned long target);
+		
+		static const ThreadEventManager& getCurrentEventManager();
 		
 	private:
 		void pushEvent(ThreadSentEvent ev);

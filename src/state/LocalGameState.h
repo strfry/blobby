@@ -22,6 +22,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Player.h"
 #include "State.h"
 
+class ThreadEventManager;
+class BlobbyThread;
+class DuelMatchThread;
+
 class LocalGameState : public State
 {
 private:
@@ -32,8 +36,9 @@ private:
 	bool mWinner;
 	std::string mFilename;
 	
-	DuelMatch* mMatch;
+	DuelMatchThread* mMatch;
 	ReplayRecorder* mRecorder;
+	ThreadEventManager* mThisThread;
 public:
 	LocalGameState();
 	virtual ~LocalGameState();

@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "PhysicWorld.h"
 #include "GameLogic.h"
 #include "Vector.h"
+#include "BlobbyThread.h"
+//#include "IDuelMatch.h"
 
 // This class represents a single game between two players
 // It applys the rules itself and provides an interface for querying
@@ -30,8 +32,47 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // multiple times on a server or be completely unavailable
 
 class InputSource;
+class ReplayRecorder;
 
-class DuelMatch
+class DuelMatch;
+
+class DuelMatchThread : public BlobbyThread//, public IDuelMatch
+{
+	public:
+		DuelMatchThread(InputSource* linput, InputSource* rinput, int speed, 
+						bool global, bool remote, ReplayRecorder* rec);
+		~DuelMatchThread();
+		
+		virtual int getScore(PlayerSide player) const 	; 
+		virtual const Clock& getClock() const			;
+		virtual PlayerSide getServingPlayer() const;
+		bool isPaused() const;
+		PlayerSide getWinningPlayer() const;
+		const PlayerInput* getPlayersInput() const;
+		const DuelMatch* getMatchRepresentation() const;
+		
+		void pause();
+		void unpause();
+		
+		virtual const PhysicWorld& getWorld() const;
+		virtual int getEvents() const;
+		virtual void step() 
+		{
+			
+		}
+		
+	private:
+		struct MatchData;
+		MatchData* data;
+		
+		MatchData* initData(InputSource* linput, InputSource* rinput, bool global, bool remote, ReplayRecorder*);
+		
+		static int threadInit(ThreadRunParams<MatchData> data);
+		static int threadMain(ThreadRunParams<MatchData> data);
+};
+
+/// \todo Move ReplayRecorder into DuelMatch!
+class DuelMatch//: public IDuelMatch
 {
 public:
 	// This constructor takes the input sources used to get player input
@@ -46,7 +87,7 @@ public:
 	// If remote is true, only physical responses will be calculated
 	// but hit events and score events are received from network
 
-	DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool remote);
+	DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool remote, ReplayRecorder* recorder);
 
 	~DuelMatch();
 
@@ -66,7 +107,7 @@ public:
 
 	// This reports the index of the winning player and -1 if the
 	// game is still running
-	PlayerSide winningPlayer() const;
+	PlayerSide getWinningPlayer() const;
 
 	// This methods report the current game state and a useful for
 	// the input manager, which needs information about the blob
@@ -132,6 +173,14 @@ private:
 	InputSource* mRightInput;
 
 	GameLogic mLogic;
+	
+	// we need the replay recorder here, cause it must record each step
+	// and thus be executed in the same thread as DuelMatch together with
+	// the step function.
+	// as we use DuelMatch for shwoing replays, too, it is possible to
+	// disable recplay recording for a match. then, mRecorder is null.
+	// it is not possible to record a math partially!
+	ReplayRecorder* mRecorder;
 
 	bool mBallDown;
 	

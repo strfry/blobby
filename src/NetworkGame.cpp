@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "raknet/RakServer.h"
 #include "raknet/BitStream.h"
 #include "raknet/GetTime.h"
+#include "DuelMatch.h"
 
 #include <physfs.h>
 
@@ -37,9 +38,14 @@ NetworkGame::NetworkGame(RakServer& server,
 			PlayerSide switchedSide)
 	: mServer(server)
 {
+	
+	mRecorder = new ReplayRecorder(MODE_RECORDING_DUEL);
+	mRecorder->setPlayerNames(mLeftPlayerName.c_str(), mRightPlayerName.c_str());
+	mRecorder->setServingPlayer(LEFT_PLAYER);
+	
 	mLeftInput = new DummyInputSource();
 	mRightInput = new DummyInputSource();
-	mMatch = new DuelMatch(mLeftInput, mRightInput, false, false);
+	mMatch = new DuelMatch(mLeftInput, mRightInput, false, false, mRecorder);
 
 	mLeftPlayer = leftPlayer;
 	mRightPlayer = rightPlayer;
@@ -51,9 +57,6 @@ NetworkGame::NetworkGame(RakServer& server,
 
 	mPausing = false;
 
-	mRecorder = new ReplayRecorder(MODE_RECORDING_DUEL);
-	mRecorder->setPlayerNames(mLeftPlayerName.c_str(), mRightPlayerName.c_str());
-	mRecorder->setServingPlayer(LEFT_PLAYER);
 
 	// buffer for playernames
 	char name[16];
@@ -256,8 +259,9 @@ bool NetworkGame::step()
 	}
 	
 	// don't record the pauses
-	if(!mMatch->isPaused())
-		mRecorder->record(mMatch->getPlayersInput());
+	/// \todo check that nothing is recorded when paused!!
+	//if(!mMatch->isPaused())
+	//	mRecorder->record(mMatch->getPlayersInput());
 	
 	mMatch->step();
 
@@ -319,7 +323,7 @@ bool NetworkGame::step()
 	}
 	
 	if(!mPausing)
-		switch(mMatch->winningPlayer()){
+		switch(mMatch->getWinningPlayer()){
 			case LEFT_PLAYER:
 			{
 				RakNet::BitStream stream;

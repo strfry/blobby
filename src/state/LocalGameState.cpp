@@ -30,12 +30,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "TextManager.h"
 #include "SpeedController.h"
 #include "Blood.h"
+#include "threadinterface.h"
+#include "ThreadSentEvent.h"
+#include "BlobbyThread.h"
 #include <ctime>
 
 LocalGameState::~LocalGameState()
 {
 	delete mMatch;
 	delete mRecorder;
+	delete mThisThread; // that's wrong
 	InputManager::getSingleton()->endGame();
 }
 
@@ -60,8 +64,11 @@ LocalGameState::LocalGameState()
 	mRecorder = new ReplayRecorder(MODE_RECORDING_DUEL);
 	mRecorder->setPlayerNames(mLeftPlayer.getName(), mRightPlayer.getName());
 	mRecorder->setServingPlayer(LEFT_PLAYER);
-
-	mMatch = new DuelMatch(mLeftPlayer.getInputSource(), mRightPlayer.getInputSource(), true, false);
+	
+	mThisThread = new ThreadEventManager(SDL_ThreadID());
+	mMatch = new DuelMatchThread(mLeftPlayer.getInputSource(), mRightPlayer.getInputSource(), 
+								gameConfig.getInteger("gamefps"), true, false, mRecorder);
+	assert(mMatch);
 
 	RenderManager::getSingleton().setPlayernames(mLeftPlayer.getName(), mRightPlayer.getName());
 	IMGUI::getSingleton().resetSelection();
@@ -70,7 +77,7 @@ LocalGameState::LocalGameState()
 void LocalGameState::step()
 {
 	RenderManager* rmanager = &RenderManager::getSingleton();
-
+	
 	IMGUI& imgui = IMGUI::getSingleton();
 	if (mSaveReplay)
 	{
@@ -118,7 +125,7 @@ void LocalGameState::step()
 		UserConfig gameConfig;
 		gameConfig.loadFile("config.xml");
 		std::stringstream tmp;
-		if(mMatch->winningPlayer() == LEFT_PLAYER)
+		if(mMatch->getWinningPlayer() == LEFT_PLAYER)
 			tmp << mLeftPlayer.getName();
 		else
 			tmp << mRightPlayer.getName();
@@ -169,12 +176,11 @@ void LocalGameState::step()
 	else
 	{
 		mRecorder->record(mMatch->getPlayersInput());
-		mMatch->step();
 
-		if (mMatch->winningPlayer() != NO_PLAYER)
+		if (mMatch->getWinningPlayer() != NO_PLAYER)
 			mWinner = true;
 			
-		presentGame(*mMatch);
+		presentGame(mMatch->getMatchRepresentation());
 		rmanager->setBlobColor(LEFT_PLAYER, mLeftPlayer.getColor());
 		rmanager->setBlobColor(RIGHT_PLAYER, mRightPlayer.getColor());
 	}

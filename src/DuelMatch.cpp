@@ -19,14 +19,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "UserConfig.h"
 #include "DuelMatch.h"
+#include "ThreadSentEvent.h"
+#include "ReplayRecorder.h"
 
 #include <cassert>
 
 DuelMatch* DuelMatch::mMainGame = 0;
+//IDuelMatch* IDuelMatch::mainGame = 0;
 
 DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput,
-				bool global, bool remote):mLogic(createGameLogic("rules.lua")),
-					mPaused(false), events(0), external_events(0), mRemote(remote)
+				bool global, bool remote, ReplayRecorder* recorder):
+				/*IDuelMatch(global), */mLogic(createGameLogic("rules.lua")),
+					mPaused(false), events(0), external_events(0), mRemote(remote),
+					mRecorder ( recorder )
 {
 	mGlobal = global;
 	if (mGlobal)
@@ -74,7 +79,6 @@ void DuelMatch::step()
 	// in pause mode, step does nothing except input being set
 	if(mPaused)
 		return;
-	
 	
 	mPhysicWorld.step();
 	mLogic->step();
@@ -135,6 +139,13 @@ void DuelMatch::step()
 	}
 	
 	external_events = 0;
+	
+	// at end of step, record input
+	// only do recording when recorder is set!
+	if(mRecorder)
+	{
+		mRecorder->record(mPhysicWorld.getPlayersInput());
+	}
 }
 
 void DuelMatch::setScore(int left, int right)
@@ -159,7 +170,7 @@ void DuelMatch::unpause()
 	mPaused = false;
 }
 
-PlayerSide DuelMatch::winningPlayer() const
+PlayerSide DuelMatch::getWinningPlayer() const
 {
 	return mLogic->getWinningPlayer();
 }
@@ -255,4 +266,137 @@ const Clock& DuelMatch::getClock() const
 Clock& DuelMatch::getClock()
 {
 	return mLogic->getClock();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// THREADING RELATED CODE
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+struct DuelMatchThread::MatchData
+{
+	InputSource* left;
+	InputSource* right;
+	bool global;
+	bool remote;
+	ReplayRecorder* rec;
+	DuelMatch* match;
+	
+};
+
+DuelMatchThread::DuelMatchThread(InputSource* linput, InputSource* rinput, int speed, 
+								bool global, bool remote, ReplayRecorder* rec)
+: BlobbyThread(threadInit, threadMain, initData(linput, rinput, global, remote, rec), speed)/*, IDuelMatch(global)*/
+{
+	
+}
+DuelMatchThread::~DuelMatchThread()
+{
+	delete data->match;
+	delete data;
+}
+
+DuelMatchThread::MatchData* DuelMatchThread::initData(InputSource* linput, InputSource* rinput, 
+													bool global, bool remote, ReplayRecorder* rec)
+{
+	data = new MatchData {linput, rinput, global, remote, rec, 0};
+	return data;
+}
+
+bool DuelMatchThread::isPaused() const
+{
+	/// \todo do we need locks here?
+	bool paused = data->match->isPaused();
+	return paused;
+}
+PlayerSide DuelMatchThread::getWinningPlayer() const
+{
+	PlayerSide wp = data->match->getWinningPlayer();
+	return wp;
+}
+
+const DuelMatch* DuelMatchThread::getMatchRepresentation() const
+{
+	return data->match;
+}
+
+const PhysicWorld& DuelMatchThread::getWorld() const
+{
+	return data->match->getWorld();
+}
+
+int DuelMatchThread::getScore(PlayerSide player) const
+{
+	return data->match->getScore(player);
+}
+const Clock& DuelMatchThread::getClock() const
+{
+	return data->match->getClock();
+}
+PlayerSide DuelMatchThread::getServingPlayer() const
+{
+	return data->match->getServingPlayer();
+}
+
+int DuelMatchThread::getEvents() const
+{
+	return data->match->getEvents();	
+}
+
+void DuelMatchThread::pause()
+{
+	ThreadSentEvent pause;
+	pause.message = 1;
+	pause.boolean = true;
+	
+	ThreadEventManager::sendEventFromCallingThread(pause, getID());
+}
+
+void DuelMatchThread::unpause()
+{
+	ThreadSentEvent pause;
+	pause.message = 1;
+	pause.boolean = false;
+	
+	ThreadEventManager::sendEventFromCallingThread(pause, getID());
+}
+
+const PlayerInput* DuelMatchThread::getPlayersInput() const
+{
+	//return mPhysicWorld.getPlayersInput();
+}
+
+
+int DuelMatchThread::threadInit(ThreadRunParams<MatchData> data)
+{
+	MatchData* d = data.in;
+	
+	// create duel match
+	DuelMatch* match = new DuelMatch(d->left, d->right, d->global, d->remote, d->rec);
+	d->match = match;
+	
+	return 0;
+}
+
+int DuelMatchThread::threadMain(ThreadRunParams<MatchData> data)
+{
+	MatchData* d = data.in;
+	
+	while(data.thread->getEventManager().hasEvents())
+	{
+		ThreadSentEvent event = data.thread->getEventManager().popEvent();
+		std::cout << "EVENT!: " << event.message << "\n"; 
+		
+		// pausieren
+		if(event.message == TE_MATCH_PAUSE)
+		{
+			if(event.boolean)
+				d->match->pause();
+			else
+				d->match->unpause();
+		}
+	}
+	
+	d->match->step();
+	
+	return 0;	
 }
