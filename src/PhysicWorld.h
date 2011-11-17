@@ -19,11 +19,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #pragma once
 
-#include <iostream>
-
 #include "Global.h"
 #include "Vector.h"
 #include "InputSource.h"
+#include "PhysicWorldState.h"
 
 
 const float BLOBBY_SPEED = 4.5; // BLOBBY_SPEED is necessary to determine the size of the input buffer
@@ -45,19 +44,11 @@ private:
 
 	// Detect and handle ball to blobby collisions
 	void checkBlobbyBallCollision(PlayerSide player);
+	
+	// sets current_state to working state and prepares new working state
+	void finishState();
 
 	bool mBallHitByBlob[MAX_PLAYERS];
-
-	Vector2 mBlobPosition[MAX_PLAYERS];
-	Vector2 mBallPosition;
-
-	Vector2 mBlobVelocity[MAX_PLAYERS];
-	Vector2 mBallVelocity;
-
-	float mBallRotation;
-	float mBallAngularVelocity;
-	float mBlobState[MAX_PLAYERS];
-	float mCurrentBlobbyAnimationSpeed[MAX_PLAYERS];
 
 	PlayerInput mPlayerInput[MAX_PLAYERS];
 
@@ -66,6 +57,10 @@ private:
 
 	float mLastHitIntensity;
 	float mTimeSinceBallout;
+	
+	/// \todo hier safeptr verwenden; current_state nie null, working_state ändert sich nicht
+	PhysicWorldState* mCurrentState;
+	PhysicWorldState* mWorkingState;
 public:
 	PhysicWorld();
 	~PhysicWorld();
@@ -133,6 +128,9 @@ public:
 
 	//Input stuff for recording and playing replays
 	const PlayerInput* getPlayersInput() const;
+	
+	
+	PhysicWorldState* getWorldState() const;
 };
 
 

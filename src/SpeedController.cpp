@@ -17,15 +17,17 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
+#include <algorithm>	// for std::max
 #include "SpeedController.h"
 
 #include <SDL/SDL.h>
 #include <cassert>
 #include <algorithm>
 
-/// this makes it possible to run a thread with >= 1000fps, 
-/// usefull for benchmarking bots
-const int TICK_FACTOR = 100;
+/// this is required to reduce rounding errors. now we have a resolution of
+/// 1µs. This is much better than SDL_Delay can handle, but we prevent 
+/// accumulation errors.
+const int PRECISION_FACTOR = 1000;
 
 SpeedController* SpeedController::mMainInstance = NULL;
 
@@ -61,7 +63,7 @@ void SpeedController::wait()
 	mFramedrop = false;
 	
 	// calculate how many ms per frame
-	int rateTicks = std::max(int(TICK_FACTOR * 1000 / mFPS), 1);
+	int rateTicks = std::max(int(PRECISION_FACTOR * 1000 / mFPS), 1);
 
 	// when all steps are done for this second, wait till second is done
 	if (mCounter == mFPS)
@@ -82,10 +84,10 @@ void SpeedController::wait()
 	const int delta = SDL_GetTicks() - mBeginSecond;
 	
 	// check if time/rate (desired number of frames) <= number of frames
-	if (delta / rateTicks * TICK_FACTOR <= mCounter)
+	if (delta / rateTicks * PRECISION_FACTOR <= mCounter)
 	{
 		// find out when the next frame has to be done and calculate timedifference, use as wait
-		int wait = ((mCounter+1)* rateTicks/TICK_FACTOR) - delta;
+		int wait = ((mCounter+1)* rateTicks/PRECISION_FACTOR) - delta;
 		
 		// do wait
 		if (wait > 0)

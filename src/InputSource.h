@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #pragma once
 
-#include <iostream>
+#include <string>
 
 // This struct exists for easy exchange of a single player input frame
 
@@ -53,6 +53,16 @@ struct PlayerInput
 		bool tmp = left;
 		left = right;
 		right = tmp;	
+	}
+	
+	bool operator==(const PlayerInput& other) const
+	{
+		return left == other.left && right == other.right && up == other.up;
+	}
+	
+	bool operator!=(const PlayerInput& other) const
+	{
+		return !(*this == other);
 	}
 
 	bool left;

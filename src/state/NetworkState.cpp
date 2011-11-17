@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <algorithm>
 #include <sstream>
+#include <iostream>
 #include <ctime>
 
 #include "NetworkState.h"
@@ -284,13 +285,15 @@ void OnlineSearchState::searchServers()
 {
 	mScannedServers.clear();
 	//TODO: Insert Masterserverconnection code here! At the moment we are using the old code here!
-	mPingClient->PingServer("blobby.openanno.org", BLOBBY_PORT, 0, true);
-	/*UserConfig config;
+	mPingClient->PingServer("blobby.blub-game.com", BLOBBY_PORT, 0, true);
+	mPingClient->PingServer("pgb.game-host.org", BLOBBY_PORT, 0, true);
+	
+	UserConfig config;
 	config.loadFile("config.xml");
 	mPingClient->PingServer(
 		config.getString("network_last_server").c_str(),
 		BLOBBY_PORT, 0, true);
-	*/
+	
 }
 
 LANSearchState::LANSearchState()
@@ -790,7 +793,7 @@ void NetworkGameState::step()
 			}
 			// Chat
 			imgui.doSelectbox(GEN_ID, Vector2(10, 190), Vector2(790, 450), mChatlog, mSelectedChatmessage);
-			if (imgui.doEditbox(GEN_ID, Vector2(10, 460), 30, mChattext, mChatCursorPosition))
+			if (imgui.doEditbox(GEN_ID, Vector2(10, 460), 30, mChattext, mChatCursorPosition, 0, true))
 			{
 
 				// GUI-Hack, so that we can send messages

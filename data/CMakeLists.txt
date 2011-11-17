@@ -1,5 +1,5 @@
 macro(add_zip_archive _dir _filetype)
-	file(GLOB archive_src RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${_dir}/*.${_filetype})
+	file(GLOB_RECURSE archive_src RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${_dir}/*.${_filetype})
 	add_custom_command(
 		OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${_dir}.zip
 		COMMAND zip ${CMAKE_CURRENT_BINARY_DIR}/${_dir}.zip ${archive_src}
@@ -27,7 +27,8 @@ set(install_files
 	server.xml
 	lang_de.xml
 	lang_en.xml
-	lang_fr.xml)
+	lang_fr.xml
+	rules.lua)
 
 if (WIN32)
 	install(FILES ${install_files} DESTINATION data)

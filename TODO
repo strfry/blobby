@@ -2,6 +2,10 @@ TODO:
 
 coderework:
 - new clean rendererarchitecture
+- multithreading
+	fps independent physics
+- new gui system
+- more lua scripting
 
 features:
 - option for 3 types of shadow (off, pixelshadow, alphablendingshadow)
@@ -22,5 +26,19 @@ bugs:
 - mouse freezed in upper right corner after leaving the game (fullscreen mode)
 - cpu consumption in waiting for opponent state
 
+- only two hits acceptet under special circumstances?
+	 Replay which shows this problem
+
+- mouse freezed in upper right corner after leaving the game (fullscreen mode, SDL)
+- framedrop does nothing
+- don't close chat if one player leaves the game
+
 data:
-- new smaller font
+- new smaller font (current one too small?)
+- monochrome font
+- more translation
+
+FOR 0.9 final:
+ auto select chat editbox
+ mouse freeze bug? hopefully
+ esc key in chat

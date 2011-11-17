@@ -39,7 +39,7 @@ public:
 	void setSpeed(float fps);
 	float getSpeed() const{return mFPS;}
 
-// This reports whether a framedrop is necessary to hold the real FPS
+/// This reports whether a framedrop is necessary to hold the real FPS
 	bool requireFramedrop() const;
 
 // This updates everything and waits the necessary time	
