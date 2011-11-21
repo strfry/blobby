@@ -42,6 +42,35 @@ LocalGameState::~LocalGameState()
 	InputManager::getSingleton()->endGame();
 }
 
+int GameEventSoundCallback(BlobbyThread* matchthread, const ThreadSentEvent& event)
+{
+	// this is called from within the blobby match thread, so everything is "safe", match cannot be 
+	// changed
+	SoundManager& smanager = SoundManager::getSingleton();
+	DuelMatch* match = DuelMatch::getMainGame();
+	
+	unsigned long events = event.integer;
+	if(events & DuelMatch::EVENT_LEFT_BLOBBY_HIT)
+	{
+		smanager.playSound("sounds/bums.wav", match->getWorld().lastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
+		Vector2 hitPos = match->getBallPosition() +
+				(match->getBlobPosition(LEFT_PLAYER) - match->getBallPosition()).normalise().scale(31.5);
+		BloodManager::getSingleton().spillBlood(hitPos, match->getWorld().lastHitIntensity(), 0);
+	}
+	
+	if (events & DuelMatch::EVENT_RIGHT_BLOBBY_HIT)
+	{
+		smanager.playSound("sounds/bums.wav", match->getWorld().lastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
+		Vector2 hitPos = match->getBallPosition() +
+				(match->getBlobPosition(RIGHT_PLAYER) - match->getBallPosition()).normalise().scale(31.5);
+		BloodManager::getSingleton().spillBlood(hitPos, match->getWorld().lastHitIntensity(), 1);
+	}
+	
+	if (events & DuelMatch::EVENT_ERROR)
+		smanager.playSound("sounds/pfiff.wav", ROUND_START_SOUND_VOLUME);
+
+}
+
 LocalGameState::LocalGameState()
 	: State(),
 	mLeftPlayer(LEFT_PLAYER),
@@ -68,6 +97,8 @@ LocalGameState::LocalGameState()
 	mMatch = new DuelMatchThread(mLeftPlayer.getInputSource(), mRightPlayer.getInputSource(), 
 								gameConfig.getInteger("gamefps"), true, false, mRecorder);
 	assert(mMatch);
+	
+	mMatch->getEventManager().addCallback(GameEventSoundCallback, TE_GAME_EVENT, SDL_ThreadID());
 
 	RenderManager::getSingleton().setPlayernames(mLeftPlayer.getName(), mRightPlayer.getName());
 	IMGUI::getSingleton().resetSelection();

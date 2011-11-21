@@ -397,6 +397,16 @@ int DuelMatchThread::threadMain(ThreadRunParams<MatchData> data)
 	}
 	
 	d->match->step();
+	// send current game events to main thread
+	unsigned int events = d->match->getEvents();
+	if(events)
+	{
+		ThreadSentEvent tse;
+		tse.message = TE_GAME_EVENT;
+		tse.integer = events;
+		
+		data.thread->getEventManager().send(tse, /*mainthread*/0);
+	}
 	
 	return 0;	
 }

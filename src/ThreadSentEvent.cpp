@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 SDL_mutex* ThreadEventManager::lock = 0;
 std::map<unsigned long, ThreadEventManager*> ThreadEventManager::event_threads;
+unsigned long ThreadEventManager::mainThreadID = SDL_ThreadID();
 
 ThreadEventManager::ThreadEventManager(unsigned int t) : mThread(t)
 {
@@ -83,11 +84,37 @@ void ThreadEventManager::send(ThreadSentEvent event, unsigned long target) const
 	
 	SDL_LockMutex(lock);
 	
+	/// if target is NULL, we want to send to main thread?
+	/// \todo wouldn't NULL be good for broadcast?
+	/// this will be changed again!
+	if(target == 0)
+		target = mainThreadID;
 	assert(event_threads.find(target) != event_threads.end());
 	event.recipent = target;
 	event.sender = SDL_ThreadID();
 	event_threads[target]->pushEvent(event);
+	
+	// now, check if we have to perform a callback
+	// still mutex'd, so other thread won't be able to retrieve 
+	// this event until the callback was finished
 
+	for( std::map<std::pair<unsigned long, unsigned long>, callbackF>::const_iterator it = callbacks.begin();
+			it != callbacks.end(); ++it)
+	{
+		if(it->first.first == target && it->first.second == event.message)
+		{
+			/// \todo oops, we don't know about the Blobby Thread here :(
+			(*it->second)(0, event);
+		}		
+	}
+
+	SDL_UnlockMutex(lock);
+}
+
+void ThreadEventManager::addCallback(callbackF function, unsigned long message_type, unsigned long thread)
+{
+	SDL_LockMutex(lock);
+	callbacks[std::make_pair(thread, message_type)] = function;
 	SDL_UnlockMutex(lock);
 }
 
