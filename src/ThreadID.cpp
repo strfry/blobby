@@ -20,6 +20,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "ThreadID.h"
 #include "BlobbyThread.h"
 
+ThreadID::GTI ThreadID::t_all;
+ThreadID::GTI ThreadID::t_none;
+ThreadID::GTI ThreadID::t_current;
+
+
 ThreadID::ThreadID( const GTI& )
 {
 	
@@ -41,4 +46,16 @@ const BlobbyThread* ThreadID::getThread() const
 unsigned int ThreadID::getThreadID() const
 {
 	return mThread->getID();
+}
+
+bool ThreadID::operator==(const ThreadID& other) const
+{
+	/// \todo if we create generic ThreadIDs, we must define how they are compared.
+	///		do we compare for exact equality or is == more a "addresses also" relation?
+	mThread == other.mThread;
+}
+
+bool ThreadID::operator<(const ThreadID& other) const
+{
+	return mThread < other.mThread;
 }

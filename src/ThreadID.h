@@ -37,7 +37,7 @@ class ThreadID
 		static GTI t_current;
 	
 	/// \todo implement this!
-	ThreadID( const GTI& = t_none );
+	explicit ThreadID( const GTI& = t_none );
 	/// construct from BlobbyThread
 	ThreadID(const BlobbyThread* t);
 	
@@ -48,6 +48,11 @@ class ThreadID
 	
 	const BlobbyThread* getThread() const;
 	unsigned int getThreadID() const;
+	
+	bool operator==(const ThreadID& other) const;
+	/// \todo this operation does not make sense, but it is needed to 
+	///			use this as map keys!
+	bool operator<(const ThreadID& other) const;
 	
 	private:
 		const BlobbyThread* mThread;

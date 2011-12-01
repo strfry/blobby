@@ -348,7 +348,7 @@ void DuelMatchThread::pause()
 	pause.message = 1;
 	pause.boolean = true;
 	
-	ThreadEventManager::sendEventFromCallingThread(pause, getID());
+	ThreadEventManager::sendEventFromCallingThread(pause, this);
 }
 
 void DuelMatchThread::unpause()
@@ -357,7 +357,7 @@ void DuelMatchThread::unpause()
 	pause.message = 1;
 	pause.boolean = false;
 	
-	ThreadEventManager::sendEventFromCallingThread(pause, getID());
+	ThreadEventManager::sendEventFromCallingThread(pause, this);
 }
 
 const PlayerInput* DuelMatchThread::getPlayersInput() const
@@ -405,7 +405,7 @@ int DuelMatchThread::threadMain(ThreadRunParams<MatchData> data)
 		tse.message = TE_GAME_EVENT;
 		tse.integer = events;
 		
-		data.thread->getEventManager().send(tse, /*mainthread*/0);
+		data.thread->getEventManager().send(tse, /*mainthread*/(const BlobbyThread*)0);
 	}
 	
 	return 0;	
