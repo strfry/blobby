@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #pragma once
 
+#include <boost/scoped_ptr.hpp>
+
 #include "Player.h"
 #include "State.h"
 
@@ -36,9 +38,8 @@ private:
 	bool mWinner;
 	std::string mFilename;
 	
-	DuelMatchThread* mMatch;
+	boost::scoped_ptr<DuelMatchThread> mMatch;
 	ReplayRecorder* mRecorder;
-	ThreadEventManager* mThisThread;
 public:
 	LocalGameState();
 	virtual ~LocalGameState();

@@ -127,7 +127,7 @@ void BlobbyThread::unlock() const
 	SDL_UnlockMutex(mLock);
 }
 
-void BlobbyThread::sendEvent(ThreadSentEvent ev, const BlobbyThread* target)
+void BlobbyThread::sendEvent(ThreadSentEvent ev, const ThreadID& target)
 {
 	event_mgr->send(ev, target);
 }

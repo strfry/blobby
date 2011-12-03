@@ -14,6 +14,7 @@ class SpeedController;
 class ThreadEventManager;
 class BlobbyThread;
 struct ThreadSentEvent;
+class ThreadID;
 
 template<class T>
 struct ThreadRunParams
@@ -74,11 +75,12 @@ class BlobbyThread
 		ThreadEventManager& getEventManager();
 		unsigned int getID() const;
 		
-		void sendEvent(ThreadSentEvent ev, const BlobbyThread* target);
+		void sendEvent(ThreadSentEvent ev, const ThreadID& target);
 		
 		static const BlobbyThread* getThread(unsigned int);
 		static const BlobbyThread* getMainThread() { return blobbyMainThread; };
 		static bool initThreading();
+		
 	protected:
 		void lock() const;
 		void unlock() const;
@@ -105,7 +107,7 @@ class BlobbyThread
 		bool started;
 		
 		static SDL_mutex* globalThreadManagementLock;
-+		static BlobbyThread* blobbyMainThread;
+		static BlobbyThread* blobbyMainThread;
 		
 		static std::map<unsigned int, BlobbyThread*> ID_thread_map;
 };

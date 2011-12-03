@@ -36,9 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 LocalGameState::~LocalGameState()
 {
-	delete mMatch;
 	delete mRecorder;
-	delete mThisThread; // that's wrong
 	InputManager::getSingleton()->endGame();
 }
 
@@ -68,7 +66,7 @@ int GameEventSoundCallback(BlobbyThread* matchthread, const ThreadSentEvent& eve
 	
 	if (events & DuelMatch::EVENT_ERROR)
 		smanager.playSound("sounds/pfiff.wav", ROUND_START_SOUND_VOLUME);
-
+	
 }
 
 LocalGameState::LocalGameState()
@@ -93,13 +91,12 @@ LocalGameState::LocalGameState()
 	mRecorder->setPlayerNames(mLeftPlayer.getName(), mRightPlayer.getName());
 	mRecorder->setServingPlayer(LEFT_PLAYER);
 	
-	mThisThread = new ThreadEventManager(SDL_ThreadID());
-	mMatch = new DuelMatchThread(mLeftPlayer.getInputSource(), mRightPlayer.getInputSource(), 
-								gameConfig.getInteger("gamefps"), true, false, mRecorder);
+	mMatch.reset(new DuelMatchThread(mLeftPlayer.getInputSource(), mRightPlayer.getInputSource(), 
+								gameConfig.getInteger("gamefps"), true, false, mRecorder));
 	assert(mMatch);
 	
 	mMatch->getEventManager().addCallback(GameEventSoundCallback, TE_GAME_EVENT, SDL_ThreadID());
-
+	
 	RenderManager::getSingleton().setPlayernames(mLeftPlayer.getName(), mRightPlayer.getName());
 	IMGUI::getSingleton().resetSelection();
 }
