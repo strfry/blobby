@@ -32,6 +32,7 @@ struct InputKeyMap
         SDLKey key;
 };
 
+/// \brief class for managing input
 class InputManager
 {
 private:
@@ -48,14 +49,16 @@ private:
 	bool mSelect;
 	bool mExit;
 	bool mClick;
+	bool mDoubleClick;
 	bool mMouseWheelUp;
 	bool mMouseWheelDown;
 	bool mUnclick;
 	
 	int mMouseX;
 	int mMouseY;
+	int mLastClickTime;
 	
-	SDLKey mLastInputKey;
+	SDL_keysym mLastInputKey;
 	int mLastMouseButton; 
 	std::string mLastJoyAction;
 
@@ -93,11 +96,12 @@ public:
 	// For GUI navigation (Mouse)
 	Vector2 position();
 	bool click() const;
+	bool doubleClick() const;
 	bool mouseWheelUp() const;
 	bool mouseWheelDown() const;
 	bool unclick() const;
 	
 	// config conversion methods
-	std::string keyToString(SDLKey key);
+	std::string keyToString(const SDL_keysym& key);
 	SDLKey stringToKey(const std::string& keyname);
 };

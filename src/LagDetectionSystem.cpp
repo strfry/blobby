@@ -18,63 +18,65 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
 #include "LagDetectionSystem.h"
+#include "CrossCorrelation.h"
 
-LagDetector::LagDetector()
+/// time function
+/// we have to determine which function is best
+float weight(float tp)
+{
+	return 1 - tp;
+}
+
+/// this function seems to perform better,
+/// but we have not enough tests to check this
+/// assumption for real network data right now
+/// thats why we conservatively stick to 
+/// the linear weight function. 
+/*float weight(float tp)
+{
+	return (1 - tp) * 0.5/(tp + 0.5);
+}
+*/
+
+LagDetector::LagDetector(int buffer_length = 80) : recalc(true), mLastLag(0)
 {
 	/// \todo document what this values do
 	/// \todo adapt this values depending on gamespeed
 	/// \todo add a gamespeed changed callback to speedmanager
-	sended.resize(100);
-	received.resize(80);
+	sended.resize(buffer_length + 20);
+	received.resize(buffer_length);
+	
+	///   difference between sended.size() and received.size() is maximum detected lag
 }
+
 void LagDetector::insertData(PlayerInput send_value, PlayerInput received_value)
 {
+	// just insert the data into the two circular_buffers
 	sended.push_front(send_value);
 	received.push_front(received_value);
-}
-
-template<class T>
-float crossCorrelationTest(const T& signal, const T& search_pattern, int offset)
-{
-	float rel = 0;
-	typename T::const_iterator signal_read = signal.begin();
-	std::advance(signal_read, offset);
-	for(typename T::const_iterator comp = search_pattern.begin(); comp != search_pattern.end(); ++comp, ++signal_read)
-	{
-		assert(signal_read != signal.end());
-		if((*signal_read) == (*comp))
-			rel += 1;
-	};
 	
-	return rel / search_pattern.size();
-}
-
-template<class T>
-int crossCorrelation(const T& A, const T& B)
-{
-	assert(A.size() >= B.size());
-	float best = 0;
-	int boffset = 0;
-	for(int offset = 0; offset <= A.size() - B.size(); ++offset)
-	{
-		float val = crossCorrelationTest(A, B, offset);
-		if(val > best)
-		{
-			best = val;
-			boffset = offset;
-		}
-	}
-	return boffset;
+	recalc = true;
 }
 
 int LagDetector::getLag() const
 {
-	return crossCorrelation(sended, received);
+	// only do CC if data has changed
+	if( recalc ) 
+	{
+		CC_Result lagres = crossCorrelation(sended, received, weight);
+		recalc = false;
+		mLastLag = lagres.offset;
+	}
+	return mLastLag;
 }
 
+#ifdef DEBUG
 std::string LagDetector::getDebugString() const
 {
+	// construct debug string
 	std::string s;
+	
+	// just make a textual representation for every input
 	for( boost::circular_buffer<PlayerInput>::const_iterator it = sended.begin(); it != sended.end(); ++it)
 	{
 		s += it->left ? (it->up ? (it->right ? '-' : 'L') : (it->right ? '_' : 'l')) : 
@@ -90,3 +92,9 @@ std::string LagDetector::getDebugString() const
 	
 	return s;
 }
+
+CC_Result LagDetector::getDebugData() const
+{
+	return crossCorrelation(sended, received);
+}
+#endif

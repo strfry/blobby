@@ -17,10 +17,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
 #include <physfs.h>
-#include <stdio.h>
+#include <cstdio>
 #include <errno.h>
 #include <unistd.h>
 #include <ctime>
@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "raknet/RakServer.h"
 #include "raknet/PacketEnumerations.h"
 #include "raknet/GetTime.h"
+#include <SDL/SDL_timer.h>
 // We need no stringcompressor only for the names
 
 #include "DedicatedServer.h"
@@ -45,6 +46,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "NetworkMessage.h"
 #include "SpeedController.h"
 #include "RakNetPacket.h"
+#include "NetworkPlayer.h"
 
 #ifdef WIN32
 #undef main
@@ -103,10 +105,7 @@ int main(int argc, char** argv)
 	RakServer server;
 	UserConfig config;
 
-	PlayerID firstPlayer;
-	PlayerSide firstPlayerSide = NO_PLAYER;
-	std::string firstPlayerName;
-	Color firstPlayerColor;
+	NetworkPlayer firstPlayer;
 
 	config.loadFile("server.xml");
 
@@ -147,25 +146,34 @@ int main(int argc, char** argv)
 				case ID_CONNECTION_LOST:
 				case ID_DISCONNECTION_NOTIFICATION:
 				{
-					bool cond1 = firstPlayerSide != NO_PLAYER;
-					bool cond2 = firstPlayer == packet->playerId;
+					bool cond1 = firstPlayer.valid();
+					bool cond2 = firstPlayer.getID() == packet->playerId;
+					// if first player disconncted, reset
 					if (cond1 && cond2)
-						firstPlayerSide = NO_PLAYER;
-					if ( playermap.find(packet->playerId) != playermap.end() ) {
+						firstPlayer = NetworkPlayer();
+					
+					// delete the disconnectiong player
+					if ( playermap.find(packet->playerId) != playermap.end() ) 
+					{
+						/// \todo what are we doing here???
+						/// seems not a good idea to let injectPacket remove the game from the game list...
+						/// maybe we should add a centralized way to delete unused games  and players!
 						// inject the packet into the game
+						/// strange, injectPacket just pushes the packet into a queue. That cannot delete 
+						/// the game???
 						playermap[packet->playerId]->injectPacket(packet);
 						
-						// then delete the player ...
-						// if it was the last player, the game is delete, too.
+						// if it was the last player, the game is removed from the game list.
 						// thus, give the game a last chance to process the last
 						// input
 						
-						// check, wether game was delete from this, in this case, process manually 
+						// check, wether game was removed from game list (not a good idea!), in that case, process manually 
 						if( std::find(gamelist.begin(), gamelist.end(), playermap[packet->playerId]) == gamelist.end())
 						{
 							playermap[packet->playerId]->step();
 						}
-						// then delete
+						
+						// then delete the player
 						playermap.erase(packet->playerId);
 					}
 					
@@ -182,6 +190,7 @@ int main(int argc, char** argv)
 						playermap[packet->playerId]->injectPacket(packet);
 						
 						// check, wether game was delete from this, in this case, process manually 
+						/// \todo here again, injectPacket is not able to delete the game. So, what are we doing here?
 						if( std::find(gamelist.begin(), gamelist.end(), playermap[packet->playerId]) == gamelist.end())
 						{
 							playermap[packet->playerId]->step();
@@ -208,70 +217,43 @@ int main(int argc, char** argv)
 					
 					stream.IgnoreBytes(1);	//ID_ENTER_GAME
 
-					int playerSide;
-					stream.Read(playerSide);
-
-					// Read the Playername
-					char charName[16];
-					stream.Read(charName, sizeof(charName));
-
-					// ensures that charName is null terminated
-					charName[sizeof(charName)-1] = '\0';
-					
-					// read colour data
-					int color;
-					stream.Read(color);
-
-
-					std::string playerName(charName);
-					PlayerSide newSide = (PlayerSide)playerSide;
-
-					if (firstPlayerSide == NO_PLAYER)
+					if (!firstPlayer.valid())
 					{
-						firstPlayer = packet->playerId;
-						firstPlayerSide = newSide;
-						firstPlayerName = playerName;
-						firstPlayerColor = color;
+						/// \todo does the copy-ctor what i assume it does? deep copy?
+						firstPlayer = NetworkPlayer(packet->playerId, stream);
 					}
 					else // We have two players now
 					{
-						PlayerID leftPlayer =
-							LEFT_PLAYER == firstPlayerSide ?
-							firstPlayer : packet->playerId;
-						PlayerID rightPlayer =
-							RIGHT_PLAYER == firstPlayerSide ?
-							firstPlayer : packet->playerId;
-						PlayerSide switchSide = NO_PLAYER;
-
-						std::string leftPlayerName =
-							LEFT_PLAYER == firstPlayerSide ?
-							firstPlayerName : playerName;
-						std::string rightPlayerName =
-							RIGHT_PLAYER == firstPlayerSide ?
-							firstPlayerName : playerName;
-							
-						Color leftColor =
-							LEFT_PLAYER == firstPlayerSide ?
-							firstPlayerColor : color;
-						Color rightColor =
-							RIGHT_PLAYER == firstPlayerSide ?
-							firstPlayerColor : color;
-
-						if (newSide == firstPlayerSide)
+						NetworkPlayer secondPlayer = NetworkPlayer(packet->playerId, stream);
+						/// \todo refactor this, this code is awful!
+						///  one swap should be enough
+						
+						NetworkPlayer leftPlayer = firstPlayer;
+						NetworkPlayer rightPlayer = secondPlayer;
+						PlayerSide switchSide;
+						
+						if (secondPlayer.getDesiredSide() == firstPlayer.getDesiredSide())
 						{
-							if (newSide == LEFT_PLAYER)
+							if (secondPlayer.getDesiredSide() == LEFT_PLAYER)
 								switchSide = RIGHT_PLAYER;
-							if (newSide == RIGHT_PLAYER)
+							if (secondPlayer.getDesiredSide() == RIGHT_PLAYER)
 								switchSide = LEFT_PLAYER;
 						}
+						
+						if(RIGHT_PLAYER == firstPlayer.getDesiredSide())
+						{
+							std::swap(leftPlayer, rightPlayer);
+						} 
+						
+						
 						boost::shared_ptr<NetworkGame> newgame (new NetworkGame(
-							server, leftPlayer, rightPlayer,
-							leftPlayerName, rightPlayerName,
-							leftColor, rightColor,
+							server, leftPlayer.getID(), rightPlayer.getID(),
+							leftPlayer.getName(), rightPlayer.getName(),
+							leftPlayer.getColor(), rightPlayer.getColor(),
 							switchSide) );
 						
-						playermap[leftPlayer] = newgame;
-						playermap[rightPlayer] = newgame;
+						playermap[leftPlayer.getID()] = newgame;
+						playermap[rightPlayer.getID()] = newgame;
 						gamelist.push_back(newgame);
 						
 						#ifdef DEBUG
@@ -279,7 +261,7 @@ int main(int argc, char** argv)
 									<< "\t\t\t" << rightPlayer.binaryAddress << " : " << rightPlayer.port << "\n";
 						#endif			
 
-						firstPlayerSide = NO_PLAYER;
+						firstPlayer = NetworkPlayer();
 					}
 					break;
 				}
@@ -290,32 +272,32 @@ int main(int argc, char** argv)
 					RakNet::BitStream stream((char*)packet->data,
 							packet->length, false);
 
-										// If the client knows nothing about versioning, the version is 0.0
-										int major = 0;
-										int minor = 0;
-										bool wrongPackageSize = true;
-	
-										// actuel client has bytesize 72
-	
-										if(packet->bitSize == 72)
-										{
-											stream.IgnoreBytes(1);	//ID_BLOBBY_SERVER_PRESENT
-											stream.Read(major);
-											stream.Read(minor);
-											wrongPackageSize = false;
-										}
+					// If the client knows nothing about versioning, the version is 0.0
+					int major = 0;
+					int minor = 0;
+					bool wrongPackageSize = true;
+
+					// actuel client has bytesize 72
+
+					if(packet->bitSize == 72)
+					{
+						stream.IgnoreBytes(1);	//ID_BLOBBY_SERVER_PRESENT
+						stream.Read(major);
+						stream.Read(minor);
+						wrongPackageSize = false;
+					}
 
 					RakNet::BitStream stream2;
 
-										if (wrongPackageSize)
-										{
-											printf("major: %d minor: %d\n", major, minor);
-											stream2.Write((unsigned char)ID_UNKNOWN_CLIENT);
-											server.Send(&stream2, LOW_PRIORITY,
-														RELIABLE_ORDERED, 0, packet->playerId,
-														false);
-										}
-										else if (major < BLOBBY_VERSION_MAJOR
+					if (wrongPackageSize)
+					{
+						printf("major: %d minor: %d\n", major, minor);
+						stream2.Write((unsigned char)ID_UNKNOWN_CLIENT);
+						server.Send(&stream2, LOW_PRIORITY,
+									RELIABLE_ORDERED, 0, packet->playerId,
+									false);
+					}
+					else if (major < BLOBBY_VERSION_MAJOR
 						|| (major == BLOBBY_VERSION_MAJOR && minor < BLOBBY_VERSION_MINOR))
 					// Check if the packet contains matching version numbers
 					{
@@ -327,15 +309,13 @@ int main(int argc, char** argv)
 					else
 					{
 						myinfo.activegames = gamelist.size();
-						if (firstPlayerSide == NO_PLAYER)
+						if (!firstPlayer.valid())
 						{
-							strncpy(myinfo.waitingplayer, "none",
-								sizeof(myinfo.waitingplayer) - 1);
+							myinfo.setWaitingPlayer("none");
 						}
 						else
 						{
-							strncpy(myinfo.waitingplayer, firstPlayerName.c_str(),
-								sizeof(myinfo.waitingplayer) - 1);
+							myinfo.setWaitingPlayer(firstPlayer.getName());
 						}
 
 						stream2.Write((unsigned char)ID_BLOBBY_SERVER_PRESENT);
@@ -377,7 +357,7 @@ int main(int argc, char** argv)
 			// connected
 			if ((SDL_GetTicks() - startTime) > 60 * 60 * 1000)
 			{
-				if (gamelist.empty() && firstPlayerSide == NO_PLAYER)
+				if (gamelist.empty() && !firstPlayer.valid())
 				{
 					exit(0);
 				}

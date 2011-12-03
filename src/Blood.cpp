@@ -55,14 +55,14 @@ BloodManager::BloodManager()
 
 void BloodManager::step()
 {
-	if (!mEnabled || mParticles.size() == 0)
+	if ( !mEnabled || mParticles.empty() )
 		return;
 	RenderManager::getSingleton().startDrawParticles();
 	std::list<Blood>::iterator it = mParticles.begin();
 	while (it != mParticles.end())
 	{
 		std::list<Blood>::iterator it2 = it;
-		it++;	
+		++it;	
 		it2->step();
 		Vector2 partPos = it2->getPosition();
 		if (partPos.y > 600)
@@ -75,6 +75,8 @@ void BloodManager::spillBlood(Vector2 pos, float intensity, int player)
 {
 	for (int c = 0; c <= int(intensity*50); c++)
 	{
+		/// \todo we should use random circular velocities
+		/// now the particles fly in a square
 		int x = random(int(-30*intensity), int(30*intensity));
 		int y = random(int(-50*intensity), 3);
 		mParticles.push_front(Blood(pos, Vector2(x, y), player));

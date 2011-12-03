@@ -125,12 +125,20 @@ void DuelMatch::step()
 			if (!(events & EVENT_BALL_HIT_GROUND))
 				mPhysicWorld.dampBall();
 			
+			// now, the ball is not valid anymore
 			mPhysicWorld.setBallValidity(0);
+			/// \todo why do we set balldown?
+			/// 		we could get here just
+			///			by for hits
 			mBallDown = true;
 			break;
 		
 	}
 
+	// if the round is finished, we 
+	// reset BallDown, reset the World
+	// to let the player serve
+	// and trigger the EVENT_RESET
 	if (mPhysicWorld.roundFinished())
 	{
 		mBallDown = false;
@@ -138,6 +146,7 @@ void DuelMatch::step()
 		events |= EVENT_RESET;
 	}
 	
+	// reset external events
 	external_events = 0;
 	
 	// at end of step, record input

@@ -1,4 +1,4 @@
-/*=============================================================================
+﻿/*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
 
@@ -23,9 +23,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "InputManager.h"
 
 #include "IMGUI.h"
-#include "SoundManager.h"
+//#include "SoundManager.h"
+#include "utf8.h"
 
 InputManager* InputManager::mSingleton = 0;
+
+const int DOUBLE_CLICK_TIME = 200;
 
 InputManager::InputManager()
 {
@@ -38,7 +41,9 @@ InputManager::InputManager()
 
 	mInputDevice[LEFT_PLAYER] = 0;
 	mInputDevice[RIGHT_PLAYER] = 0;
-	mLastInputKey = SDLK_UNKNOWN;
+	/// \todo init properly?
+	mLastInputKey.sym = SDLK_UNKNOWN;
+	mLastClickTime = 0;
 }
 
 InputManager::~InputManager()
@@ -59,12 +64,16 @@ void InputManager::beginGame(PlayerSide side)
 	
 	UserConfig config;
 	config.loadFile("inputconfig.xml");
+	// determine which device is to be used
 	std::string device = config.getString(prefix + "device");
+	
+	// load config for mouse
 	if (device == "mouse")
 	{
 		int jumpbutton = config.getInteger(prefix + "mouse_jumpbutton");
 		mInputDevice[side] = new MouseInputDevice(side, jumpbutton);
 	}
+	// load config for keyboard
 	else if (device == "keyboard")
 	{
 		SDLKey lkey = stringToKey(config.getString(prefix +
@@ -75,6 +84,7 @@ void InputManager::beginGame(PlayerSide side)
 					"keyboard_jump"));
 		mInputDevice[side] = new KeyboardInputDevice(lkey, rkey, jkey);
 	}
+	// load config for joystick
 	else if (device == "joystick")
 	{
 		JoystickAction laction(config.getString(prefix + "joystick_left"));
@@ -133,7 +143,8 @@ void InputManager::updateInput()
 	mMouseWheelDown = false;
 	mUnclick = false;
 	mLastMouseButton = -1;
-	mLastInputKey = SDLK_UNKNOWN;
+	/// \todo init properly
+	mLastInputKey.sym = SDLK_UNKNOWN;
 	mLastJoyAction = "";
 	// Init GUI Events for buffered Input
 
@@ -141,6 +152,7 @@ void InputManager::updateInput()
 	SDL_Event event;
 	SDL_JoystickUpdate();
 
+	// process all SDL events
 	while (SDL_PollEvent(&event))
 	switch (event.type)
 	{
@@ -148,7 +160,7 @@ void InputManager::updateInput()
 			mRunning = false;
 			break;
 		case SDL_KEYDOWN:
-			mLastInputKey = event.key.keysym.sym;
+			mLastInputKey = event.key.keysym;
 			switch (event.key.keysym.sym)
 			{
 				case SDLK_UP:
@@ -181,6 +193,12 @@ void InputManager::updateInput()
 			{
 				case SDL_BUTTON_LEFT:
 					mClick = true;
+					
+					if(SDL_GetTicks() - mLastClickTime < DOUBLE_CLICK_TIME )
+					{
+						mDoubleClick = true;
+					}
+					mLastClickTime = SDL_GetTicks();
 					break;
 				case SDL_BUTTON_WHEELUP:
 					mMouseWheelUp = true;
@@ -219,6 +237,9 @@ void InputManager::updateInput()
 
 /* This handles the special buttons on the GP2X, this will
  * have to be renewed with the next GP2X release.
+/// even if we reintroduce this behaviour, we should move this code
+/// elsewhere...
+/// this is input processing not input retrieving/managing!
 #if defined(__arm__) && defined(linux)
 		case SDL_JOYBUTTONDOWN:
 			switch (event.jbutton.button)
@@ -287,6 +308,12 @@ bool InputManager::click() const
 {
 	return mClick;
 }
+
+bool InputManager::doubleClick() const
+{
+	return mDoubleClick;
+}
+
 
 bool InputManager::mouseWheelUp() const
 {
@@ -561,15 +588,61 @@ InputKeyMap InputManager::mKeyMap[] = {
 	{ "euro",SDLK_EURO },		/* Some european keyboards */
 	{ "undo",SDLK_UNDO },		/* Atari keyboard has Undo */
 	{NULL}			// end of the keymap
-};	
+};
 
-std::string InputManager::keyToString (const SDLKey key)
+
+std::string InputManager::keyToString (const SDL_keysym& key)
 {
+	// use direct unicode translation when we did not
+	// get a control key
+	// for now, we can not do this, as
+	// other parts of blobby don't work correctly
+	// when string returns a character consistsing
+	// of 2 bytes
+	if(key.unicode > 0x1F)
+	{
+		wchar_t c = key.unicode;
+		// we must convert from wchar_t to utf8
+		char cc[4] = {0,0,0,0};
+		to_utf8(c, cc);
+		
+		// if this is no multibyte character, we can use it directly
+		if(cc[1] == 0)
+		{
+			return std::string(cc);
+		}
+		
+		// special behaviour for some german keys
+		// for now, that's öäüß
+		if(cc[0] == "ß"[0])
+		{
+			switch((unsigned char)cc[1])
+			{
+				case 0x84:
+				case 0xa4:
+					return "a";
+				case 0x96:
+				case 0xb6:
+					return "o";
+				case 0x9c:
+				case 0xbc:
+					return "u";
+				case 0x9f:
+					return "s";
+			}
+		}
+		
+		// otherwise, we have to use the old behaviour and look in our translation table
+	}
+	
 	int i = 0;
 	while (mKeyMap[i].keyname != NULL)
 	{
-		if (mKeyMap[i].key == key)
+		if (mKeyMap[i].key == key.sym)
+		{
+			std::cout << "found: " << mKeyMap[i].keyname << "\n";
 			return mKeyMap[i].keyname;
+		}
 		++i;
 	}
 	return "";
@@ -596,7 +669,7 @@ std::string InputManager::getLastTextKey()
 
 std::string InputManager::getLastActionKey()
 {
-	if (mLastInputKey != SDLK_UNKNOWN)
+	if (mLastInputKey.sym != SDLK_UNKNOWN)
 		return keyToString(mLastInputKey);
 	else 
 		return "";

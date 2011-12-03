@@ -36,6 +36,8 @@ SpeedController::SpeedController(float FPS, unsigned int thread) : mCounter(0), 
 {
 	mLastTicks = SDL_GetTicks();
 	mBeginSecond = mLastTicks;
+	mBeginSecond = mOldTicks;
+	mCounter = 0;
 }
 
 SpeedController::~SpeedController()
@@ -48,6 +50,10 @@ void SpeedController::setSpeed(float fps)
 	if (fps < 5)
 		fps = 5;
 	mFPS = fps;
+	
+	/// \todo maybe we should reset only if speed changed?
+	mBeginSecond = mOldTicks;
+	mCounter = 0;
 }
 
 bool SpeedController::requireFramedrop() const
@@ -84,7 +90,7 @@ void SpeedController::wait()
 	const int delta = SDL_GetTicks() - mBeginSecond;
 	
 	// check if time/rate (desired number of frames) <= number of frames
-	if (delta / rateTicks * PRECISION_FACTOR <= mCounter)
+	if ( (PRECISION_FACTOR * delta) / rateTicks <= mCounter)
 	{
 		// find out when the next frame has to be done and calculate timedifference, use as wait
 		int wait = ((mCounter+1)* rateTicks/PRECISION_FACTOR) - delta;
@@ -94,9 +100,15 @@ void SpeedController::wait()
 			SDL_Delay(wait);
 	}
 	
-	// (draw) next frame
-	mCounter++;
+	// do we need framedrop?
+	// if passed time > time when we should have drawn next frame
+	// maybe we should limit the number of consecutive framedrops?
+	if ( delta * PRECISION_FACTOR > rateTicks * (mCounter + 1) )
+	{
+		mFramedrop = true;
+	}
 
+	mCounter++;
 	//update for next call:
 	mLastTicks = SDL_GetTicks();
 }

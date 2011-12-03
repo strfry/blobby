@@ -588,13 +588,18 @@ bool IMGUI::doEditbox(int id, const Vector2& position, int length, std::string& 
 	mLastWidget = id;
 	mQueue->push(obj);
 
+	// when content changed, it is active
+	// part of chat window hack
+	if( changed && force_active )
+		mActiveButton = id;
+
 	return changed;
 }
 
-bool IMGUI::doSelectbox(int id, const Vector2& pos1, const Vector2& pos2, const std::vector<std::string>& entries, int& selected, unsigned int flags)
+SelectBoxAction IMGUI::doSelectbox(int id, const Vector2& pos1, const Vector2& pos2, const std::vector<std::string>& entries, int& selected, unsigned int flags)
 {
 	int FontSize = (flags & TF_SMALL_FONT ? (FONT_WIDTH_SMALL+LINE_SPACER_SMALL) : (FONT_WIDTH_NORMAL+LINE_SPACER_NORMAL));
-	bool changed = false;
+	SelectBoxAction changed = SBA_NONE;
 	QueueObject obj;
 	obj.id = id;
 	obj.pos1 = pos1;
@@ -647,7 +652,7 @@ bool IMGUI::doSelectbox(int id, const Vector2& pos1, const Vector2& pos2, const 
 					if (selected > 0)
 					{
 						selected--;
-						changed = true;
+						changed = SBA_SELECT;
 					}
 					mLastKeyAction = NONE;
 					break;
@@ -655,7 +660,7 @@ bool IMGUI::doSelectbox(int id, const Vector2& pos1, const Vector2& pos2, const 
 					if (selected < entries.size()-1)
 					{
 						selected++;
-						changed = true;
+						changed = SBA_SELECT;
 					}
 					mLastKeyAction = NONE;
 					break;
@@ -681,6 +686,11 @@ bool IMGUI::doSelectbox(int id, const Vector2& pos1, const Vector2& pos2, const 
 			if (InputManager::getSingleton()->click())
 			{
 				int tmp = (int)((mousepos.y-pos1.y-5) / FontSize)+first;
+				/// \todo well, it's not really a doulbe click...
+				/// we need to do this in inputmanager
+				if( selected == tmp && InputManager::getSingleton()->doubleClick() )
+					changed = SBA_DBL_CLICK;
+				
 				if (tmp < entries.size())
 					selected = tmp;
 				mActiveButton = id;
@@ -688,12 +698,12 @@ bool IMGUI::doSelectbox(int id, const Vector2& pos1, const Vector2& pos2, const 
 			if ((InputManager::getSingleton()->mouseWheelUp()) && (selected > 0))
 			{
 				selected--;
-				changed = true;
+				changed = SBA_SELECT;
 			}
 			if ((InputManager::getSingleton()->mouseWheelDown()) && (selected < entries.size()-1))
 			{
 				selected++;
-				changed = true;
+				changed = SBA_SELECT;
 			}
 		}
 		//arrows mouseclick:
@@ -702,12 +712,12 @@ bool IMGUI::doSelectbox(int id, const Vector2& pos1, const Vector2& pos2, const 
 			if (mousepos.y > pos1.y+3 && mousepos.y < pos1.y+3+24 && selected > 0)
 			{
 				selected--;
-				changed = true;
+				changed = SBA_SELECT;
 			}
 			if (mousepos.y > pos2.y-27 && mousepos.y < pos2.y-27+24 && selected < entries.size()-1)
 			{
 				selected++;
-				changed = true;
+				changed = SBA_SELECT;
 			}
 		}
 	}
@@ -715,7 +725,7 @@ bool IMGUI::doSelectbox(int id, const Vector2& pos1, const Vector2& pos2, const 
 	doImage(GEN_ID, Vector2(pos2.x-15, pos2.y-15), "gfx/pfeil_unten.bmp");
 
 	first = (selected / itemsPerPage)*itemsPerPage; //recalc first
-	if (entries.size() != 0)
+	if ( !entries.empty() )
 	{
 		int last = first + itemsPerPage;
 		if (last > entries.size())
@@ -731,6 +741,134 @@ bool IMGUI::doSelectbox(int id, const Vector2& pos1, const Vector2& pos2, const 
 
 	return changed;
 }
+
+void IMGUI::doChatbox(int id, const Vector2& pos1, const Vector2& pos2, const std::vector<std::string>& entries, int& selected, unsigned int flags)
+{
+	int FontSize = (flags & TF_SMALL_FONT ? (FONT_WIDTH_SMALL+LINE_SPACER_SMALL) : (FONT_WIDTH_NORMAL+LINE_SPACER_NORMAL));
+	SelectBoxAction changed = SBA_NONE;
+	QueueObject obj;
+	obj.id = id;
+	obj.pos1 = pos1;
+	obj.pos2 = pos2;
+	obj.type = SELECTBOX;
+	obj.flags = flags;
+
+	const int itemsPerPage = int(pos2.y - pos1.y - 10) / FontSize;
+	int first = selected; //the first visible element in the list
+
+	if (!mInactive)
+	{
+		// M.W. : Activate cursorless object-highlighting once the up or down key is pressed.
+		if (mActiveButton == -1)
+		{
+			switch (mLastKeyAction)
+			{
+				case DOWN:
+					mActiveButton = 0;
+					mLastKeyAction = NONE;
+					break;
+				case UP:
+					mActiveButton = mLastWidget;
+					mLastKeyAction = NONE;
+					break;
+				default:
+					break;
+			}
+		}
+		
+		// Highlight first menu object for arrow key navigation.
+		if (mActiveButton == 0 && !mButtonReset)
+			mActiveButton = id;
+		
+		// React to keyboard input.
+		if (id == mActiveButton)
+		{
+			obj.type = ACTIVESELECTBOX;
+			switch (mLastKeyAction)
+			{
+				case DOWN:
+					mActiveButton = 0;
+					mLastKeyAction = NONE;
+					break;
+				case UP:
+					mActiveButton = mLastWidget;
+					mLastKeyAction = NONE;
+					break;
+				case LEFT:
+					if (selected > 0)
+					{
+						selected--;
+					}
+					mLastKeyAction = NONE;
+					break;
+				case RIGHT:
+					if (selected < entries.size()-1)
+					{
+						selected++;
+					}
+					mLastKeyAction = NONE;
+					break;
+				default:
+					break;
+			}
+		}
+		
+		// React to mouse input.
+		Vector2 mousepos = InputManager::getSingleton()->position();
+		if (mousepos.x > pos1.x && mousepos.y > pos1.y && mousepos.x < pos2.x && mousepos.y < pos2.y)
+		{
+			obj.type = ACTIVESELECTBOX;
+			if (InputManager::getSingleton()->click())
+				mActiveButton = id;
+		}
+		//entries mouseclick:
+		if (mousepos.x > pos1.x &&
+			mousepos.y > pos1.y+5 &&
+			mousepos.x < pos2.x-35 &&
+			mousepos.y < pos1.y+5+FontSize*itemsPerPage)
+		{
+			if ((InputManager::getSingleton()->mouseWheelUp()) && (selected > 0))
+			{
+				selected--;
+			}
+			if ((InputManager::getSingleton()->mouseWheelDown()) && (selected < entries.size()-1))
+			{
+				selected++;
+			}
+		}
+		//arrows mouseclick:
+		if (mousepos.x > pos2.x-30 && mousepos.x < pos2.x-30+24 && InputManager::getSingleton()->click())
+		{
+			if (mousepos.y > pos1.y+3 && mousepos.y < pos1.y+3+24 && selected > 0)
+			{
+				selected--;
+			}
+			if (mousepos.y > pos2.y-27 && mousepos.y < pos2.y-27+24 && selected < entries.size()-1)
+			{
+				selected++;
+			}
+		}
+	}
+	doImage(GEN_ID, Vector2(pos2.x-15, pos1.y+15), "gfx/pfeil_oben.bmp");
+	doImage(GEN_ID, Vector2(pos2.x-15, pos2.y-15), "gfx/pfeil_unten.bmp");
+
+	first = (selected / itemsPerPage)*itemsPerPage; //recalc first
+	if ( !entries.empty() )
+	{
+		int last = selected + 1;
+		first = last - itemsPerPage;
+		if (first < 0)
+			first = 0;
+		obj.entries = std::vector<std::string>(entries.begin()+first, entries.begin()+last);
+	}
+	else
+		obj.entries = std::vector<std::string>();
+	obj.selected = selected-first;
+
+	mLastWidget = id;
+	mQueue->push(obj);
+}
+
 
 bool IMGUI::doBlob(int id, const Vector2& position, const Color& col)
 {
