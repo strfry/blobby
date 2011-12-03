@@ -77,6 +77,8 @@ class BlobbyThread
 		void sendEvent(ThreadSentEvent ev, const BlobbyThread* target);
 		
 		static const BlobbyThread* getThread(unsigned int);
+		static const BlobbyThread* getMainThread() { return blobbyMainThread; };
+		static bool initThreading();
 	protected:
 		void lock() const;
 		void unlock() const;
@@ -84,6 +86,12 @@ class BlobbyThread
 		~BlobbyThread();
 	
 	private:
+	
+		// this creation function is needed only once
+		// for creating a blobby thread without starting
+		// a new thread. we need this to create a thread 
+		// manager for the main thread.
+		BlobbyThread(unsigned int ID);
 	
 		void createBlobbyThread(thread_func tf, void* data);
 		void initThread(int speed);
@@ -97,6 +105,7 @@ class BlobbyThread
 		bool started;
 		
 		static SDL_mutex* globalThreadManagementLock;
++		static BlobbyThread* blobbyMainThread;
 		
 		static std::map<unsigned int, BlobbyThread*> ID_thread_map;
 };

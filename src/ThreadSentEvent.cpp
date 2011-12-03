@@ -91,6 +91,7 @@ void ThreadEventManager::send(ThreadSentEvent event, const ThreadID& target) con
 	/// this will be changed again!
 	//if(target == 0)
 	//	target = mainThreadEventManager.mThread;
+	
 	assert(event_threads.find(target.getThread()) != event_threads.end());
 	event.recipent = target;
 	event.sender = mThread;
@@ -129,14 +130,13 @@ void ThreadEventManager::sendEventFromCallingThread(ThreadSentEvent ev, const Th
 
 const ThreadEventManager& ThreadEventManager::getCurrentEventManager()
 {
-	/*unsigned long caller = SDL_ThreadID();
+	ThreadID caller = SDL_ThreadID();
 	/// \todo use auto
 	/// \todo we have to find out which blobby thread is associated with caller
-	std::map<const BlobbyThread*, ThreadEventManager*>::iterator mgr = event_threads.find(caller);
+	std::map<const BlobbyThread*, ThreadEventManager*>::iterator mgr = event_threads.find(caller.getThread());
 	
 	// no thread is allowed to have no thread event manager!
 	assert( mgr != event_threads.end());
 	
-	return *mgr->second;*/
-	assert(0);
+	return *mgr->second;
 }

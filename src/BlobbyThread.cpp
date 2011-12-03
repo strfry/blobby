@@ -6,7 +6,39 @@
 #include <iostream>
 
 SDL_mutex* 		BlobbyThread::globalThreadManagementLock 	= 0;
+BlobbyThread* 	BlobbyThread::blobbyMainThread 				= 0;
 std::map<unsigned int, BlobbyThread*> BlobbyThread::ID_thread_map;
+
+
+bool BlobbyThread::initThreading()
+{
+	// create mutex for general threading management operations
+	globalThreadManagementLock = SDL_CreateMutex();
+
+	// create standard thread
+	// we don't need to keep this pointer as it is also in 
+	// the static variable blobbyMainThread
+	BlobbyThread* main = new BlobbyThread(SDL_ThreadID());
+}
+
+BlobbyThread::BlobbyThread(unsigned int ID) : mThread(0), scon(0), started(true)
+{
+	// check that we don't have a main thread!
+	assert(blobbyMainThread == 0);
+	/// \todo with our current architecture, it is not safe
+	///		to call getID for the main thread as mThread is 0!
+	// create our mutex
+	mLock = SDL_CreateMutex();
+	
+	event_mgr = new ThreadEventManager(this);
+	
+	// register this thread as main thread
+	blobbyMainThread = this;
+	
+	// register as ormale thread too
+	ID_thread_map[SDL_ThreadID()] = this;
+}
+
 BlobbyThread::~BlobbyThread()
 {
 	// free the lock
@@ -51,6 +83,9 @@ void BlobbyThread::createBlobbyThread(thread_func thread, void* data)
 	// after this condition, scon and EventManager have to be initialised
 	
 	// now the thread is fully usable, we can register it
+	ID_thread_map[SDL_GetThreadID(mThread)] = this;
+	
+	// rnow the thread is fully usable, we can register it
 	ID_thread_map[SDL_GetThreadID(mThread)] = this;
 	
 	std::cout << "THREAD CREATED\n";

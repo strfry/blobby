@@ -405,7 +405,7 @@ int DuelMatchThread::threadMain(ThreadRunParams<MatchData> data)
 		tse.message = TE_GAME_EVENT;
 		tse.integer = events;
 		
-		data.thread->getEventManager().send(tse, /*mainthread*/(const BlobbyThread*)0);
+		data.thread->getEventManager().send(tse, BlobbyThread::getMainThread());
 	}
 	
 	return 0;	

@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "state/State.h"
 #include "SpeedController.h"
 #include "Blood.h"
+#include "BlobbyThread.h"
 
 #include <cstring>
 #include <sstream>
@@ -145,6 +146,9 @@ int main(int argc, char* argv[])
 
 	try
 	{
+		// set up threading
+		BlobbyThread::initThreading();
+		
 		UserConfig gameConfig;
 		gameConfig.loadFile("config.xml");
 		
