@@ -2,6 +2,7 @@
 #define BLOBBYTHREAD_H_INCLUDED
 
 #include "SpeedController.h"
+#include <map>
 #include <iostream>
 
 typedef int(*thread_func)(void*);
@@ -21,6 +22,12 @@ struct ThreadRunParams
 	BlobbyThread* thread;	
 };
 
+/*! 	\class BlobbyThread
+		\brief represents a thread
+		\detailed
+			This class manages an SDL_Thread together with communication with other threads,
+				regulating speed, passing parameters to threads, initialisation and shutdown.
+*/
 class BlobbyThread
 {
 	private:
@@ -67,8 +74,9 @@ class BlobbyThread
 		ThreadEventManager& getEventManager();
 		unsigned int getID() const;
 		
-		void sendEvent(ThreadSentEvent ev, unsigned long target);
+		void sendEvent(ThreadSentEvent ev, const BlobbyThread* target);
 		
+		static const BlobbyThread* getThread(unsigned int);
 	protected:
 		void lock() const;
 		void unlock() const;
@@ -87,6 +95,10 @@ class BlobbyThread
 		ThreadEventManager* event_mgr;
 		
 		bool started;
+		
+		static SDL_mutex* globalThreadManagementLock;
+		
+		static std::map<unsigned int, BlobbyThread*> ID_thread_map;
 };
 
 template<class T>
@@ -107,7 +119,6 @@ int BlobbyThread::TS<T>::GenericThreadFunction(void* data)
 	// only execute if there is an init function
 	if(params.init)
 	{
-		std::cout << "try init function"<< params.in <<"\n";
 		int stat = (*params.init)( {params.in, params.thread} );
 		
 		// failure on init

@@ -5,6 +5,8 @@
 #include <cassert>
 #include <iostream>
 
+SDL_mutex* 		BlobbyThread::globalThreadManagementLock 	= 0;
+std::map<unsigned int, BlobbyThread*> BlobbyThread::ID_thread_map;
 BlobbyThread::~BlobbyThread()
 {
 	// free the lock
@@ -48,6 +50,9 @@ void BlobbyThread::createBlobbyThread(thread_func thread, void* data)
 	
 	// after this condition, scon and EventManager have to be initialised
 	
+	// now the thread is fully usable, we can register it
+	ID_thread_map[SDL_GetThreadID(mThread)] = this;
+	
 	std::cout << "THREAD CREATED\n";
 }
 
@@ -57,7 +62,7 @@ void BlobbyThread::initThread(int speed)
 	// create SpeedController
 	scon = new SpeedController(speed, SDL_ThreadID());
 	// create ThreadEventManager
-	event_mgr = new ThreadEventManager(SDL_GetThreadID(mThread));
+	event_mgr = new ThreadEventManager(this);
 }
 
 void BlobbyThread::signalInitFinished(SDL_cond* cond)
@@ -87,7 +92,15 @@ void BlobbyThread::unlock() const
 	SDL_UnlockMutex(mLock);
 }
 
-void BlobbyThread::sendEvent(ThreadSentEvent ev, unsigned long target)
+void BlobbyThread::sendEvent(ThreadSentEvent ev, const BlobbyThread* target)
 {
 	event_mgr->send(ev, target);
+}
+
+const BlobbyThread* BlobbyThread::getThread(unsigned int id)
+{
+	/// \todo add checks!
+		std::cout << ID_thread_map.begin()->first << " " << id  << "\n";
+	assert(ID_thread_map.find(id) != ID_thread_map.end() );
+	return ID_thread_map[id];
 }
