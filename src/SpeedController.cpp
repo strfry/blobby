@@ -36,7 +36,6 @@ SpeedController::SpeedController(float FPS, unsigned int thread) : mCounter(0), 
 {
 	mLastTicks = SDL_GetTicks();
 	mBeginSecond = mLastTicks;
-	mBeginSecond = mOldTicks;
 	mCounter = 0;
 }
 
@@ -52,7 +51,7 @@ void SpeedController::setSpeed(float fps)
 	mFPS = fps;
 	
 	/// \todo maybe we should reset only if speed changed?
-	mBeginSecond = mOldTicks;
+	mBeginSecond = mLastTicks;
 	mCounter = 0;
 }
 

@@ -64,7 +64,7 @@ void ReplayMenuState::loadCurrentReplay()
 	{
 		mReplayRecorder->load(std::string("replays/" + mReplayFiles[mSelectedReplay] + ".bvr"));
 		mReplaying = true;
-		mReplayMatch = new DuelMatch(0, 0, true, false);
+		mReplayMatch = new DuelMatch(0, 0, true, false, mReplayRecorder);
 		mReplayMatch->setServingPlayer(mReplayRecorder->getServingPlayer());
 		RenderManager::getSingleton().setPlayernames(
 			mReplayRecorder->getPlayerName(LEFT_PLAYER), mReplayRecorder->getPlayerName(RIGHT_PLAYER));
@@ -73,7 +73,7 @@ void ReplayMenuState::loadCurrentReplay()
 				
 		UserConfig gameConfig;
 		gameConfig.loadFile("config.xml");
-		SpeedController::getMainInstance()->setGameSpeed((float)gameConfig.getInteger("gamefps"));
+		SpeedController::getMainInstance()->setSpeed((float)gameConfig.getInteger("gamefps"));
 	
 	}
 	catch (ChecksumException& e)
@@ -97,11 +97,11 @@ void ReplayMenuState::step()
 			mReplayMatch->step();
 		}
 		
-		presentGame(*mReplayMatch);
+		presentGame(mReplayMatch);
 		rmanager->setBlobColor(LEFT_PLAYER, mLeftPlayer.getColor());
 		rmanager->setBlobColor(RIGHT_PLAYER, mRightPlayer.getColor());
 
-		PlayerSide side = mReplayMatch->winningPlayer();
+		PlayerSide side = mReplayMatch->getWinningPlayer();
 		if (side != NO_PLAYER)
 		{
 			std::stringstream tmp;
@@ -119,7 +119,7 @@ void ReplayMenuState::step()
 				delete mReplayMatch;
 				delete mReplayRecorder;
 				imgui.resetSelection();
-				SpeedController::getMainInstance()->setGameSpeed(75);
+				SpeedController::getMainInstance()->setSpeed(75);
 			}
 			if (imgui.doButton(GEN_ID, Vector2(400, 350), TextManager::getSingleton()->getString(TextManager::RP_SHOW_AGAIN)))
 			{
@@ -136,7 +136,7 @@ void ReplayMenuState::step()
 			delete mReplayMatch;
 			delete mReplayRecorder;
 			imgui.resetSelection();
-			SpeedController::getMainInstance()->setGameSpeed(75);
+			SpeedController::getMainInstance()->setSpeed(75);
 		}
 	}
 	else
