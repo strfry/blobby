@@ -42,17 +42,6 @@ const Vector2& PhysicObject::getAcceleration() const
 
 // ---------------------------------
 
-
-Vector2& PhysicObject::getPosition()
-{
-	return mPosition;
-}
-
-Vector2& PhysicObject::getVelocity() 
-{
-	return mVelocity;
-}
-
 void PhysicObject::setDebugName(const std::string& name)
 {
 	mDebugName = name;

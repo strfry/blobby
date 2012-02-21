@@ -39,10 +39,6 @@ class PhysicObject
 		
 		// -----------------------------
 		
-		/// \depreciated
-		Vector2& getPosition();
-		Vector2& getVelocity();
-		
 		void step();
 		
 		void setDebugName(const std::string& name);

@@ -22,25 +22,22 @@ class PhysicWorld
 		void step();
 		
 		const PhysicObject& getBall() const;
+		const PhysicObject& getBlob(PlayerSide player) const;
 		
 		// ------------------
 		//  copied functions
 		// ------------------
 		
-
-		Vector2 getBallVelocity() const;
 		bool getBlobJump(PlayerSide player) const;
 		bool getBallActive() const;
 
 		void setLeftInput(const PlayerInput& input);
 		void setRightInput(const PlayerInput& input);
 
-		Vector2 getBlob(PlayerSide player) const;
+		
 
 		float getBlobState(PlayerSide player) const;
 		float getBallRotation() const;
-
-		float getBallSpeed() const;
 
 		// These functions tell about ball collisions for game logic and sound
 		bool ballHitLeftPlayer() const;

@@ -5,6 +5,26 @@
 PhysicWorld::PhysicWorld()
 {
 	mObjects.resize(3);
+	mObjects[0].setDebugName("Left Blobby");
+	mObjects[0].setPosition( Vector2(200, 400) );
+	mObjects[0].setAcceleration( Vector2(0, GRAVITATION) );
+	mObjects[0].setRadius( BALL_RADIUS );
+	
+	mObjects[0].addWall(new PhysicWall(PhysicWall::HORIZONTAL, 500));
+	mObjects[0].addWall(new PhysicWall(PhysicWall::VERTICAL, 400));
+	mObjects[0].addWall(new PhysicWall(PhysicWall::VERTICAL, 0));
+	
+	mObjects[1].setDebugName("Right Blobby");
+	mObjects[1].setPosition( Vector2(600, 400) );
+	mObjects[1].setAcceleration( Vector2(0, GRAVITATION) );
+	mObjects[1].setRadius( BALL_RADIUS );
+	
+	mObjects[1].addWall(new PhysicWall(PhysicWall::HORIZONTAL, 500));
+	mObjects[1].addWall(new PhysicWall(PhysicWall::VERTICAL, 400));
+	mObjects[1].addWall(new PhysicWall(PhysicWall::VERTICAL, 800));
+	
+	
+	
 	mObjects[2].setDebugName("Ball");
 	mObjects[2].setPosition( Vector2(400, 300) );
 	mObjects[2].setAcceleration( Vector2(0, BALL_GRAVITATION) );
@@ -34,13 +54,21 @@ const PhysicObject& PhysicWorld::getBall() const
 	return mObjects[2];
 }
 
+const PhysicObject& PhysicWorld::getBlob(PlayerSide side) const
+{
+	assert(side == LEFT_PLAYER || side == RIGHT_PLAYER);
+	switch(side)
+	{
+		case LEFT_PLAYER:
+			return mObjects[0];
+		case RIGHT_PLAYER:
+			return mObjects[1];
+	}
+	assert(0);
+}
+
 // -------------------------------------------------
 
-
-Vector2 PhysicWorld::getBallVelocity() const
-{
-	
-}
 bool PhysicWorld::getBlobJump(PlayerSide player) const
 {
 	
@@ -59,21 +87,11 @@ void PhysicWorld::setRightInput(const PlayerInput& input)
 	
 }
 
-Vector2 PhysicWorld::getBlob(PlayerSide player) const
-{
-	
-}
-
 float PhysicWorld::getBlobState(PlayerSide player) const
 {
 	return 0;
 }
 float PhysicWorld::getBallRotation() const
-{
-	return 0;
-}
-
-float PhysicWorld::getBallSpeed() const
 {
 	return 0;
 }
