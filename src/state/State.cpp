@@ -91,7 +91,7 @@ void State::presentGame(const DuelMatch& match)
 	{
 		smanager.playSound("sounds/bums.wav", match.getWorld().lastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
 		Vector2 hitPos = match.getBallPosition() +
-				(match.getBlobPosition(LEFT_PLAYER) - match.getBallPosition()).normalise().scale(31.5);
+				(match.getBlobPosition(LEFT_PLAYER) - match.getBallPosition()).normalise().scaled(31.5);
 		BloodManager::getSingleton().spillBlood(hitPos, match.getWorld().lastHitIntensity(), 0);
 	}
 	
@@ -99,7 +99,7 @@ void State::presentGame(const DuelMatch& match)
 	{
 		smanager.playSound("sounds/bums.wav", match.getWorld().lastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
 		Vector2 hitPos = match.getBallPosition() +
-				(match.getBlobPosition(RIGHT_PLAYER) - match.getBallPosition()).normalise().scale(31.5);
+				(match.getBlobPosition(RIGHT_PLAYER) - match.getBallPosition()).normalise().scaled(31.5);
 		BloodManager::getSingleton().spillBlood(hitPos, match.getWorld().lastHitIntensity(), 1);
 	}
 	

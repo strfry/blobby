@@ -4,6 +4,7 @@
 #include <iostream>
 #include "PhysicObject.h"
 #include "PhysicWorld.h"
+#include "PhysicWall.h"
 
 std::ostream& operator<<(std::ostream& stream, const Vector2& vector)
 {
@@ -48,6 +49,23 @@ BOOST_AUTO_TEST_CASE( constructor )
 	BOOST_CHECK_EQUAL(vec3.y, -y);
 	
 	BOOST_CHECK_EQUAL(Vector2(vec2, vec2), Vector2(0,0));
+}
+
+BOOST_AUTO_TEST_CASE( clear )
+{
+	Vector2 vec = getRandVec();
+	vec.clear();
+	BOOST_CHECK_EQUAL(vec, Vector2());
+	
+}
+
+BOOST_AUTO_TEST_CASE( simple_reflection )
+{
+	Vector2 vec = getRandVec();
+	
+	BOOST_CHECK_EQUAL(vec, vec.reflectedX().reflectedX());
+	BOOST_CHECK_EQUAL(vec, vec.reflectedY().reflectedY());
+	
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -180,6 +198,27 @@ BOOST_AUTO_TEST_SUITE( physic_wall )
 BOOST_AUTO_TEST_CASE( constructor )
 {
 	/// \todo we don't have any functions that can do constructor testing
+}
+
+/// this test tests a simple wall collision
+BOOST_AUTO_TEST_CASE( simple_collision )
+{
+	PhysicWall wall = PhysicWall(PhysicWall::HORIZONTAL, 500);
+	PhysicObject ob = PhysicObject(Vector2(0,0), Vector2(0, 30));
+	
+	ob.setRadius(20);
+	ob.addWall(&wall);
+	
+	for(int i = 0; i < 50; ++i )
+	{
+		ob.step();
+		if(ob.getPosition().y > 480)
+		{
+			std::cout << "position " << i << " " << ob.getPosition().y << std::endl;
+		}
+		BOOST_CHECK(ob.getPosition().y <= 480);
+		
+	}
 }
 
 

@@ -58,10 +58,10 @@ float time_to_x(const Vector2& pos, const Vector2& vel, float destination) {
 		{
 			Vector2 nhitpos = Vector2(net, predict_y(pos, vel, tnet));
 			if ( nhitpos.y > NET_SPHERE_POSITION - NET_RADIUS - BALL_RADIUS )
-				return tnet + time_to_x(nhitpos, vel.reflectX(), destination);
+				return tnet + time_to_x(nhitpos, vel.reflectedX(), destination);
 		}
 		Vector2 whitpos = Vector2(wall, predict_y(pos, vel, twall));
-		return twall + time_to_x(whitpos, vel.reflectX(), destination);
+		return twall + time_to_x(whitpos, vel.reflectedX(), destination);
 	}
 	
 	float net = vel.x > 0 ? (NET_POSITION_X - BALL_RADIUS - NET_RADIUS) : (NET_POSITION_X + BALL_RADIUS + NET_RADIUS);
@@ -80,7 +80,7 @@ float time_to_x(const Vector2& pos, const Vector2& vel, float destination) {
 		return std::numeric_limits<float>::max();
 	}
 	
-	return tnet + time_to_x(nhitpos, vel.reflectX(), destination);
+	return tnet + time_to_x(nhitpos, vel.reflectedX(), destination);
 	
 }
 
@@ -107,7 +107,7 @@ float predict_x(const Vector2& pos, const Vector2& vel, float time) {
 	}
 	
 	// collision with net
-	return predict_x(nhitpos, vel.reflectX(), time - tnet);
+	return predict_x(nhitpos, vel.reflectedX(), time - tnet);
 	
 	
 }

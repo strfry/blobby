@@ -49,13 +49,14 @@ class Vector2
 	/// \details initialises the new vector with the difference v2 - v1
 	Vector2(const Vector2& v1, const Vector2& v2);
 
+	/// resets the vector to (0,0)
 	void clear();
 	
-	Vector2 reflectX() const;
-	Vector2 reflectY() const;
-	Vector2 scale(float factor) const;
-	Vector2 scaleX(float factor) const;
-	Vector2 scaleY(float factor) const;
+	Vector2 reflectedX() const;
+	Vector2 reflectedY() const;
+	Vector2 scaled(float factor) const;
+	Vector2 scaledX(float factor) const;
+	Vector2 scaledY(float factor) const;
 	float length() const;
 	Vector2 normalise();
 	Vector2 contraVector() const ;
@@ -167,27 +168,27 @@ inline Vector2::Vector2(const Vector2& v1, const Vector2& v2) : x(v2.x - v1.x), 
 
 }
 
-inline Vector2 Vector2::reflectX() const
+inline Vector2 Vector2::reflectedX() const
 {
 	return Vector2(-x, y);
 }
 
-inline Vector2 Vector2::reflectY() const
+inline Vector2 Vector2::reflectedY() const
 {
 	return Vector2(x, -y);
 }
 
-inline Vector2 Vector2::scale(float factor) const
+inline Vector2 Vector2::scaled(float factor) const
 {
 	return Vector2(x * factor, y * factor);
 }
 
-inline Vector2 Vector2::scaleX(float factor) const
+inline Vector2 Vector2::scaledX(float factor) const
 {
 	return Vector2(x * factor, y);
 }
 
-inline Vector2 Vector2::scaleY(float factor) const
+inline Vector2 Vector2::scaledY(float factor) const
 {
 	return Vector2(x, y * factor);
 }
@@ -233,3 +234,7 @@ inline bool operator > (const Vector2& v1, const Vector2& v2)
 	return false;
 }
 
+inline Vector2 operator*(float f, const Vector2& vec)
+{
+	return vec * f;
+}
