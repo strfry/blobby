@@ -245,7 +245,7 @@ Vector2 DuelMatch::getBlobPosition(PlayerSide player) const
 
 Vector2 DuelMatch::getBallPosition() const
 {
-	return mPhysicWorld.getBall();
+	return mPhysicWorld.getBall().getPosition();
 }
 
 Vector2 DuelMatch::getBallVelocity() const
