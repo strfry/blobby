@@ -37,8 +37,16 @@ class Vector2
 			float val[2];
 		};
 	
+	/// \brief default c'tor
+	/// \details does initialise to (0,0)
 	Vector2();
+	
+	/// \brief component c'tor
+	/// \details initialises to (\p x,\p y)
 	Vector2(float x, float y);
+	
+	/// \brief difference c'tor
+	/// \details initialises the new vector with the difference v2 - v1
 	Vector2(const Vector2& v1, const Vector2& v2);
 
 	void clear();
@@ -52,7 +60,7 @@ class Vector2
 	Vector2 normalise();
 	Vector2 contraVector() const ;
 	
-	inline Vector2 halfVector(const Vector2& vec) const
+	inline Vector2 getHalfVector(const Vector2& vec) const
 	{
 		return Vector2(x + (vec.x - x) / 2, y + (vec.y - y) / 2);
 	}
@@ -186,24 +194,7 @@ inline Vector2 Vector2::scaleY(float factor) const
 
 inline float Vector2::length() const
 {
-#ifdef USE_SSE
-	float ret;
-	asm (
-		"movss 	%1,	%%xmm0	\n"
-		"movss 	%2,	%%xmm1	\n"
-		"mulss 	%%xmm0,	%%xmm0	\n"
-		"mulss 	%%xmm1,	%%xmm1	\n"
-		"addss 	%%xmm1,	%%xmm0	\n"
-		"sqrtss %%xmm0,	%%xmm0	\n"
-		"movss 	%%xmm0,	%0	\n"
-		: "=m"(ret)
-		: "m"(x), "m"(y)
-		: "%xmm0", "%xmm1"
-	);
-	return ret;
-#else
 	return sqrt(this->x * this->x + this->y * this->y);
-#endif
 }
 
 inline Vector2 Vector2::normalise()
