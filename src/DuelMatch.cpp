@@ -87,6 +87,7 @@ void DuelMatch::step()
 		mPhysicWorld.setRightInput(mRightInput->getInput());
 		
 	// in pause mode, step does nothing except input being set
+	/// \todo find out why we do set input in pause mode!
 	if(mPaused)
 		return;
 	
@@ -264,11 +265,13 @@ void DuelMatch::setState(RakNet::BitStream* stream)
 
 const PlayerInput* DuelMatch::getPlayersInput() const
 {
-	return mPhysicWorld.getPlayersInput();
+	return mInputs;
 }
 
 void DuelMatch::setPlayersInput(const PlayerInput& left, const PlayerInput& right)
 {
+	mInputs[0] = left;
+	mInputs[1] = right;
 	mPhysicWorld.setLeftInput( left );
 	mPhysicWorld.setRightInput( right );
 }

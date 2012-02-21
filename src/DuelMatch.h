@@ -146,4 +146,6 @@ private:
 	int events;
 	int external_events;
 	bool mRemote;
+	
+	PlayerInput mInputs[2]; 
 };
