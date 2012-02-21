@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include "PhysicObject.h"
+#include "PhysicWorld.h"
 
 std::ostream& operator<<(std::ostream& stream, const Vector2& vector)
 {
@@ -78,6 +79,7 @@ BOOST_AUTO_TEST_CASE( constructor )
 	BOOST_CHECK_EQUAL(po.getVelocity(), velocity);
 	BOOST_CHECK_EQUAL(po.getAcceleration(), Vector2(0,0));
 	BOOST_CHECK_EQUAL(po.getDebugName(), "");
+	BOOST_CHECK_EQUAL(po.getWorld(), (void*)0);
 }
 
 /// this test checks that setters and getters work as expected, i.e., that getters report
@@ -99,6 +101,14 @@ BOOST_AUTO_TEST_CASE( get_set_round_trip )
 	
 	po.setDebugName("name_test");
 	BOOST_CHECK_EQUAL(po.getDebugName(), "name_test");
+	
+	float radius = rand() % 101 - 50;
+	po.setRadius(radius);
+	BOOST_CHECK_EQUAL(po.getRadius(), radius);
+	
+	PhysicWorld w;
+	po.setWorld(&w);
+	BOOST_CHECK_EQUAL(po.getWorld(), &w);
 }
 
 /// this test checks that position does not change when velocity and acceleration are 0
@@ -171,3 +181,6 @@ BOOST_AUTO_TEST_CASE( constructor )
 {
 	/// \todo we don't have any functions that can do constructor testing
 }
+
+
+BOOST_AUTO_TEST_SUITE_END()

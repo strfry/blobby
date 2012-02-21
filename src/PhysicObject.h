@@ -5,6 +5,7 @@
 #include <vector>
 
 class PhysicWall;
+class PhysicWorld;
 
 class PhysicObject
 {
@@ -45,17 +46,22 @@ class PhysicObject
 		const std::string& getDebugName() const;
 		void setRadius(float rad);
 		float getRadius() const;
+		void setWorld(PhysicWorld* world);
+		PhysicWorld* getWorld() const;
 		
 		void addWall(PhysicWall* pw);
 		
 	private:
+		// motion state
 		Vector2 mPosition;
 		Vector2 mVelocity;
 		Vector2 mAcceleration;
 		
+		// object geometry/properties
 		float mRadius;
-		
-		std::vector<PhysicWall*> mWalls;
-		
 		std::string mDebugName;
+		
+		// physical surrounding
+		std::vector<PhysicWall*> mWalls;
+		PhysicWorld* mConnectedWorld;
 };

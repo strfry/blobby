@@ -41,26 +41,10 @@ DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput,
 
 	mBallDown = false;
 
-	mPhysicWorld.resetPlayer();
 	mPhysicWorld.step();
 
 	/// \todo we better pass this as a parameter so DuelMatch has no coupeling with UserConfigs...s
 	mLogic->setScoreToWin(IUserConfigReader::createUserConfigReader("config.xml")->getInteger("scoretowin"));
-}
-
-void DuelMatch::reset()
-{
-	mPhysicWorld = PhysicWorld();
-	mLogic = createGameLogic("rules.lua");
-	
-	mBallDown = false;
-
-	mPhysicWorld.resetPlayer();
-	mPhysicWorld.step();
-	
-	UserConfig gameConfig;
-	gameConfig.loadFile("config.xml");
-	mLogic->setScoreToWin(gameConfig.getInteger("scoretowin"));
 }
 
 DuelMatch::~DuelMatch()
@@ -138,7 +122,9 @@ void DuelMatch::step()
 			events &= ~EVENT_ERROR_LEFT;
 			events |= EVENT_ERROR_RIGHT;
 			if (!(events & EVENT_BALL_HIT_GROUND))
-				mPhysicWorld.dampBall();
+			{
+				mPhysicWorld.getBallReference().setVelocity( getBallVelocity() * 0.6);
+			}
 			
 			// now, the ball is not valid anymore
 			mPhysicWorld.setBallValidity(0);
@@ -255,7 +241,7 @@ PlayerSide DuelMatch::getServingPlayer() const
 
 void DuelMatch::setState(RakNet::BitStream* stream)
 {
-	mPhysicWorld.setState(stream);
+	//mPhysicWorld.setState(stream);
 }
 
 const PlayerInput* DuelMatch::getPlayersInput() const

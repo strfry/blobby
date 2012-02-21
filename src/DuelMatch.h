@@ -58,8 +58,6 @@ public:
 	// interactive input. Note this can return 0.
 	static DuelMatch* getMainGame();
 	
-	void reset();
-
 	// This steps through one frame
 	void step();
 	

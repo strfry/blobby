@@ -116,7 +116,9 @@ bool ReplayPlayer::gotoPlayingPosition(int rep_position, DuelMatch* virtual_matc
 	if(rep_position < mPosition)
 	{
 		// reset the match and simulate from start!
-		virtual_match->reset(/*mReplayPlayer->getServingPlayer()*/);
+		/// \todo we need to rework this code!
+		DuelMatch nm (0,0,false,false);
+		(*virtual_match) = nm;
 		mPosition = 0;
 	}
 	

@@ -4,13 +4,15 @@
 
 PhysicWorld::PhysicWorld()
 {
+	mWalls.push_back(new PhysicWall(PhysicWall::HORIZONTAL, 500));
+	
 	mObjects.resize(3);
 	mObjects[0].setDebugName("Left Blobby");
 	mObjects[0].setPosition( Vector2(200, 400) );
 	mObjects[0].setAcceleration( Vector2(0, GRAVITATION) );
 	mObjects[0].setRadius( BALL_RADIUS );
 	
-	mObjects[0].addWall(new PhysicWall(PhysicWall::HORIZONTAL, 500));
+	mObjects[0].addWall(mWalls[0]);
 	mObjects[0].addWall(new PhysicWall(PhysicWall::VERTICAL, 400));
 	mObjects[0].addWall(new PhysicWall(PhysicWall::VERTICAL, 0));
 	
@@ -19,7 +21,7 @@ PhysicWorld::PhysicWorld()
 	mObjects[1].setAcceleration( Vector2(0, GRAVITATION) );
 	mObjects[1].setRadius( BALL_RADIUS );
 	
-	mObjects[1].addWall(new PhysicWall(PhysicWall::HORIZONTAL, 500));
+	mObjects[1].addWall(mWalls[0]);
 	mObjects[1].addWall(new PhysicWall(PhysicWall::VERTICAL, 400));
 	mObjects[1].addWall(new PhysicWall(PhysicWall::VERTICAL, 800));
 	
@@ -31,14 +33,17 @@ PhysicWorld::PhysicWorld()
 	mObjects[2].setVelocity( Vector2(10, -2) );
 	mObjects[2].setRadius( BALL_RADIUS );
 	
-	mObjects[2].addWall(new PhysicWall(PhysicWall::HORIZONTAL, 500));
+	mObjects[2].addWall(mWalls[0]);
 	mObjects[2].addWall(new PhysicWall(PhysicWall::VERTICAL, 800));
 	mObjects[2].addWall(new PhysicWall(PhysicWall::VERTICAL, 0));
 }
 
 PhysicWorld::~PhysicWorld()
 {
-	
+	for(int i=0; i < mWalls.size(); ++i)
+	{
+		delete mWalls[i];
+	}
 }
 
 void PhysicWorld::step() 
@@ -50,6 +55,11 @@ void PhysicWorld::step()
 }
 
 const PhysicObject& PhysicWorld::getBall() const
+{
+	return mObjects[2];
+}
+
+PhysicObject& PhysicWorld::getBallReference()
 {
 	return mObjects[2];
 }
@@ -153,18 +163,6 @@ bool PhysicWorld::roundFinished() const
 // This resets everything to the starting situation and
 // wants to know, which player begins.
 void PhysicWorld::reset(PlayerSide player)
-{
-	
-}
-
-// This resets the player to their starting positions
-void PhysicWorld::resetPlayer()
-{
-	
-}
-
-// For reducing ball speed after rule violation
-void PhysicWorld::dampBall()
 {
 	
 }

@@ -22,6 +22,7 @@ class PhysicWorld
 		void step();
 		
 		const PhysicObject& getBall() const;
+		PhysicObject& getBallReference();
 		const PhysicObject& getBlob(PlayerSide player) const;
 		
 		// ------------------
@@ -67,12 +68,6 @@ class PhysicWorld
 		// wants to know, which player begins.
 		void reset(PlayerSide player);
 
-		// This resets the player to their starting positions
-		void resetPlayer();
-
-		// For reducing ball speed after rule violation
-		void dampBall();
-
 		// Set a new state received from server over a RakNet BitStream
 		void setState(RakNet::BitStream* stream);
 
@@ -83,5 +78,6 @@ class PhysicWorld
 		void getSwappedState(RakNet::BitStream* stream) const;
 	private:
 		std::vector<PhysicObject> mObjects;
+		std::vector<PhysicWall*> mWalls;
 };
 

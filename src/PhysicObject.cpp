@@ -62,6 +62,16 @@ float PhysicObject::getRadius() const
 	return mRadius;
 }
 
+void PhysicObject::setWorld(PhysicWorld* world)
+{
+	mConnectedWorld = world;
+}
+
+PhysicWorld* PhysicObject::getWorld() const
+{
+	return mConnectedWorld;	
+}
+
 void PhysicObject::addWall(PhysicWall* pw)
 {
 	mWalls.push_back(pw);
