@@ -1,11 +1,14 @@
 #include "PhysicObject.h"
+#include "PhysicWall.h"
 
 PhysicObject::PhysicObject(const Vector2& p, const Vector2& v):
 	mPosition(p),
 	mVelocity(v)
 {
-	
 }
+
+// ----------------------------
+// motion state getters/setters
 
 void PhysicObject::setPosition(const Vector2& np)
 {
@@ -37,6 +40,9 @@ const Vector2& PhysicObject::getAcceleration() const
 	return mAcceleration;
 }
 
+// ---------------------------------
+
+
 Vector2& PhysicObject::getPosition()
 {
 	return mPosition;
@@ -57,6 +63,16 @@ const std::string& PhysicObject::getDebugName() const
 	return mDebugName;
 }
 
+void PhysicObject::setRadius(float rad)
+{
+	mRadius = rad;
+}
+
+float PhysicObject::getRadius() const
+{
+	return mRadius;
+}
+
 void PhysicObject::addWall(PhysicWall* pw)
 {
 	mWalls.push_back(pw);
@@ -66,4 +82,13 @@ void PhysicObject::step()
 {
 	mPosition += mVelocity + mAcceleration / 2;
 	mVelocity += mAcceleration;
+	
+	// now, check for collisions with walls
+	for(int i = 0; i < mWalls.size(); ++i)
+	{
+		if(mWalls[i]->hitTest(mPosition, mRadius))
+		{
+			mVelocity = mVelocity.reflect(mWalls[i]->getNormal());
+		}
+	}
 }

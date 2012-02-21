@@ -2,7 +2,7 @@
 
 #include "Vector.h"
 #include <cmath>
-
+#include <iostream>
 class PhysicWall
 {
 	public:
@@ -13,30 +13,10 @@ class PhysicWall
 			VERTICAL
 		};
 		
-		PhysicWall(Orientation o, float position, float min = -100000, float max = 1000000) : 
-				mOrientation(o), 
-				mPosition(position), 
-				mMinBoundary(min),
-				mMaxBoundary(max)
-		{
-			
-		}
+		PhysicWall(Orientation o, float position, float min = -100000, float max = 1000000);
 	
-		bool hitTest(const Vector2& center, float radius)
-		{
-			float tp = (mOrientation == HORIZONTAL) ? center.x : center.y;
-			float sp = (mOrientation == HORIZONTAL) ? center.y : center.x;
-			
-			if( std::abs(tp - mPosition) < radius )
-			{
-				if( sp > mMinBoundary && sp < mMaxBoundary)
-				{
-					return true;
-				}
-			}
-			
-			return false;
-		}
+		bool hitTest(const Vector2& center, float radius) const;
+		Vector2 getNormal() const;
 		
 	private:
 		

@@ -20,13 +20,24 @@ class PhysicObject
 		/// \post getAcceleration() = (0,0)
 		PhysicObject(const Vector2& p, const Vector2& v);
 	
+		// ----------------------------
+		// motion state getters/setters
+		
+		/// sets position
 		void setPosition(const Vector2& np);
+		/// sets velocity
 		void setVelocity(const Vector2& nv);
+		/// sets acceleration
 		void setAcceleration( const Vector2& na);
-	
+		
+		/// gets current position
 		const Vector2& getPosition() const;
+		/// gets current velocity
 		const Vector2& getVelocity() const;
+		/// gets current acceleration
 		const Vector2& getAcceleration() const;
+		
+		// -----------------------------
 		
 		/// \depreciated
 		Vector2& getPosition();
@@ -36,6 +47,8 @@ class PhysicObject
 		
 		void setDebugName(const std::string& name);
 		const std::string& getDebugName() const;
+		void setRadius(float rad);
+		float getRadius() const;
 		
 		void addWall(PhysicWall* pw);
 		
@@ -44,7 +57,7 @@ class PhysicObject
 		Vector2 mVelocity;
 		Vector2 mAcceleration;
 		
-		float radius;
+		float mRadius;
 		
 		std::vector<PhysicWall*> mWalls;
 		

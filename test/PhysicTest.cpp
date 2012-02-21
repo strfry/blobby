@@ -16,6 +16,10 @@ Vector2 getRandVec()
 }
 
 
+// ****************************************************************************
+// ***			V e c t o r 2 D  -  T e s t									***
+// ****************************************************************************
+
 BOOST_AUTO_TEST_SUITE( vector )
 
 BOOST_AUTO_TEST_CASE( constructor )
@@ -46,6 +50,15 @@ BOOST_AUTO_TEST_CASE( constructor )
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+
+
+
+
+// ****************************************************************************
+// ***		P h y s i c  -  O b j e c t   T e s t							***
+// ****************************************************************************
+
 
 
 BOOST_AUTO_TEST_SUITE( physic_object )
@@ -119,5 +132,42 @@ BOOST_AUTO_TEST_CASE( linear_motion )
 	BOOST_CHECK_EQUAL(po.getVelocity(), velocity);
 }
 
+/// this test checks that velocity does not change when acceleration is 0
+BOOST_AUTO_TEST_CASE( accelerated_motion )
+{
+	Vector2 position = getRandVec();
+	Vector2 velocity = getRandVec();
+	Vector2 acceleration = getRandVec();
+	PhysicObject po = PhysicObject(position, velocity);
+	po.setAcceleration(acceleration);
+	
+	for(int i=0; i < 10; ++i)
+	{
+		po.step();
+	}
+	
+	BOOST_CHECK_EQUAL(po.getPosition(), position + velocity * 10 + acceleration/2 * 10*10);
+	BOOST_CHECK_EQUAL(po.getVelocity(), velocity + acceleration * 10);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
+
+
+
+
+
+// ****************************************************************************
+// ***		P h y s i c  -  W a l l   T e s t								***
+// ****************************************************************************
+
+
+
+BOOST_AUTO_TEST_SUITE( physic_wall )
+
+/// this check tests whether the constructor sets all values
+/// as desired
+BOOST_AUTO_TEST_CASE( constructor )
+{
+	/// \todo we don't have any functions that can do constructor testing
+}
