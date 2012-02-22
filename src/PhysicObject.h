@@ -1,10 +1,11 @@
 #pragma once
 
 #include "Vector.h"
+#include "PhysicCollisionShape.h"
 #include <string>
 #include <vector>
+#include <boost/shared_ptr.hpp>
 
-class PhysicWall;
 class PhysicWorld;
 
 class PhysicObject
@@ -40,17 +41,30 @@ class PhysicObject
 		
 		// -----------------------------
 		
-		void step();
+		// shape
+		void addCollisionShape( boost::shared_ptr<ICollisionShape> newshape );
+		void clearCollisionShapes();
+		int getCollisionShapeCount() const;
+		boost::weak_ptr<const ICollisionShape> getCollisionShape(int i) const; 
+		
+		AABBox getBoundingBox() const;
+		
+		void step(float time = 1.f);
 		
 		void setDebugName(const std::string& name);
 		const std::string& getDebugName() const;
-		void setRadius(float rad);
-		float getRadius() const;
 		void setWorld(PhysicWorld* world);
 		PhysicWorld* getWorld() const;
 		
-		void addWall(PhysicWall* pw);
+		struct MotionState
+		{
+			Vector2 pos;
+			Vector2 vel;
+			const PhysicObject* object;
+		};
 		
+		MotionState getMotionState() const;
+		MotionState getPredictedMotionState(float time = 1) const;
 	private:
 		// motion state
 		Vector2 mPosition;
@@ -58,10 +72,11 @@ class PhysicObject
 		Vector2 mAcceleration;
 		
 		// object geometry/properties
-		float mRadius;
+		std::vector<boost::shared_ptr<ICollisionShape>> mCollisionShapes;
+		AABBox mBoundingBox;
+		
 		std::string mDebugName;
 		
-		// physical surrounding
-		std::vector<PhysicWall*> mWalls;
+		// world this object is in
 		PhysicWorld* mConnectedWorld;
 };

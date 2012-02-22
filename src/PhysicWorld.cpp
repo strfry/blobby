@@ -1,56 +1,99 @@
 #include "PhysicWorld.h"
 #include "PhysicWall.h"
+#include "CollisionDetector.h"
 #include "GameConstants.h"
+
+#include <algorithm>
+#include <iostream>
 
 PhysicWorld::PhysicWorld()
 {
-	mWalls.push_back(new PhysicWall(PhysicWall::HORIZONTAL, 500));
-	
 	mObjects.resize(3);
 	mObjects[0].setDebugName("Left Blobby");
-	mObjects[0].setPosition( Vector2(200, 400) );
-	mObjects[0].setAcceleration( Vector2(0, GRAVITATION) );
-	mObjects[0].setRadius( BALL_RADIUS );
-	
-	mObjects[0].addWall(mWalls[0]);
-	mObjects[0].addWall(new PhysicWall(PhysicWall::VERTICAL, 400));
-	mObjects[0].addWall(new PhysicWall(PhysicWall::VERTICAL, 0));
-	
-	mObjects[1].setDebugName("Right Blobby");
+	mObjects[0].setPosition( Vector2(200, 300) );
+	mObjects[0].setAcceleration( Vector2(0, 0*GRAVITATION) );
+	mObjects[0].setVelocity( Vector2(5, 0) );
+	boost::shared_ptr<ICollisionShape> body (new CollisionShapeSphere(BLOBBY_LOWER_RADIUS, Vector2(0, BLOBBY_LOWER_SPHERE)));	
+	boost::shared_ptr<ICollisionShape> head (new CollisionShapeSphere(BLOBBY_UPPER_RADIUS, Vector2(0, -BLOBBY_UPPER_SPHERE)));	
+	mObjects[0].addCollisionShape( body );
+	mObjects[0].addCollisionShape( head );
+	/*
+	mObjects[0].addWall(mWalls[0], IWallHitHandler::createDampedReflectionHitHandler(0));
+	mObjects[0].addWall(new PhysicWall(PhysicWall::VERTICAL, 400), IWallHitHandler::createDampedReflectionHitHandler(0));
+	mObjects[0].addWall(new PhysicWall(PhysicWall::VERTICAL, 0), IWallHitHandler::createDampedReflectionHitHandler(0));
+	*/
+/*	mObjects[1].setDebugName("Right Blobby");
 	mObjects[1].setPosition( Vector2(600, 400) );
-	mObjects[1].setAcceleration( Vector2(0, GRAVITATION) );
-	mObjects[1].setRadius( BALL_RADIUS );
-	
-	mObjects[1].addWall(mWalls[0]);
-	mObjects[1].addWall(new PhysicWall(PhysicWall::VERTICAL, 400));
-	mObjects[1].addWall(new PhysicWall(PhysicWall::VERTICAL, 800));
-	
-	
-	
+	mObjects[1].setVelocity( Vector2(3, 2) );
+	mObjects[1].setAcceleration( Vector2(0, GRAVITATION) );	
+	mObjects[1].addCollisionShape( body );
+	mObjects[1].addCollisionShape( head );
+	*/
 	mObjects[2].setDebugName("Ball");
-	mObjects[2].setPosition( Vector2(400, 300) );
-	mObjects[2].setAcceleration( Vector2(0, BALL_GRAVITATION) );
-	mObjects[2].setVelocity( Vector2(10, -2) );
-	mObjects[2].setRadius( BALL_RADIUS );
-	
-	mObjects[2].addWall(mWalls[0]);
-	mObjects[2].addWall(new PhysicWall(PhysicWall::VERTICAL, 800));
-	mObjects[2].addWall(new PhysicWall(PhysicWall::VERTICAL, 0));
+	mObjects[2].setPosition( Vector2(300, 300) );
+	mObjects[2].setAcceleration( Vector2(0, 0*BALL_GRAVITATION) );
+	mObjects[2].setVelocity( Vector2(3, 0) );
+	boost::shared_ptr<ICollisionShape> sp2 (new CollisionShapeSphere(BALL_RADIUS));
+	mObjects[2].addCollisionShape( sp2 );
 }
 
 PhysicWorld::~PhysicWorld()
 {
-	for(int i=0; i < mWalls.size(); ++i)
-	{
-		delete mWalls[i];
-	}
 }
 
 void PhysicWorld::step() 
 {
-	for(int i=0; i < mObjects.size(); ++i)
+	static CollisionDetector collisionDetector;
+
+	// at first, do some broadphase collision detection:
+	//  we determine all pairs of objects that will intersec if the objects move without interacting
+	//  with each other.
+	
+	float curtime = 0;
+	
+	BroadphaseCollisonArray col_candidates = collisionDetector.getCollisionEventsBroadphase(mObjects);
+	
+	if(!col_candidates.empty())
 	{
-		mObjects[i].step();	
+		// now we've got an array of possible collision pairs. Now we need some more precise checks.
+		// we want to determine in which order the collisions happen and when exactly the will occur.
+		// with that information, we are able to sort the collision events
+
+		std::vector<TimedCollisionEvent> timed_hits;
+		for(auto i = col_candidates.begin(); i != col_candidates.end(); ++i)
+		{
+			TimedCollisionEvent evt = collisionDetector.checkCollision(*i);
+			// if its real
+			if(evt.first) 
+			{
+				timed_hits.push_back(evt);
+			}
+		}
+
+		std::sort(timed_hits.begin(), timed_hits.end());
+
+		// now we have the hit events in chronological order.
+		// let's handle them.
+		
+		for(auto i = timed_hits.begin(); i != timed_hits.end(); ++i)
+		{
+			// simulate 
+			for(auto j = mObjects.begin(); j != mObjects.end(); ++j)
+			{
+				j->step(i->time - curtime);
+			}
+			std::cout << i->time << "\n";
+			const_cast<PhysicObject*>(i->first)->setVelocity( Vector2(0,0) );
+			const_cast<PhysicObject*>(i->second)->setVelocity( Vector2(0,0) );
+			const_cast<PhysicObject*>(i->first)->setAcceleration( Vector2(0,0) );
+			const_cast<PhysicObject*>(i->second)->setAcceleration( Vector2(0,0) );
+			std::cout << "IMPACT\n";
+		}
+	}
+	
+	for(auto i = mObjects.begin(); i != mObjects.end(); ++i)
+	{
+		i->step(1 - curtime);
 	}
 }
 

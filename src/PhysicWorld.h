@@ -78,6 +78,5 @@ class PhysicWorld
 		void getSwappedState(RakNet::BitStream* stream) const;
 	private:
 		std::vector<PhysicObject> mObjects;
-		std::vector<PhysicWall*> mWalls;
 };
 

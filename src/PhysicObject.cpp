@@ -1,5 +1,6 @@
 #include "PhysicObject.h"
-#include "PhysicWall.h"
+#include <boost/weak_ptr.hpp>
+#include <iostream>
 
 PhysicObject::PhysicObject(const Vector2& p, const Vector2& v):
 	mPosition(p),
@@ -52,16 +53,6 @@ const std::string& PhysicObject::getDebugName() const
 	return mDebugName;
 }
 
-void PhysicObject::setRadius(float rad)
-{
-	mRadius = rad;
-}
-
-float PhysicObject::getRadius() const
-{
-	return mRadius;
-}
-
 void PhysicObject::setWorld(PhysicWorld* world)
 {
 	mConnectedWorld = world;
@@ -72,22 +63,65 @@ PhysicWorld* PhysicObject::getWorld() const
 	return mConnectedWorld;	
 }
 
-void PhysicObject::addWall(PhysicWall* pw)
+void PhysicObject::addCollisionShape( boost::shared_ptr<ICollisionShape> newshape )
 {
-	mWalls.push_back(pw);
+	mCollisionShapes.push_back(newshape);
+	mBoundingBox.merge(newshape->getBoundingBox());
 }
 
-void PhysicObject::step()
+void PhysicObject::clearCollisionShapes()
 {
-	mPosition += mVelocity + mAcceleration / 2;
-	mVelocity += mAcceleration;
+	mCollisionShapes.clear();
+	mBoundingBox.clear();
+}
+
+int PhysicObject::getCollisionShapeCount() const
+{
+	return mCollisionShapes.size();
+}
+
+boost::weak_ptr<const ICollisionShape> PhysicObject::getCollisionShape(int i) const
+{
+	return mCollisionShapes[i];
+}
+
+AABBox PhysicObject::getBoundingBox() const
+{
+	return mBoundingBox;
+}
+
+PhysicObject::MotionState PhysicObject::getMotionState() const
+{
+	return MotionState{mPosition, mVelocity, this};
+}
+
+PhysicObject::MotionState PhysicObject::getPredictedMotionState(float time) const
+{
+	return MotionState{mPosition + mVelocity * time + mAcceleration / 2 * time * time, mVelocity + mAcceleration * time, this};
+}
+
+void PhysicObject::step(float time)
+{
+	mPosition += mVelocity * time + mAcceleration / 2 * time * time;
+	mVelocity += mAcceleration * time;
+	
+	if(mPosition.x < 0 || mPosition.x > 800 )
+	{
+		mVelocity.x *= -1;
+	}
+	if(mPosition.y > 500)
+	{
+		mVelocity.y *= -1;
+	}
+	/*
+	HitData hitInfo;
 	
 	// now, check for collisions with walls
 	for(int i = 0; i < mWalls.size(); ++i)
 	{
-		if(mWalls[i]->hitTest(mPosition, mRadius))
+		if(mWalls[i].wall->hitTest(mPosition, mVelocity, mRadius, hitInfo))
 		{
-			mVelocity = mVelocity.reflect(mWalls[i]->getNormal());
+			mWalls[i].handler->onHit(*this, *mWalls[i].wall, hitInfo);
 		}
-	}
+	}*/
 }
