@@ -91,6 +91,15 @@ AABBox PhysicObject::getBoundingBox() const
 	return mBoundingBox;
 }
 
+void PhysicObject::setCollisionType(unsigned int ct)
+{
+	mCollisionType = ct;
+}
+unsigned int PhysicObject::getCollisionType() const
+{
+	return mCollisionType;
+}
+
 PhysicObject::MotionState PhysicObject::getMotionState() const
 {
 	return MotionState{mPosition, mVelocity, this};
@@ -106,23 +115,13 @@ void PhysicObject::step(float time)
 	mPosition += mVelocity * time + mAcceleration / 2 * time * time;
 	mVelocity += mAcceleration * time;
 	
-	/*if(mPosition.x < 0 || mPosition.x > 800 )
+	if(mPosition.x < 0 || mPosition.x > 800 )
 	{
 		mVelocity.x *= -1;
 	}
 	if(mPosition.y > 500)
 	{
 		mVelocity.y *= -1;
-	}*/
-	/*
-	HitData hitInfo;
-	
-	// now, check for collisions with walls
-	for(int i = 0; i < mWalls.size(); ++i)
-	{
-		if(mWalls[i].wall->hitTest(mPosition, mVelocity, mRadius, hitInfo))
-		{
-			mWalls[i].handler->onHit(*this, *mWalls[i].wall, hitInfo);
-		}
-	}*/
+		mPosition.y = 500;
+	}
 }

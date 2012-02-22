@@ -68,6 +68,11 @@ TimedCollisionEvent CollisionDetector::checkCollision(BroadphaseCollisionEvent b
 					std::cout << (	stateone.pos + sphere1->getRelativePosition() - 
 						statetwo.pos - sphere2->getRelativePosition()		).length() << "\n";
 					std::cout << sphere1->getRadius() + sphere2->getRadius() << "\n";
+					
+					// now, ensure that one and two are correctly ordered
+					if( one->getCollisionType() > two->getCollisionType() ) 
+						std::swap(one, two);
+					
 					return TimedCollisionEvent{one, two, substep / 16.f};
 				}
 			}

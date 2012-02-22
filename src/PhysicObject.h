@@ -56,6 +56,9 @@ class PhysicObject
 		/// gets the debug name of this object
 		const std::string& getDebugName() const;
 		
+		void setCollisionType(unsigned int ct);
+		unsigned int getCollisionType() const;
+		
 		/// sets the world this object is in
 		/// \todo do we really want the world to change for any given
 		/// object. i guess not. So we have to do sth. so that world can 
@@ -92,6 +95,7 @@ class PhysicObject
 		Vector2 mAcceleration;
 		
 		// object geometry/properties
+		unsigned int mCollisionType;
 		std::vector<boost::shared_ptr<ICollisionShape>> mCollisionShapes;
 		AABBox mBoundingBox;
 		

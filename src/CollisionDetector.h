@@ -7,6 +7,7 @@
 typedef std::pair<const PhysicObject*, const PhysicObject*> BroadphaseCollisionEvent;
 typedef std::vector<BroadphaseCollisionEvent> BroadphaseCollisonArray;
 
+/// guarantees that first->getCollisionType() <= second->getCollisionType()
 struct TimedCollisionEvent
 {
 	// the objects

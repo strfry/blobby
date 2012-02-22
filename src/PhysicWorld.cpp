@@ -16,24 +16,23 @@ PhysicWorld::PhysicWorld()
 	boost::shared_ptr<ICollisionShape> head (new CollisionShapeSphere(BLOBBY_UPPER_RADIUS, Vector2(0, -BLOBBY_UPPER_SPHERE)));	
 	mObjects[0].addCollisionShape( body );
 	mObjects[0].addCollisionShape( head );
-	/*
-	mObjects[0].addWall(mWalls[0], IWallHitHandler::createDampedReflectionHitHandler(0));
-	mObjects[0].addWall(new PhysicWall(PhysicWall::VERTICAL, 400), IWallHitHandler::createDampedReflectionHitHandler(0));
-	mObjects[0].addWall(new PhysicWall(PhysicWall::VERTICAL, 0), IWallHitHandler::createDampedReflectionHitHandler(0));
-	*/
-/*	mObjects[1].setDebugName("Right Blobby");
+	mObjects[0].setCollisionType(1);
+	
+	mObjects[1].setDebugName("Right Blobby");
 	mObjects[1].setPosition( Vector2(600, 400) );
-	mObjects[1].setVelocity( Vector2(3, 2) );
+	mObjects[1].setVelocity( Vector2(3, -4) );
 	mObjects[1].setAcceleration( Vector2(0, GRAVITATION) );	
 	mObjects[1].addCollisionShape( body );
 	mObjects[1].addCollisionShape( head );
-	*/
+	mObjects[1].setCollisionType(1);
+	
 	mObjects[2].setDebugName("Ball");
 	mObjects[2].setPosition( Vector2(300, 300) );
 	mObjects[2].setAcceleration( Vector2(0, 0*BALL_GRAVITATION) );
-	mObjects[2].setVelocity( Vector2(3, 0) );
+	mObjects[2].setVelocity( Vector2(0, 0) );
 	boost::shared_ptr<ICollisionShape> sp2 (new CollisionShapeSphere(BALL_RADIUS));
 	mObjects[2].addCollisionShape( sp2 );
+	mObjects[2].setCollisionType(2);
 }
 
 PhysicWorld::~PhysicWorld()
@@ -81,13 +80,16 @@ void PhysicWorld::step()
 			{
 				j->step(i->time - curtime);
 			}
+			
+			// no we need to do the corresponding collision response handler
+			
 			std::cout << i->time << "\n";
-			const_cast<PhysicObject*>(i->first)->setVelocity( Vector2(0,0) );
-			const_cast<PhysicObject*>(i->second)->setVelocity( Vector2(0,0) );
-			const_cast<PhysicObject*>(i->first)->setAcceleration( Vector2(0,0) );
-			const_cast<PhysicObject*>(i->second)->setAcceleration( Vector2(0,0) );
-			std::cout << "IMPACT\n";
-			system("pause");
+			//const_cast<PhysicObject*>(i->second)->setVelocity( -i->second->getVelocity() );
+			if(i->second->getCollisionType() == 2) {
+				const_cast<PhysicObject*>(i->second)->setVelocity( Vector2(13,0) );
+			}
+			//const_cast<PhysicObject*>(i->first)->setAcceleration( Vector2(0,0) );
+			//const_cast<PhysicObject*>(i->second)->setAcceleration( Vector2(0,0) );
 		}
 	}
 	
