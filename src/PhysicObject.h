@@ -51,20 +51,40 @@ class PhysicObject
 		
 		void step(float time = 1.f);
 		
+		/// assigns a debug name to this object
 		void setDebugName(const std::string& name);
+		/// gets the debug name of this object
 		const std::string& getDebugName() const;
-		void setWorld(PhysicWorld* world);
-		PhysicWorld* getWorld() const;
+		
+		/// sets the world this object is in
+		/// \todo do we really want the world to change for any given
+		/// object. i guess not. So we have to do sth. so that world can 
+		///	be set only once.
+		void setWorld(const PhysicWorld* world);
+		
+		/// gets the world associated with this physic object
+		const PhysicWorld* getWorld() const;
 		
 		struct MotionState
 		{
 			Vector2 pos;
 			Vector2 vel;
 			const PhysicObject* object;
+			
+			bool operator==(const MotionState& other) const 
+			{
+				return pos == other.pos && vel== other.vel;// && object == other.object;
+			}
 		};
 		
+		/// returns a motion state for the object.
+		/// contains the current position and velocity
 		MotionState getMotionState() const;
+		
+		/// returns a prediction of the motion state after given time
+		/// fulfills: getPredictedMotionState(t) = (this->step(t), this->getMotionState());
 		MotionState getPredictedMotionState(float time = 1) const;
+		
 	private:
 		// motion state
 		Vector2 mPosition;
@@ -78,5 +98,5 @@ class PhysicObject
 		std::string mDebugName;
 		
 		// world this object is in
-		PhysicWorld* mConnectedWorld;
+		const PhysicWorld* mConnectedWorld;
 };

@@ -107,7 +107,7 @@ class CollisionShapeSphere : public ICollisionShape
 	
 		virtual AABBox getBoundingBox() const 
 		{
-			return AABBox(getRelativePosition(), mRadius, mRadius);
+			return AABBox(getRelativePosition(), 2*mRadius, 2*mRadius);
 		}
 		
 		virtual bool isPointInside(Vector2 point) const 

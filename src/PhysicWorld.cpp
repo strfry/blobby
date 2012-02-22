@@ -1,5 +1,4 @@
 #include "PhysicWorld.h"
-#include "PhysicWall.h"
 #include "CollisionDetector.h"
 #include "GameConstants.h"
 
@@ -88,6 +87,7 @@ void PhysicWorld::step()
 			const_cast<PhysicObject*>(i->first)->setAcceleration( Vector2(0,0) );
 			const_cast<PhysicObject*>(i->second)->setAcceleration( Vector2(0,0) );
 			std::cout << "IMPACT\n";
+			system("pause");
 		}
 	}
 	

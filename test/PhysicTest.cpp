@@ -2,15 +2,22 @@
 #include <boost/test/unit_test.hpp>
 
 #include <iostream>
+#include <iomanip>
 #include "PhysicObject.h"
 #include "PhysicWorld.h"
-#include "PhysicWall.h"
 
 std::ostream& operator<<(std::ostream& stream, const Vector2& vector)
 {
 	stream << "(" << vector.x << ", " << vector.y << ")";
 	return stream;
 }
+
+std::ostream& operator<<(std::ostream& stream, const PhysicObject::MotionState& ms)
+{
+	stream << ms.object->getDebugName() << " [" << ms.pos << ", " << ms.vel << "]";
+	return stream;
+}
+
 
 Vector2 getRandVec() 
 {
@@ -120,10 +127,6 @@ BOOST_AUTO_TEST_CASE( get_set_round_trip )
 	po.setDebugName("name_test");
 	BOOST_CHECK_EQUAL(po.getDebugName(), "name_test");
 	
-	float radius = rand() % 101 - 50;
-	po.setRadius(radius);
-	BOOST_CHECK_EQUAL(po.getRadius(), radius);
-	
 	PhysicWorld w;
 	po.setWorld(&w);
 	BOOST_CHECK_EQUAL(po.getWorld(), &w);
@@ -179,47 +182,78 @@ BOOST_AUTO_TEST_CASE( accelerated_motion )
 }
 
 
-BOOST_AUTO_TEST_SUITE_END()
-
-
-
-
-
-// ****************************************************************************
-// ***		P h y s i c  -  W a l l   T e s t								***
-// ****************************************************************************
-
-
-
-BOOST_AUTO_TEST_SUITE( physic_wall )
-
-/// this check tests whether the constructor sets all values
-/// as desired
-BOOST_AUTO_TEST_CASE( constructor )
+// Motion State
+/// tests that a motion state contains the right values
+BOOST_AUTO_TEST_CASE( motion_state )
 {
-	/// \todo we don't have any functions that can do constructor testing
-}
-
-/// this test tests a simple wall collision
-BOOST_AUTO_TEST_CASE( simple_collision )
-{
-	PhysicWall wall = PhysicWall(PhysicWall::HORIZONTAL, 500);
-	PhysicObject ob = PhysicObject(Vector2(0,0), Vector2(0, 30));
+	Vector2 position = getRandVec();
+	Vector2 velocity = getRandVec();
+	Vector2 acceleration = getRandVec();
+	PhysicObject po = PhysicObject(position, velocity);
+	po.setAcceleration(acceleration);
 	
-	ob.setRadius(20);
-	ob.addWall(&wall);
-	
-	for(int i = 0; i < 50; ++i )
+	for(int i=0; i < 10; ++i)
 	{
-		ob.step();
-		if(ob.getPosition().y > 480)
-		{
-			std::cout << "position " << i << " " << ob.getPosition().y << std::endl;
-		}
-		BOOST_CHECK(ob.getPosition().y <= 480);
-		
+		po.step();
 	}
+	
+	BOOST_CHECK_EQUAL(po.getMotionState().pos, po.getPosition());
+	BOOST_CHECK_EQUAL(po.getMotionState().vel, po.getVelocity());
 }
 
 
+/// tests that the motion state prediction is equivalent to calling step if 
+/// no interactions with other objects happen
+BOOST_AUTO_TEST_CASE( motion_state_prediction )
+{
+	Vector2 position = getRandVec();
+	Vector2 velocity = getRandVec();
+	Vector2 acceleration = getRandVec();
+	PhysicObject po = PhysicObject(position, velocity);
+	po.setAcceleration(acceleration);
+	
+	PhysicObject::MotionState future = po.getPredictedMotionState();
+	po.step();
+	
+	BOOST_CHECK_EQUAL(po.getMotionState(), future);
+}
+
+// substeps
+/// 
+BOOST_AUTO_TEST_CASE( substep_linear_motion )
+{
+	Vector2 position = getRandVec() / 11.f + getRandVec();
+	Vector2 velocity = getRandVec() / 11.f;
+	PhysicObject po = PhysicObject(position, velocity);
+	PhysicObject ref = PhysicObject(position, velocity);
+	
+	for(int i=0; i < 75*10; ++i)
+	{
+		po.step(0.5f);
+		po.step(0.5f);
+		ref.step();
+	}
+	
+	std::cout <<  std::setprecision (50) << (po.getPosition() - ref.getPosition()) << "\n";;
+	
+	// currently, this test will always fail. we have to add a desired precision
+	BOOST_CHECK_EQUAL(po.getMotionState(), ref.getMotionState());
+
+	po = PhysicObject(position, velocity);
+	ref = PhysicObject(position, velocity);
+	
+	for(int i=0; i < 75*10; ++i)
+	{
+		for(int j=0; j < 16; ++j)
+		{
+			po.step(1.f/16);
+		}
+		ref.step();
+	}
+	
+	std::cout <<  std::setprecision (50) << (po.getPosition() - ref.getPosition()) << "\n";;
+	
+	// currently, this test will always fail. we have to add a desired precision
+	BOOST_CHECK_EQUAL(po.getMotionState(), ref.getMotionState());
+}
 BOOST_AUTO_TEST_SUITE_END()

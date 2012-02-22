@@ -4,7 +4,8 @@
 
 PhysicObject::PhysicObject(const Vector2& p, const Vector2& v):
 	mPosition(p),
-	mVelocity(v)
+	mVelocity(v),
+	mConnectedWorld(0)
 {
 }
 
@@ -53,12 +54,12 @@ const std::string& PhysicObject::getDebugName() const
 	return mDebugName;
 }
 
-void PhysicObject::setWorld(PhysicWorld* world)
+void PhysicObject::setWorld(const PhysicWorld* world)
 {
 	mConnectedWorld = world;
 }
 
-PhysicWorld* PhysicObject::getWorld() const
+const PhysicWorld* PhysicObject::getWorld() const
 {
 	return mConnectedWorld;	
 }
@@ -105,14 +106,14 @@ void PhysicObject::step(float time)
 	mPosition += mVelocity * time + mAcceleration / 2 * time * time;
 	mVelocity += mAcceleration * time;
 	
-	if(mPosition.x < 0 || mPosition.x > 800 )
+	/*if(mPosition.x < 0 || mPosition.x > 800 )
 	{
 		mVelocity.x *= -1;
 	}
 	if(mPosition.y > 500)
 	{
 		mVelocity.y *= -1;
-	}
+	}*/
 	/*
 	HitData hitInfo;
 	
