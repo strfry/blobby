@@ -72,6 +72,11 @@ void DuelMatch::step()
 		PhysicObject& blob = mPhysicWorld.getBlobReference(LEFT_PLAYER);
 		Vector2 vel = blob.getVelocity();
 		vel.x = mLeftInput->getInput().left ? -4.5 : 0 - mLeftInput->getInput().right ? 4.5 : 0;
+		
+		if(!getBlobJump(LEFT_PLAYER) && mLeftInput->getInput().up)
+		{
+			vel.y = -BLOBBY_JUMP_ACCELERATION;
+		}
 		blob.setVelocity(vel);
 	}
 	
@@ -80,6 +85,11 @@ void DuelMatch::step()
 		PhysicObject& blob = mPhysicWorld.getBlobReference(RIGHT_PLAYER);
 		Vector2 vel = blob.getVelocity();
 		vel.x = mRightInput->getInput().left ? -4.5 : 0 - mRightInput->getInput().right ? 4.5 : 0;
+		
+		if(!getBlobJump(RIGHT_PLAYER) && mRightInput->getInput().up)
+		{
+			vel.y = -BLOBBY_JUMP_ACCELERATION;
+		}
 		blob.setVelocity(vel);
 	}
 		
@@ -246,7 +256,9 @@ bool DuelMatch::getBallActive() const
 
 bool DuelMatch::getBlobJump(PlayerSide player) const
 {
-	return !mPhysicWorld.blobbyHitGround(player);
+	/// \todo replace with more stable algorithm
+	PhysicObject::MotionState state = mPhysicWorld.getBlob(player).getMotionState();
+	return !(state.vel.y == 0 && state.pos.y > GROUND_PLANE_HEIGHT - 2);
 }
 
 Vector2 DuelMatch::getBlobPosition(PlayerSide player) const

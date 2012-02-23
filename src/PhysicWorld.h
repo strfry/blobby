@@ -54,8 +54,6 @@ class PhysicWorld
 
 		float getBlobState(PlayerSide player) const;
 		float getBallRotation() const;
-		
-		bool blobbyHitGround(PlayerSide player) const;
 
 		// Blobby animation methods
 		void blobbyAnimationStep(PlayerSide player);

@@ -186,11 +186,6 @@ float PhysicWorld::getBallRotation() const
 	return 0;
 }
 
-bool PhysicWorld::blobbyHitGround(PlayerSide player) const
-{
-	return false;
-}
-
 // Blobby animation methods
 void PhysicWorld::blobbyAnimationStep(PlayerSide player)
 {
