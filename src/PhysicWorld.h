@@ -45,6 +45,9 @@ class PhysicWorld
 		
 		PhysicEvent getNextEvent();
 		
+		// callback
+		void constraintActiveCallback(const PhysicObject* object, const IPhysicConstraint* constraint);
+		
 		// ------------------
 		//  copied functions
 		// ------------------
@@ -55,11 +58,7 @@ class PhysicWorld
 
 		float getBlobState(PlayerSide player) const;
 		float getBallRotation() const;
-
-		// These functions tell about ball collisions for game logic and sound
-		bool ballHitLeftGround() const;
-		bool ballHitRightGround() const;
-
+		
 		bool blobbyHitGround(PlayerSide player) const;
 
 		// Blobby animation methods

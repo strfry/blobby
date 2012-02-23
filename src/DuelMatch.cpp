@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "UserConfig.h"
 
 #include <cassert>
+#include <iostream>
 
 DuelMatch* DuelMatch::mMainGame = 0;
 
@@ -102,22 +103,28 @@ void DuelMatch::step()
 				case PhysicEvent::PE_BALL_HIT_BLOBBY:
 					if(evt.position.x < 400) 
 					{
-						events |= mLogic->isCollisionValid(LEFT_PLAYER) & EVENT_LEFT_BLOBBY_HIT;
-					} else {
-						events |= mLogic->isCollisionValid(RIGHT_PLAYER) & EVENT_RIGHT_BLOBBY_HIT;
+						events |= ~(!mLogic->isCollisionValid(LEFT_PLAYER)) & EVENT_LEFT_BLOBBY_HIT;
+						std::cout << "LEFT BLOBBY BALL HIT" << mLogic->isCollisionValid(LEFT_PLAYER) << "\n";
+					}
+					 else 
+					{
+						events |= ~(!mLogic->isCollisionValid(RIGHT_PLAYER)) & EVENT_RIGHT_BLOBBY_HIT;
+						std::cout << "RIGHT BLOBBY BALL HIT "<< mLogic->isCollisionValid(RIGHT_PLAYER) << "\n";
+					}
+					break;
+				case PhysicEvent::PE_BALL_HIT_GROUND:
+					if(evt.position.x < 400) 
+					{
+						events |= EVENT_BALL_HIT_LEFT_GROUND;
+					}
+					 else 
+					{
+						events |= EVENT_BALL_HIT_RIGHT_GROUND;
 					}
 					break;
 			}
 		}
 		
-		
-
-		// ball/ground hit events:
-		if(mPhysicWorld.ballHitLeftGround())
-			events |= EVENT_BALL_HIT_LEFT_GROUND;
-
-		if(mPhysicWorld.ballHitRightGround())
-			events |= EVENT_BALL_HIT_RIGHT_GROUND;
 	}
 	
 	// process events
@@ -154,6 +161,7 @@ void DuelMatch::step()
 			/// 		we could get here just
 			///			by for hits
 			mBallDown = true;
+			mPhysicWorld.getBallReference().setPosition( Vector2(400, 100) );
 			break;
 		
 	}

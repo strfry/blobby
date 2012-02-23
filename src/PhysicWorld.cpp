@@ -5,6 +5,7 @@
 #include "SDL/SDL.h"
 
 #include <algorithm>
+#include <boost/weak_ptr.hpp>
 #include <iostream>
 
 PhysicWorld::PhysicWorld()
@@ -23,6 +24,7 @@ PhysicWorld::PhysicWorld()
 	boost::shared_ptr<IPhysicConstraint> ground (new GroundConstraint(500));
 	mObjects[0].addConstraint (con1);
 	mObjects[0].addConstraint (ground);
+	mObjects[0].setWorld(this);
 	
 	mObjects[1].setDebugName("Right Blobby");
 	mObjects[1].setPosition( Vector2(400, 400) );
@@ -34,6 +36,7 @@ PhysicWorld::PhysicWorld()
 	boost::shared_ptr<IPhysicConstraint> con2 (new HorizontalFieldBoundaryConstraint(400 + NET_RADIUS + BLOBBY_LOWER_RADIUS, 800));
 	mObjects[1].addConstraint (con2);
 	mObjects[1].addConstraint (ground);
+	mObjects[1].setWorld(this);
 	
 	mObjects[2].setDebugName("Ball");
 	mObjects[2].setPosition( Vector2(600, 412.99999) );
@@ -45,6 +48,7 @@ PhysicWorld::PhysicWorld()
 	boost::shared_ptr<IPhysicConstraint> con3 (new HorizontalFieldBoundaryConstraint(BALL_RADIUS, 800 - BALL_RADIUS, 1));
 	mObjects[2].addConstraint (con3);
 	mObjects[2].addConstraint (ground);
+	mObjects[2].setWorld(this);
 }
 
 PhysicWorld::~PhysicWorld()
@@ -151,12 +155,23 @@ PhysicObject& PhysicWorld::getBlobReference(PlayerSide side)
 
 PhysicEvent PhysicWorld::getNextEvent()
 {
-	if(mEventQueue.empty()) {
+	if(mEventQueue.empty()) 
+	{
 		return PhysicEvent{PhysicEvent::PE_NONE, 0, Vector2()};
-	} else {
+	} 
+	else 
+	{
 		PhysicEvent r = mEventQueue.front();
 		mEventQueue.pop();
 		return r;
+	}
+}
+
+void PhysicWorld::constraintActiveCallback(const PhysicObject* object, const IPhysicConstraint* constraint)
+{
+	if(object->getDebugName() == "Ball" && constraint == object->getConstraint(1).lock().get())  
+	{
+		mEventQueue.push(PhysicEvent{PhysicEvent::PE_BALL_HIT_GROUND, 0, object->getPosition()});
 	}
 }
 
@@ -178,17 +193,6 @@ float PhysicWorld::getBlobState(PlayerSide player) const
 float PhysicWorld::getBallRotation() const
 {
 	return 0;
-}
-
-// These functions tell about ball collisions for game logic and sound
-
-bool PhysicWorld::ballHitLeftGround() const
-{
-	return false;
-}
-bool PhysicWorld::ballHitRightGround() const
-{
-	return false;
 }
 
 bool PhysicWorld::blobbyHitGround(PlayerSide player) const
