@@ -32,4 +32,14 @@ class CollisionDetector
 		BroadphaseCollisonArray getCollisionEventsBroadphase(const std::vector<PhysicObject>& objects);
 		
 		TimedCollisionEvent checkCollision(BroadphaseCollisionEvent broadphase);
+		
+	private:
+		bool collisionTestSphereSphere(PhysicObject::MotionState state1, PhysicObject::MotionState state2,
+										const CollisionShapeSphere* s1, const CollisionShapeSphere* s2, 
+										Vector2& norm);
+		bool collisionTestBoxSphere(PhysicObject::MotionState state1, PhysicObject::MotionState state2,
+										const CollisionShapeBox* box, const CollisionShapeSphere* sp, 
+										Vector2& norm);
+		
+		
 };

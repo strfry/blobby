@@ -73,9 +73,11 @@ void DuelMatch::step()
 		Vector2 vel = blob.getVelocity();
 		vel.x = mLeftInput->getInput().left ? -4.5 : 0 - mLeftInput->getInput().right ? 4.5 : 0;
 		
-		if(!getBlobJump(LEFT_PLAYER) && mLeftInput->getInput().up)
+		if(mLeftInput->getInput().up)
 		{
-			vel.y = -BLOBBY_JUMP_ACCELERATION;
+			blob.addForce( Vector2(0, -BLOBBY_JUMP_BUFFER) );
+			if(!getBlobJump(LEFT_PLAYER))
+				vel.y = -BLOBBY_JUMP_ACCELERATION;
 		}
 		blob.setVelocity(vel);
 	}
@@ -86,9 +88,11 @@ void DuelMatch::step()
 		Vector2 vel = blob.getVelocity();
 		vel.x = mRightInput->getInput().left ? -4.5 : 0 - mRightInput->getInput().right ? 4.5 : 0;
 		
-		if(!getBlobJump(RIGHT_PLAYER) && mRightInput->getInput().up)
+		if( mRightInput->getInput().up)
 		{
-			vel.y = -BLOBBY_JUMP_ACCELERATION;
+			blob.addForce( Vector2(0, -BLOBBY_JUMP_BUFFER) );
+			if(!getBlobJump(RIGHT_PLAYER) )
+				vel.y = -BLOBBY_JUMP_ACCELERATION;
 		}
 		blob.setVelocity(vel);
 	}
@@ -98,6 +102,10 @@ void DuelMatch::step()
 	if(mPaused)
 		return;
 	
+	// update gravity
+	mPhysicWorld.getBallReference().addForce( Vector2(0, BALL_GRAVITATION));
+	mPhysicWorld.getBlobReference(LEFT_PLAYER).addForce( Vector2(0, GRAVITATION));
+	mPhysicWorld.getBlobReference(RIGHT_PLAYER).addForce( Vector2(0, GRAVITATION));
 	
 	mPhysicWorld.step();
 	mLogic->step();

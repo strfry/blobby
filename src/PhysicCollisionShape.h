@@ -48,6 +48,10 @@ struct AABBox
 
 	}
 	
+	bool isPointInside(Vector2 point) const {
+		return point > upperLeft && point < lowerRight;
+	}
+	
 	AABBox& operator+=(Vector2 vec)
 	{
 		upperLeft += vec;
@@ -127,4 +131,34 @@ class CollisionShapeSphere : public ICollisionShape
 		
 	private:
 		float mRadius;
+};
+
+class CollisionShapeBox : public ICollisionShape
+{
+	public:
+		CollisionShapeBox(Vector2 size, Vector2 center = Vector2(0,0)) : 
+				ICollisionShape(center), mBox(Vector2(0,0), size.x, size.y)
+		{
+			/// \todo that's not really efficient, using AABBox with arbitrary center
+			// but using relativePosition too
+		}
+	
+		virtual AABBox getBoundingBox() const 
+		{
+			return mBox + getRelativePosition();
+		}
+		
+		virtual bool isPointInside(Vector2 point) const 
+		{
+			/// \todo we need lengthSQ();
+			return mBox.isPointInside(point - getRelativePosition());
+		}
+		
+		virtual unsigned int getShapeType() const 
+		{
+			return BOX;
+		}
+		
+	private:
+		AABBox mBox;
 };

@@ -146,3 +146,13 @@ void PhysicObject::step(float time)
 		}
 	}
 }
+
+void PhysicObject::addForce(const Vector2& force)
+{
+	mAcceleration += force;
+}
+
+void PhysicObject::clearForces()
+{
+	mAcceleration.clear();
+}

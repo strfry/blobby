@@ -10,9 +10,9 @@
 
 PhysicWorld::PhysicWorld()
 {
-	mObjects.resize(3);
+	mObjects.resize(4);
 	mObjects[0].setDebugName("Left Blobby");
-	mObjects[0].setPosition( Vector2(500, 400) );
+	mObjects[0].setPosition( Vector2(200, 400) );
 	mObjects[0].setAcceleration( Vector2(0, GRAVITATION) );
 	mObjects[0].setVelocity( Vector2(5, 0) );
 	boost::shared_ptr<ICollisionShape> body (new CollisionShapeSphere(BLOBBY_LOWER_RADIUS, Vector2(0, BLOBBY_LOWER_SPHERE)));	
@@ -27,7 +27,7 @@ PhysicWorld::PhysicWorld()
 	mObjects[0].setWorld(this);
 	
 	mObjects[1].setDebugName("Right Blobby");
-	mObjects[1].setPosition( Vector2(400, 400) );
+	mObjects[1].setPosition( Vector2(600, 400) );
 	mObjects[1].setVelocity( Vector2(0, 0) );
 	mObjects[1].setAcceleration( Vector2(0, GRAVITATION) );	
 	mObjects[1].addCollisionShape( body );
@@ -39,7 +39,7 @@ PhysicWorld::PhysicWorld()
 	mObjects[1].setWorld(this);
 	
 	mObjects[2].setDebugName("Ball");
-	mObjects[2].setPosition( Vector2(600, 412.99999) );
+	mObjects[2].setPosition( Vector2(600, 400) );
 	mObjects[2].setAcceleration( Vector2(0, BALL_GRAVITATION) );
 	mObjects[2].setVelocity( Vector2(0, 0) );
 	boost::shared_ptr<ICollisionShape> sp2 (new CollisionShapeSphere(BALL_RADIUS));
@@ -49,6 +49,15 @@ PhysicWorld::PhysicWorld()
 	mObjects[2].addConstraint (con3);
 	mObjects[2].addConstraint (ground);
 	mObjects[2].setWorld(this);
+	
+	mObjects[3].setDebugName("Net");
+	mObjects[3].setPosition( Vector2(400, 500) );
+	boost::shared_ptr<ICollisionShape> nc (new CollisionShapeBox( Vector2( 2*NET_RADIUS, 2*(500-NET_SPHERE_POSITION))));
+	mObjects[3].addCollisionShape( nc );
+	boost::shared_ptr<ICollisionShape> nt (new CollisionShapeSphere( NET_RADIUS, Vector2(0, 500-NET_SPHERE_POSITION)) );
+	mObjects[3].addCollisionShape( nt );
+	mObjects[3].setCollisionType(3);
+	mObjects[3].setWorld(this);
 }
 
 PhysicWorld::~PhysicWorld()
@@ -108,6 +117,14 @@ void PhysicWorld::step()
 				const_cast<PhysicObject*>(timed_hits.begin()->second)->setVelocity( -13 * timed_hits.begin()->impactNormal );
 				mEventQueue.push(PhysicEvent{PhysicEvent::PE_BALL_HIT_BLOBBY, timed_hits.begin()->time, timed_hits.begin()->second->getPosition()});
 			}
+			else if(timed_hits.begin()->first->getCollisionType() == 2 && timed_hits.begin()->second->getCollisionType() == 3) 
+			{
+				//nethit
+				std::cout << "nethit\n";
+				std::cout << timed_hits.begin()->impactNormal.x << "\n";
+				const_cast<PhysicObject*>(timed_hits.begin()->first)->setVelocity( 
+						timed_hits.begin()->first->getVelocity().reflect(timed_hits.begin()->impactNormal)) ;
+			}
 		}
 	}
 	
@@ -115,6 +132,10 @@ void PhysicWorld::step()
 	{
 		i->step(1 - curtime);
 	}
+	
+	// reset all forces
+	for(auto i = mObjects.begin(); i != mObjects.end(); ++i)
+		i->clearForces();
 }
 
 const PhysicObject& PhysicWorld::getBall() const

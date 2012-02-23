@@ -58,6 +58,9 @@ class PhysicObject
 		boost::weak_ptr<const IPhysicConstraint> getConstraint(int i) const; 
 		
 		
+		void addForce(const Vector2& force);
+		void clearForces();
+		
 		void step(float time = 1.f);
 		
 		/// assigns a debug name to this object
