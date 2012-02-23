@@ -95,11 +95,22 @@ void DuelMatch::step()
 	{
 		// create game events
 		// ball/player hit events:
-		if (mPhysicWorld.ballHitLeftPlayer() && mLogic->isCollisionValid(LEFT_PLAYER))
-			events |= EVENT_LEFT_BLOBBY_HIT;
-
-		if (mPhysicWorld.ballHitRightPlayer() && mLogic->isCollisionValid(RIGHT_PLAYER))
-			events |= EVENT_RIGHT_BLOBBY_HIT;
+		
+		while( PhysicEvent evt = mPhysicWorld.getNextEvent()) 
+		{
+			switch(evt.type) {
+				case PhysicEvent::PE_BALL_HIT_BLOBBY:
+					if(evt.position.x < 400) 
+					{
+						events |= mLogic->isCollisionValid(LEFT_PLAYER) & EVENT_LEFT_BLOBBY_HIT;
+					} else {
+						events |= mLogic->isCollisionValid(RIGHT_PLAYER) & EVENT_RIGHT_BLOBBY_HIT;
+					}
+					break;
+			}
+		}
+		
+		
 
 		// ball/ground hit events:
 		if(mPhysicWorld.ballHitLeftGround())
@@ -264,8 +275,6 @@ void DuelMatch::setPlayersInput(const PlayerInput& left, const PlayerInput& righ
 {
 	mInputs[0] = left;
 	mInputs[1] = right;
-	mPhysicWorld.setLeftInput( left );
-	mPhysicWorld.setRightInput( right );
 }
 
 void DuelMatch::setServingPlayer(PlayerSide side)

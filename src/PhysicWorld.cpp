@@ -102,8 +102,8 @@ void PhysicWorld::step()
 			if(timed_hits.begin()->second->getCollisionType() == 2) 
 			{
 				const_cast<PhysicObject*>(timed_hits.begin()->second)->setVelocity( -13 * timed_hits.begin()->impactNormal );
+				mEventQueue.push(PhysicEvent{PhysicEvent::PE_BALL_HIT_BLOBBY, timed_hits.begin()->time, timed_hits.begin()->second->getPosition()});
 			}
-			
 		}
 	}
 	
@@ -149,6 +149,17 @@ PhysicObject& PhysicWorld::getBlobReference(PlayerSide side)
 	assert(0);
 }
 
+PhysicEvent PhysicWorld::getNextEvent()
+{
+	if(mEventQueue.empty()) {
+		return PhysicEvent{PhysicEvent::PE_NONE, 0, Vector2()};
+	} else {
+		PhysicEvent r = mEventQueue.front();
+		mEventQueue.pop();
+		return r;
+	}
+}
+
 // -------------------------------------------------
 
 bool PhysicWorld::getBlobJump(PlayerSide player) const
@@ -156,15 +167,6 @@ bool PhysicWorld::getBlobJump(PlayerSide player) const
 	
 }
 bool PhysicWorld::getBallActive() const
-{
-	
-}
-
-void PhysicWorld::setLeftInput(const PlayerInput& input)
-{
-	
-}
-void PhysicWorld::setRightInput(const PlayerInput& input)
 {
 	
 }
@@ -179,14 +181,7 @@ float PhysicWorld::getBallRotation() const
 }
 
 // These functions tell about ball collisions for game logic and sound
-bool PhysicWorld::ballHitLeftPlayer() const
-{
-	return false;
-}
-bool PhysicWorld::ballHitRightPlayer() const
-{
-	return false;
-}
+
 bool PhysicWorld::ballHitLeftGround() const
 {
 	return false;
