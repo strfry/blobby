@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "IUserConfigReader.h"
 #include "DuelMatch.h"
 #include "UserConfig.h"
+#include "GameConstants.h"
 
 #include <cassert>
 #include <iostream>
@@ -156,12 +157,10 @@ void DuelMatch::step()
 			}
 			
 			// now, the ball is not valid anymore
-			mPhysicWorld.setBallValidity(0);
 			/// \todo why do we set balldown?
 			/// 		we could get here just
 			///			by for hits
 			mBallDown = true;
-			mPhysicWorld.getBallReference().setPosition( Vector2(400, 100) );
 			break;
 		
 	}
@@ -170,10 +169,10 @@ void DuelMatch::step()
 	// reset BallDown, reset the World
 	// to let the player serve
 	// and trigger the EVENT_RESET
-	if (mPhysicWorld.roundFinished())
+	if (roundFinished())
 	{
 		mBallDown = false;
-		mPhysicWorld.reset(mLogic->getServingPlayer());
+		resetBall(mLogic->getServingPlayer());
 		events |= EVENT_RESET;
 	}
 	
@@ -240,13 +239,14 @@ bool DuelMatch::getBallDown() const
 
 bool DuelMatch::getBallActive() const 
 {
-	return mPhysicWorld.getBallActive();
+	/// \todo i guess this needs to be reworked too
+	return !mBallDown;
 }
 
 
 bool DuelMatch::getBlobJump(PlayerSide player) const
 {
-	return mPhysicWorld.getBlobJump(player);
+	return !mPhysicWorld.blobbyHitGround(player);
 }
 
 Vector2 DuelMatch::getBlobPosition(PlayerSide player) const
@@ -288,7 +288,7 @@ void DuelMatch::setPlayersInput(const PlayerInput& left, const PlayerInput& righ
 void DuelMatch::setServingPlayer(PlayerSide side)
 {
 	mLogic->setServingPlayer(side);
-	mPhysicWorld.reset(side);
+	resetBall(side);
 }
 
 const Clock& DuelMatch::getClock() const
@@ -299,4 +299,54 @@ const Clock& DuelMatch::getClock() const
 Clock& DuelMatch::getClock()
 {
 	return mLogic->getClock();
+}
+
+void DuelMatch::resetBall(PlayerSide player)
+{
+	Vector2 ballPosition = Vector2(400, 450);
+	
+	if (player == LEFT_PLAYER)
+		ballPosition = Vector2(200, STANDARD_BALL_HEIGHT);
+	else if (player == RIGHT_PLAYER)
+		 ballPosition= Vector2(600, STANDARD_BALL_HEIGHT);
+	//else
+	/// \todo assert here?
+	mPhysicWorld.getBallReference().setPosition( ballPosition );
+	mPhysicWorld.getBallReference().setVelocity( Vector2(0,0) );
+
+/*	mBallRotation = 0.0;
+	mBallAngularVelocity = STANDARD_BALL_ANGULAR_VELOCITY;
+	mBlobState[LEFT_PLAYER] = 0.0;
+	mBlobState[RIGHT_PLAYER] = 0.0;
+
+	mIsGameRunning = false;
+	mIsBallValid = true;
+
+	mLastHitIntensity = 0.0;
+*/
+}
+
+bool DuelMatch::resetAreaClear() const
+{
+	/// \todo implement this
+	//if (blobbyHitGround(LEFT_PLAYER) && blobbyHitGround(RIGHT_PLAYER))
+		return true;
+	return false;
+}
+
+bool DuelMatch::roundFinished() const
+{
+	if (resetAreaClear())
+	{
+		if (mBallDown)
+			if (getBallVelocity().y < 1.5 &&
+				getBallVelocity().y > -1.5 && getBallPosition().y > 430)
+				return true;
+	}
+	
+	/// \todo add a timeout timer
+	/*if (mTimeSinceBallout > TIMEOUT_MAX)
+		return true;
+	*/
+	return false;
 }

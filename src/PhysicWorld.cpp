@@ -177,15 +177,6 @@ void PhysicWorld::constraintActiveCallback(const PhysicObject* object, const IPh
 
 // -------------------------------------------------
 
-bool PhysicWorld::getBlobJump(PlayerSide player) const
-{
-	
-}
-bool PhysicWorld::getBallActive() const
-{
-	
-}
-
 float PhysicWorld::getBlobState(PlayerSide player) const
 {
 	return 0;
@@ -215,27 +206,6 @@ void PhysicWorld::blobbyStartAnimation(PlayerSide player)
 float PhysicWorld::lastHitIntensity() const
 {
 	return 0;
-}
-
-// Here the game logic can decide whether the ball is valid.
-// If not, no ball to player collision checking is done,
-// the input is ignored an the ball experiences a strong damping
-void PhysicWorld::setBallValidity(bool validity)
-{
-	
-}
-
-// This returns true if the ball is not valid and the ball is steady
-bool PhysicWorld::roundFinished() const
-{
-	return false;
-}
-
-// This resets everything to the starting situation and
-// wants to know, which player begins.
-void PhysicWorld::reset(PlayerSide player)
-{
-	
 }
 
 // Set a new state received from server over a RakNet BitStream

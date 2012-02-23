@@ -146,4 +146,8 @@ private:
 	bool mRemote;
 	
 	PlayerInput mInputs[2]; 
+	
+	void resetBall(PlayerSide player);
+	bool resetAreaClear() const;
+	bool roundFinished() const;
 };
