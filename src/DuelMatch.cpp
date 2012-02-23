@@ -66,9 +66,20 @@ void DuelMatch::step()
 
 	// do steps in physic an logic
 	if (mLeftInput)
-		mPhysicWorld.setLeftInput(mLeftInput->getInput());
+	{
+		PhysicObject& blob = mPhysicWorld.getBlobReference(LEFT_PLAYER);
+		Vector2 vel = blob.getVelocity();
+		vel.x = mLeftInput->getInput().left ? -4.5 : 0 - mLeftInput->getInput().right ? 4.5 : 0;
+		blob.setVelocity(vel);
+	}
+	
 	if (mRightInput)
-		mPhysicWorld.setRightInput(mRightInput->getInput());
+	{
+		PhysicObject& blob = mPhysicWorld.getBlobReference(RIGHT_PLAYER);
+		Vector2 vel = blob.getVelocity();
+		vel.x = mRightInput->getInput().left ? -4.5 : 0 - mRightInput->getInput().right ? 4.5 : 0;
+		blob.setVelocity(vel);
+	}
 		
 	// in pause mode, step does nothing except input being set
 	/// \todo find out why we do set input in pause mode!

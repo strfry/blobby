@@ -91,6 +91,26 @@ AABBox PhysicObject::getBoundingBox() const
 	return mBoundingBox;
 }
 
+void PhysicObject::addConstraint( boost::shared_ptr<IPhysicConstraint> cst )
+{
+	mConstraints.push_back(cst);
+}
+
+void PhysicObject::clearConstraints()
+{
+	mConstraints.clear();
+}
+
+int PhysicObject::getConstraintCount() const
+{
+	return mConstraints.size();
+}
+
+boost::weak_ptr<const IPhysicConstraint> PhysicObject::getConstraint(int i) const
+{
+	return mConstraints[i];
+}
+
 void PhysicObject::setCollisionType(unsigned int ct)
 {
 	mCollisionType = ct;
@@ -115,13 +135,8 @@ void PhysicObject::step(float time)
 	mPosition += mVelocity * time + mAcceleration / 2 * time * time;
 	mVelocity += mAcceleration * time;
 	
-	if(mPosition.x < 0 || mPosition.x > 800 )
+	for(auto i = mConstraints.begin(); i != mConstraints.end(); ++i)
 	{
-		mVelocity.x *= -1;
-	}
-	if(mPosition.y > 500)
-	{
-		mVelocity.y *= -1;
-		mPosition.y = 500;
+		(*i)->checkAndCorrectConstraint(*this);
 	}
 }

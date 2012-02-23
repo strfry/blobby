@@ -13,6 +13,9 @@ struct TimedCollisionEvent
 	// the objects
 	const PhysicObject* first;
 	const PhysicObject* second;
+	
+	// hit information
+	Vector2 impactNormal;
 
 	// time when collision occurs
 	float time;

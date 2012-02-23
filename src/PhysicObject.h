@@ -2,6 +2,7 @@
 
 #include "Vector.h"
 #include "PhysicCollisionShape.h"
+#include "PhysicConstraint.h"
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
@@ -48,6 +49,14 @@ class PhysicObject
 		boost::weak_ptr<const ICollisionShape> getCollisionShape(int i) const; 
 		
 		AABBox getBoundingBox() const;
+		
+		
+		// constraint
+		void addConstraint( boost::shared_ptr<IPhysicConstraint> cst );
+		void clearConstraints();
+		int getConstraintCount() const;
+		boost::weak_ptr<const IPhysicConstraint> getConstraint(int i) const; 
+		
 		
 		void step(float time = 1.f);
 		
@@ -97,6 +106,7 @@ class PhysicObject
 		// object geometry/properties
 		unsigned int mCollisionType;
 		std::vector<boost::shared_ptr<ICollisionShape>> mCollisionShapes;
+		std::vector<boost::shared_ptr<IPhysicConstraint>> mConstraints;
 		AABBox mBoundingBox;
 		
 		std::string mDebugName;

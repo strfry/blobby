@@ -1,6 +1,8 @@
 #include "PhysicWorld.h"
 #include "CollisionDetector.h"
+#include "PhysicConstraint.h"
 #include "GameConstants.h"
+#include "SDL/SDL.h"
 
 #include <algorithm>
 #include <iostream>
@@ -9,30 +11,40 @@ PhysicWorld::PhysicWorld()
 {
 	mObjects.resize(3);
 	mObjects[0].setDebugName("Left Blobby");
-	mObjects[0].setPosition( Vector2(200, 300) );
-	mObjects[0].setAcceleration( Vector2(0, 0*GRAVITATION) );
+	mObjects[0].setPosition( Vector2(500, 400) );
+	mObjects[0].setAcceleration( Vector2(0, GRAVITATION) );
 	mObjects[0].setVelocity( Vector2(5, 0) );
 	boost::shared_ptr<ICollisionShape> body (new CollisionShapeSphere(BLOBBY_LOWER_RADIUS, Vector2(0, BLOBBY_LOWER_SPHERE)));	
 	boost::shared_ptr<ICollisionShape> head (new CollisionShapeSphere(BLOBBY_UPPER_RADIUS, Vector2(0, -BLOBBY_UPPER_SPHERE)));	
 	mObjects[0].addCollisionShape( body );
 	mObjects[0].addCollisionShape( head );
 	mObjects[0].setCollisionType(1);
+	boost::shared_ptr<IPhysicConstraint> con1 (new HorizontalFieldBoundaryConstraint(0, 400 - NET_RADIUS - BLOBBY_LOWER_RADIUS));
+	boost::shared_ptr<IPhysicConstraint> ground (new GroundConstraint(500));
+	mObjects[0].addConstraint (con1);
+	mObjects[0].addConstraint (ground);
 	
 	mObjects[1].setDebugName("Right Blobby");
-	mObjects[1].setPosition( Vector2(600, 400) );
-	mObjects[1].setVelocity( Vector2(3, -4) );
+	mObjects[1].setPosition( Vector2(400, 400) );
+	mObjects[1].setVelocity( Vector2(0, 0) );
 	mObjects[1].setAcceleration( Vector2(0, GRAVITATION) );	
 	mObjects[1].addCollisionShape( body );
 	mObjects[1].addCollisionShape( head );
 	mObjects[1].setCollisionType(1);
+	boost::shared_ptr<IPhysicConstraint> con2 (new HorizontalFieldBoundaryConstraint(400 + NET_RADIUS + BLOBBY_LOWER_RADIUS, 800));
+	mObjects[1].addConstraint (con2);
+	mObjects[1].addConstraint (ground);
 	
 	mObjects[2].setDebugName("Ball");
-	mObjects[2].setPosition( Vector2(300, 300) );
-	mObjects[2].setAcceleration( Vector2(0, 0*BALL_GRAVITATION) );
+	mObjects[2].setPosition( Vector2(600, 412.99999) );
+	mObjects[2].setAcceleration( Vector2(0, BALL_GRAVITATION) );
 	mObjects[2].setVelocity( Vector2(0, 0) );
 	boost::shared_ptr<ICollisionShape> sp2 (new CollisionShapeSphere(BALL_RADIUS));
 	mObjects[2].addCollisionShape( sp2 );
 	mObjects[2].setCollisionType(2);
+	boost::shared_ptr<IPhysicConstraint> con3 (new HorizontalFieldBoundaryConstraint(BALL_RADIUS, 800 - BALL_RADIUS, 1));
+	mObjects[2].addConstraint (con3);
+	mObjects[2].addConstraint (ground);
 }
 
 PhysicWorld::~PhysicWorld()
@@ -41,6 +53,8 @@ PhysicWorld::~PhysicWorld()
 
 void PhysicWorld::step() 
 {
+//	SDL_Delay(50);
+	
 	static CollisionDetector collisionDetector;
 
 	// at first, do some broadphase collision detection:
@@ -68,28 +82,28 @@ void PhysicWorld::step()
 			}
 		}
 
-		std::sort(timed_hits.begin(), timed_hits.end());
-
-		// now we have the hit events in chronological order.
-		// let's handle them.
-		
-		for(auto i = timed_hits.begin(); i != timed_hits.end(); ++i)
+		if(!timed_hits.empty())
 		{
+			std::sort(timed_hits.begin(), timed_hits.end());
+
+			// now we have the hit events in chronological order.
+			// let's handle them.
+			
+			
 			// simulate 
 			for(auto j = mObjects.begin(); j != mObjects.end(); ++j)
 			{
-				j->step(i->time - curtime);
+				j->step(timed_hits.begin()->time - curtime);
 			}
 			
 			// no we need to do the corresponding collision response handler
 			
-			std::cout << i->time << "\n";
 			//const_cast<PhysicObject*>(i->second)->setVelocity( -i->second->getVelocity() );
-			if(i->second->getCollisionType() == 2) {
-				const_cast<PhysicObject*>(i->second)->setVelocity( Vector2(13,0) );
+			if(timed_hits.begin()->second->getCollisionType() == 2) 
+			{
+				const_cast<PhysicObject*>(timed_hits.begin()->second)->setVelocity( -13 * timed_hits.begin()->impactNormal );
 			}
-			//const_cast<PhysicObject*>(i->first)->setAcceleration( Vector2(0,0) );
-			//const_cast<PhysicObject*>(i->second)->setAcceleration( Vector2(0,0) );
+			
 		}
 	}
 	
@@ -110,6 +124,19 @@ PhysicObject& PhysicWorld::getBallReference()
 }
 
 const PhysicObject& PhysicWorld::getBlob(PlayerSide side) const
+{
+	assert(side == LEFT_PLAYER || side == RIGHT_PLAYER);
+	switch(side)
+	{
+		case LEFT_PLAYER:
+			return mObjects[0];
+		case RIGHT_PLAYER:
+			return mObjects[1];
+	}
+	assert(0);
+}
+
+PhysicObject& PhysicWorld::getBlobReference(PlayerSide side)
 {
 	assert(side == LEFT_PLAYER || side == RIGHT_PLAYER);
 	switch(side)

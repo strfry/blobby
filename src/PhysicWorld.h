@@ -24,6 +24,7 @@ class PhysicWorld
 		const PhysicObject& getBall() const;
 		PhysicObject& getBallReference();
 		const PhysicObject& getBlob(PlayerSide player) const;
+		PhysicObject& getBlobReference(PlayerSide player);
 		
 		// ------------------
 		//  copied functions
