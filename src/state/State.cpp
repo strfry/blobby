@@ -82,7 +82,7 @@ void State::presentGame(const DuelMatch& match)
 	rmanager.setBlob(RIGHT_PLAYER, match.getBlobPosition(RIGHT_PLAYER),
 							match.getWorld().getBlobState(RIGHT_PLAYER));
 	
-	rmanager.setBall(match.getBallPosition(), match.getWorld().getBallRotation());
+	rmanager.setBall(match.getBallPosition(), match.getBallRotation());
 			
 	rmanager.setTime(match.getClock().getTimeString());
 			

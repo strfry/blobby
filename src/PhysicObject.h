@@ -32,6 +32,10 @@ class PhysicObject
 		void setVelocity(const Vector2& nv);
 		/// sets acceleration
 		void setAcceleration( const Vector2& na);
+		/// sets rotation
+		void setRotation(float r);
+		/// sets angular velocity
+		void setAngularVelocity(float a);
 		
 		/// gets current position
 		const Vector2& getPosition() const;
@@ -39,6 +43,10 @@ class PhysicObject
 		const Vector2& getVelocity() const;
 		/// gets current acceleration
 		const Vector2& getAcceleration() const;
+		/// gets current rotation
+		float getRotation() const;
+		/// gets angular velocity
+		float getAngularVelocity() const;
 		
 		// -----------------------------
 		
@@ -84,6 +92,8 @@ class PhysicObject
 		{
 			Vector2 pos;
 			Vector2 vel;
+			float rot;
+			float rev;
 			const PhysicObject* object;
 			
 			bool operator==(const MotionState& other) const 
@@ -105,6 +115,8 @@ class PhysicObject
 		Vector2 mPosition;
 		Vector2 mVelocity;
 		Vector2 mAcceleration;
+		float mRotation;
+		float mAngularVelocity;
 		
 		// object geometry/properties
 		unsigned int mCollisionType;

@@ -40,6 +40,8 @@ PhysicWorld::PhysicWorld()
 	
 	mObjects[2].setDebugName("Ball");
 	mObjects[2].setPosition( Vector2(600, 400) );
+	mObjects[2].setRotation( 0 );
+	mObjects[2].setAngularVelocity( 0 );
 	mObjects[2].setAcceleration( Vector2(0, BALL_GRAVITATION) );
 	mObjects[2].setVelocity( Vector2(0, 0) );
 	boost::shared_ptr<ICollisionShape> sp2 (new CollisionShapeSphere(BALL_RADIUS));
@@ -60,7 +62,7 @@ PhysicWorld::PhysicWorld()
 	
 	mObjects[4].setDebugName("Ground");
 	mObjects[4].setPosition( Vector2(400, 700) );
-	boost::shared_ptr<ICollisionShape> gr (new CollisionShapeBox( Vector2( 1000, 400)));
+	boost::shared_ptr<ICollisionShape> gr (new CollisionShapeBox( Vector2( 1000, 390)));
 	mObjects[4].addCollisionShape( gr );
 	mObjects[4].setCollisionType(4);
 	mObjects[4].setWorld(this);
@@ -136,13 +138,35 @@ void PhysicWorld::step()
 				// groundhit
 				Vector2 vel =ball->getVelocity();
 				Vector2 dc = vel.decompose(timed_hits.begin()->impactNormal);
-				float speed = vel.length();
+				float e1 = vel.length() * vel.length() +  ball->getAngularVelocity() * ball->getAngularVelocity() * BALL_RADIUS;
 				float dp = dc.x * 1.5;
-				std::cout << speed << " " << dc.length() << "\n";
 				dc.x *= -0.5;
+				float mu = 0.2;
 				
+				for(int i=0; i < 5; ++i)
+				{
+					float cg = 0.2 * mu * dp;
+					if(dc.y + BALL_RADIUS * ball->getAngularVelocity() > cg)
+					{
+						dc.y -= cg;
+						ball->setAngularVelocity( ball->getAngularVelocity() - cg/BALL_RADIUS );
+					}
+					else if (dc.y + BALL_RADIUS * ball->getAngularVelocity() < -mu*dp)
+					{
+						dc.y += cg;
+						ball->setAngularVelocity( ball->getAngularVelocity() + cg/BALL_RADIUS );
+					} 
+					else 
+					{
+						dc.y = BALL_RADIUS * ball->getAngularVelocity();
+					}
+				}
+				std::cout << ball->getAngularVelocity() << "\n";
 				vel = dc.recompose(timed_hits.begin()->impactNormal);
-				assert( vel.length() <= speed );
+				
+				float e2 = vel.length() * vel.length() +  ball->getAngularVelocity() * ball->getAngularVelocity() * BALL_RADIUS;
+				std::cout << e1 << " -> " << e2 << "\n";
+				assert( e2 <= e1 );
 				
 				ball->setVelocity( vel ) ;
 				ball->setPosition( ball->getPosition() - timed_hits.begin()->impactNormal) ;
@@ -214,10 +238,6 @@ PhysicEvent PhysicWorld::getNextEvent()
 // -------------------------------------------------
 
 float PhysicWorld::getBlobState(PlayerSide player) const
-{
-	return 0;
-}
-float PhysicWorld::getBallRotation() const
 {
 	return 0;
 }

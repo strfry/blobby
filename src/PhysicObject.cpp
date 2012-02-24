@@ -6,7 +6,9 @@
 PhysicObject::PhysicObject(const Vector2& p, const Vector2& v):
 	mPosition(p),
 	mVelocity(v),
-	mConnectedWorld(0)
+	mConnectedWorld(0),
+	mRotation(0),
+	mAngularVelocity(0)
 {
 }
 
@@ -123,18 +125,32 @@ unsigned int PhysicObject::getCollisionType() const
 
 PhysicObject::MotionState PhysicObject::getMotionState() const
 {
-	return MotionState{mPosition, mVelocity, this};
+	return MotionState{mPosition, mVelocity, mRotation, mAngularVelocity, this};
 }
 
 PhysicObject::MotionState PhysicObject::getPredictedMotionState(float time) const
 {
-	return MotionState{mPosition + mVelocity * time + mAcceleration / 2 * time * time, mVelocity + mAcceleration * time, this};
+	return MotionState{mPosition + mVelocity * time + mAcceleration / 2 * time * time, 
+						mVelocity + mAcceleration * time, 
+						mRotation + time * mAngularVelocity,
+						mAngularVelocity,
+						this};
 }
 
 void PhysicObject::step(float time)
 {
 	mPosition += mVelocity * time + mAcceleration / 2 * time * time;
 	mVelocity += mAcceleration * time;
+	const float PI = 3.1415;
+	mRotation += time * mAngularVelocity;
+	if(mRotation > 2 * PI) 
+	{
+		mRotation -= 2 * PI;
+	} 
+	else if (mRotation < 0)
+	{
+		mRotation += 2 * PI;
+	}
 	
 	for(auto i = mConstraints.begin(); i != mConstraints.end(); ++i)
 	{
@@ -150,4 +166,24 @@ void PhysicObject::addForce(const Vector2& force)
 void PhysicObject::clearForces()
 {
 	mAcceleration.clear();
+}
+
+float PhysicObject::getRotation() const
+{
+	return mRotation;
+}
+
+void PhysicObject::setRotation( float nrot)
+{
+	mRotation = nrot;;
+}
+
+float PhysicObject::getAngularVelocity() const
+{
+	return mAngularVelocity;
+}
+
+void PhysicObject::setAngularVelocity( float nrot)
+{
+	mAngularVelocity = nrot;
 }

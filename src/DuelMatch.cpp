@@ -370,3 +370,8 @@ bool DuelMatch::roundFinished() const
 	*/
 	return false;
 }
+
+float DuelMatch::getBallRotation() const
+{
+	return mPhysicWorld.getBall().getRotation();
+}
