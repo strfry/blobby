@@ -10,7 +10,7 @@
 
 PhysicWorld::PhysicWorld()
 {
-	mObjects.resize(4);
+	mObjects.resize(5);
 	mObjects[0].setDebugName("Left Blobby");
 	mObjects[0].setPosition( Vector2(200, 400) );
 	mObjects[0].setAcceleration( Vector2(0, GRAVITATION) );
@@ -47,7 +47,6 @@ PhysicWorld::PhysicWorld()
 	mObjects[2].setCollisionType(2);
 	boost::shared_ptr<IPhysicConstraint> con3 (new HorizontalFieldBoundaryConstraint(BALL_RADIUS, 800 - BALL_RADIUS, 1));
 	mObjects[2].addConstraint (con3);
-	mObjects[2].addConstraint (ground);
 	mObjects[2].setWorld(this);
 	
 	mObjects[3].setDebugName("Net");
@@ -58,6 +57,13 @@ PhysicWorld::PhysicWorld()
 	mObjects[3].addCollisionShape( nt );
 	mObjects[3].setCollisionType(3);
 	mObjects[3].setWorld(this);
+	
+	mObjects[4].setDebugName("Ground");
+	mObjects[4].setPosition( Vector2(400, 600) );
+	boost::shared_ptr<ICollisionShape> gr (new CollisionShapeBox( Vector2( 1000, 200)));
+	mObjects[4].addCollisionShape( gr );
+	mObjects[4].setCollisionType(4);
+	mObjects[4].setWorld(this);
 }
 
 PhysicWorld::~PhysicWorld()
@@ -120,10 +126,16 @@ void PhysicWorld::step()
 			else if(timed_hits.begin()->first->getCollisionType() == 2 && timed_hits.begin()->second->getCollisionType() == 3) 
 			{
 				//nethit
-				std::cout << "nethit\n";
-				std::cout << timed_hits.begin()->impactNormal.x << "\n";
 				const_cast<PhysicObject*>(timed_hits.begin()->first)->setVelocity( 
 						timed_hits.begin()->first->getVelocity().reflect(timed_hits.begin()->impactNormal)) ;
+			}
+			else if
+			(timed_hits.begin()->first->getCollisionType() == 2 && timed_hits.begin()->second->getCollisionType() == 4) 
+			{
+				//nethit
+				const_cast<PhysicObject*>(timed_hits.begin()->first)->setVelocity( 
+						timed_hits.begin()->first->getVelocity().reflect(timed_hits.begin()->impactNormal)) ;
+				mEventQueue.push(PhysicEvent{PhysicEvent::PE_BALL_HIT_GROUND, 0, timed_hits.begin()->first->getPosition()});
 			}
 		}
 	}
@@ -190,10 +202,6 @@ PhysicEvent PhysicWorld::getNextEvent()
 
 void PhysicWorld::constraintActiveCallback(const PhysicObject* object, const IPhysicConstraint* constraint)
 {
-	if(object->getDebugName() == "Ball" && constraint == object->getConstraint(1).lock().get())  
-	{
-		mEventQueue.push(PhysicEvent{PhysicEvent::PE_BALL_HIT_GROUND, 0, object->getPosition()});
-	}
 }
 
 // -------------------------------------------------
