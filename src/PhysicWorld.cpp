@@ -59,8 +59,8 @@ PhysicWorld::PhysicWorld()
 	mObjects[3].setWorld(this);
 	
 	mObjects[4].setDebugName("Ground");
-	mObjects[4].setPosition( Vector2(400, 600) );
-	boost::shared_ptr<ICollisionShape> gr (new CollisionShapeBox( Vector2( 1000, 200)));
+	mObjects[4].setPosition( Vector2(400, 700) );
+	boost::shared_ptr<ICollisionShape> gr (new CollisionShapeBox( Vector2( 1000, 400)));
 	mObjects[4].addCollisionShape( gr );
 	mObjects[4].setCollisionType(4);
 	mObjects[4].setWorld(this);
@@ -132,10 +132,21 @@ void PhysicWorld::step()
 			else if
 			(timed_hits.begin()->first->getCollisionType() == 2 && timed_hits.begin()->second->getCollisionType() == 4) 
 			{
-				//nethit
-				const_cast<PhysicObject*>(timed_hits.begin()->first)->setVelocity( 
-						timed_hits.begin()->first->getVelocity().reflect(timed_hits.begin()->impactNormal)) ;
-				mEventQueue.push(PhysicEvent{PhysicEvent::PE_BALL_HIT_GROUND, 0, timed_hits.begin()->first->getPosition()});
+				PhysicObject* ball = const_cast<PhysicObject*>(timed_hits.begin()->first);
+				// groundhit
+				Vector2 vel =ball->getVelocity();
+				Vector2 dc = vel.decompose(timed_hits.begin()->impactNormal);
+				float speed = vel.length();
+				float dp = dc.x * 1.5;
+				std::cout << speed << " " << dc.length() << "\n";
+				dc.x *= -0.5;
+				
+				vel = dc.recompose(timed_hits.begin()->impactNormal);
+				assert( vel.length() <= speed );
+				
+				ball->setVelocity( vel ) ;
+				ball->setPosition( ball->getPosition() - timed_hits.begin()->impactNormal) ;
+				//mEventQueue.push(PhysicEvent{PhysicEvent::PE_BALL_HIT_GROUND, 0, timed_hits.begin()->first->getPosition()});
 			}
 		}
 	}
@@ -198,10 +209,6 @@ PhysicEvent PhysicWorld::getNextEvent()
 		mEventQueue.pop();
 		return r;
 	}
-}
-
-void PhysicWorld::constraintActiveCallback(const PhysicObject* object, const IPhysicConstraint* constraint)
-{
 }
 
 // -------------------------------------------------

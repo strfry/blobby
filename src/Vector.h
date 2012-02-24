@@ -58,7 +58,7 @@ class Vector2
 	Vector2 scaledX(float factor) const;
 	Vector2 scaledY(float factor) const;
 	float length() const;
-	Vector2 normalise();
+	Vector2 normalise() const;
 	Vector2 contraVector() const ;
 	
 	inline Vector2 getHalfVector(const Vector2& vec) const
@@ -152,7 +152,20 @@ class Vector2
 		return Vector2(*this - (normal * 2 * dotProduct(normal)));
 	}
 
-
+	Vector2 decompose(Vector2 line) const
+	{
+		//line = line.normalise();
+		Vector2 perp = Vector2(-line.y, line.x);
+		
+		return Vector2 (dotProduct(line), dotProduct(perp))/line.length()/line.length();
+	}
+	
+	Vector2 recompose(Vector2 line) const
+	{
+		Vector2 perp = Vector2(-line.y, line.x);
+		
+		return line * x + perp * y;
+	}
 };
 
 inline Vector2::Vector2() : x(0), y(0)
@@ -198,7 +211,7 @@ inline float Vector2::length() const
 	return sqrt(this->x * this->x + this->y * this->y);
 }
 
-inline Vector2 Vector2::normalise()
+inline Vector2 Vector2::normalise() const
 {
 	float fLength = length();
 	if (fLength > 1e-08)

@@ -45,9 +45,6 @@ class PhysicWorld
 		
 		PhysicEvent getNextEvent();
 		
-		// callback
-		void constraintActiveCallback(const PhysicObject* object, const IPhysicConstraint* constraint);
-		
 		// ------------------
 		//  copied functions
 		// ------------------

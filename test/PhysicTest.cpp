@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <limits>
 #include "PhysicObject.h"
 #include "PhysicWorld.h"
 
@@ -73,7 +74,54 @@ BOOST_AUTO_TEST_CASE( simple_reflection )
 	BOOST_CHECK_EQUAL(vec, vec.reflectedX().reflectedX());
 	BOOST_CHECK_EQUAL(vec, vec.reflectedY().reflectedY());
 	
+	BOOST_CHECK_EQUAL(-vec.x, vec.reflectedX().x);
+	BOOST_CHECK_EQUAL(vec.y, vec.reflectedX().y);
+	
+	BOOST_CHECK_EQUAL(vec.x, vec.reflectedY().x);
+	BOOST_CHECK_EQUAL(-vec.y, vec.reflectedY().y);
 }
+
+BOOST_AUTO_TEST_CASE( length_scaling )
+{
+	Vector2 zero = Vector2();
+	Vector2 vec = getRandVec();
+	
+	BOOST_CHECK_EQUAL( zero, zero.scaled( 4.5f ) );
+	BOOST_CHECK_EQUAL( zero, zero.scaledX( 5.5f ) );
+	BOOST_CHECK_EQUAL( zero, zero.scaledX( -4.5f ) );
+	BOOST_CHECK_EQUAL( zero, vec.scaled( 0 ) );
+	
+	float sc = (rand() % 101 - 50) / 11.f;
+	
+	BOOST_CHECK_EQUAL( vec.x * sc, vec.scaledX(sc).x );
+	BOOST_CHECK_EQUAL( vec.y * sc, vec.scaledY(sc).y );
+	
+	BOOST_CHECK_EQUAL( vec.scaledX(sc).scaledY(sc), vec.scaled(sc) );
+	
+	float dif = std::abs(vec.scaled(sc).length() - vec.length() * sc);
+	BOOST_CHECK( dif < std::numeric_limits<float>::epsilon() * vec.length() * sc  );
+	
+	BOOST_CHECK_EQUAL( zero.length(), 0.f  );
+}
+
+BOOST_AUTO_TEST_CASE( vector_decomposition )
+{
+	Vector2 v1 = Vector2(1,0);
+	Vector2 v2 = Vector2(0,1);
+	std::cout << v1.decompose(v2) << "\n";
+	BOOST_CHECK_EQUAL(v1, v1.decompose(v2).recompose(v2));
+	
+	Vector2 v3 = Vector2(10,10);
+	Vector2 v4 = Vector2(1,1);
+	std::cout << v3.decompose(v4) << "\n";
+	BOOST_CHECK_EQUAL(v3, v3.decompose(v4).recompose(v4));
+	
+	Vector2 vec = getRandVec();
+	Vector2 vec2 = getRandVec();
+	
+	BOOST_CHECK_EQUAL(vec, vec.decompose(vec2).recompose(vec2));
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 

@@ -138,12 +138,7 @@ void PhysicObject::step(float time)
 	
 	for(auto i = mConstraints.begin(); i != mConstraints.end(); ++i)
 	{
-		if( (*i)->checkAndCorrectConstraint(*this) )
-		{
-			/// \todo this is a hack, i guess... we don't want callbacks for constraints. but for now,
-			/// it servers for creating ball-ground events
-			const_cast<PhysicWorld*>(mConnectedWorld)->constraintActiveCallback(this, (*i).get());
-		}
+		(*i)->checkAndCorrectConstraint(*this);
 	}
 }
 
