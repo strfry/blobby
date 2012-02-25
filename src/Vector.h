@@ -52,13 +52,23 @@ class Vector2
 	/// resets the vector to (0,0)
 	void clear();
 	
+	/// gets vector with inverted x-component
 	Vector2 reflectedX() const;
+	/// gets vector with inverted y-component
 	Vector2 reflectedY() const;
+	/// returns vector scaled with \p factor. Same
+	/// as \p *this * \p factor
 	Vector2 scaled(float factor) const;
+	/// returns vector with scaled x component
 	Vector2 scaledX(float factor) const;
+	/// returns vector with scaled y component
 	Vector2 scaledY(float factor) const;
+	
+	/// gets length of vector
 	float length() const;
+	/// gets normalised vector
 	Vector2 normalise() const;
+	/// gets contra vector. same as -*this
 	Vector2 contraVector() const ;
 	
 	inline Vector2 getHalfVector(const Vector2& vec) const
@@ -66,6 +76,7 @@ class Vector2
 		return Vector2(x + (vec.x - x) / 2, y + (vec.y - y) / 2);
 	}
 
+	/// assings \p newVector to this
 	inline Vector2& operator = (const Vector2& newVector)
 	{
 		x = newVector.x;
@@ -73,26 +84,33 @@ class Vector2
 		return *this;
 	}
 	
+	/// checks equality. does not take float point
+	/// inaccuracy into account
 	inline bool operator == (const Vector2& vector) const
 	{
 		return (x == vector.x && y == vector.y);
 	}
 	
+	/// checks inequality. does not take float point
+	/// inaccuracy into account
 	inline bool operator != (const Vector2& vector) const
 	{
 		return (x != vector.x || y != vector.y);
 	}
 	
+	/// gets sum of two vectors
 	inline Vector2 operator + (const Vector2& vector) const
 	{
 		return Vector2(x + vector.x, y + vector.y);
 	}
 	
+	/// gets difference of two vectors
 	inline Vector2 operator - (const Vector2& vector) const
 	{
 		return Vector2(x - vector.x, y - vector.y);
 	}
 	
+	/// scales vector with a scalar
 	inline Vector2 operator * (float scalar) const
 	{
 		return Vector2(x * scalar, y * scalar);
@@ -103,6 +121,8 @@ class Vector2
 		return Vector2(x * vector.x, y * vector.y);
 	}
 	
+	/// divides vector by a scalar
+	/// \pre scalar != 0
 	inline Vector2 operator / (float scalar) const
 	{
 		assert(scalar != 0.0);
@@ -110,11 +130,13 @@ class Vector2
 		return Vector2(x * invert, y * invert);
 	}
 	
+	/// gets negated vector
 	inline Vector2 operator - () const
 	{
 		return Vector2(-x, -y);
 	}
 	
+	/// addition and assignment operator
 	inline Vector2& operator += (const Vector2& vector)
 	{
 		x += vector.x;
@@ -122,6 +144,7 @@ class Vector2
 		return *this;
 	}
 	
+	/// subtractiona and assignment operator
 	inline Vector2& operator -= (const Vector2& vector)
 	{
 		x -= vector.x;

@@ -6,12 +6,7 @@
 #include <limits>
 #include "PhysicObject.h"
 #include "PhysicWorld.h"
-
-std::ostream& operator<<(std::ostream& stream, const Vector2& vector)
-{
-	stream << "(" << vector.x << ", " << vector.y << ")";
-	return stream;
-}
+#include "BlobbyDebug.h"
 
 std::ostream& operator<<(std::ostream& stream, const PhysicObject::MotionState& ms)
 {
@@ -59,6 +54,22 @@ BOOST_AUTO_TEST_CASE( constructor )
 	BOOST_CHECK_EQUAL(Vector2(vec2, vec2), Vector2(0,0));
 }
 
+BOOST_AUTO_TEST_CASE( assignment_equality )
+{
+	Vector2 vec = getRandVec();
+	Vector2 vec2 = getRandVec();
+	
+	BOOST_CHECK_EQUAL(vec, vec);
+	BOOST_CHECK_EQUAL(vec2, vec2);
+	
+	vec2 = vec + Vector2(1,1);
+	BOOST_CHECK(vec != vec2);
+	
+	vec2 = vec;
+	BOOST_CHECK_EQUAL(vec, vec2);
+}
+
+
 BOOST_AUTO_TEST_CASE( clear )
 {
 	Vector2 vec = getRandVec();
@@ -102,6 +113,61 @@ BOOST_AUTO_TEST_CASE( length_scaling )
 	BOOST_CHECK( dif < std::numeric_limits<float>::epsilon() * vec.length() * sc  );
 	
 	BOOST_CHECK_EQUAL( zero.length(), 0.f  );
+	
+	// zero vectors won't get changed when normalised
+	BOOST_CHECK_EQUAL( zero.normalise(), zero );
+	
+	BOOST_CHECK_EQUAL( vec.normalise().length(), 1);
+}
+
+BOOST_AUTO_TEST_CASE( add_subtract )
+{
+	Vector2 vec = getRandVec();
+	Vector2 vec2 = getRandVec();
+	Vector2 zero = Vector2();
+	
+	BOOST_CHECK_EQUAL(vec, vec + zero);
+	BOOST_CHECK_EQUAL(vec, zero + vec);
+	
+	BOOST_CHECK_EQUAL(vec, vec - zero);
+	BOOST_CHECK_EQUAL(-vec, zero - vec);
+	
+	BOOST_CHECK_EQUAL(vec - vec, zero);
+	BOOST_CHECK_EQUAL(vec + (-vec), zero);
+	
+	
+	BOOST_CHECK_EQUAL(vec + vec2, vec2 + vec);
+	BOOST_CHECK_EQUAL(vec - vec2, -(vec2 - vec));
+	
+	BOOST_CHECK_EQUAL((vec + vec2).x, vec.x + vec2.x);
+	BOOST_CHECK_EQUAL((vec + vec2).y, vec.y + vec2.y);
+	
+	// short operators
+	Vector2 vec3 = vec;
+	vec3 += vec2;
+	BOOST_CHECK_EQUAL(vec3, vec + vec2);
+	vec3 -= vec2;
+	BOOST_CHECK_EQUAL(vec3, vec);
+}
+
+BOOST_AUTO_TEST_CASE( multiply_divide )
+{
+	Vector2 vec = getRandVec();
+	Vector2 vec2 = getRandVec();
+	Vector2 zero = Vector2();
+	float f = (rand() % 101 - 50) / 11.f;
+	
+	BOOST_CHECK_EQUAL(zero,  zero * f);
+	BOOST_CHECK_EQUAL(zero,  vec * 0);
+	
+	BOOST_CHECK_EQUAL(vec * f, vec.scaled(f));
+	BOOST_CHECK_EQUAL(f * vec, vec.scaled(f));
+	
+	vec2 = vec;
+	/*! \todo we don't have this operation yet!
+	vec2 *= f;
+	BOOST_CHECK_EQUAL(vec * f, vec2);
+	*/
 }
 
 BOOST_AUTO_TEST_CASE( vector_decomposition )

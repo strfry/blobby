@@ -125,6 +125,9 @@ void PhysicWorld::step()
 			
 			curtime = timed_hits.begin()->time;
 			timed_hits.pop_front();
+			
+			/// \todo actually, we should look here if we can find a new collision which happens
+			/// 		due to the changes in trajectories
 		}
 	}
 	

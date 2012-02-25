@@ -3,6 +3,7 @@
 #include "Vector.h"
 #include "PhysicCollisionShape.h"
 #include "PhysicConstraint.h"
+#include "PhysicCollisionShape.h"
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
@@ -120,8 +121,8 @@ class PhysicObject
 		
 		// object geometry/properties
 		unsigned int mCollisionType;
-		std::vector<boost::shared_ptr<ICollisionShape>> mCollisionShapes;
-		std::vector<boost::shared_ptr<IPhysicConstraint>> mConstraints;
+		std::vector<boost::shared_ptr<ICollisionShape> > mCollisionShapes;
+		std::vector<boost::shared_ptr<IPhysicConstraint> > mConstraints;
 		AABBox mBoundingBox;
 		
 		std::string mDebugName;
