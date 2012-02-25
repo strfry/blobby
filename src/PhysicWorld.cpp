@@ -123,21 +123,48 @@ void PhysicWorld::step_impl(float timestep)
 			i->step(timestep);
 		}
 
-		while(!timed_hits.empty())
+		for(auto i = timed_hits.begin(); i != timed_hits.end(); ++i)
 		{
 			hc++;
 			// now we have the hit events in chronological order.
 			// let's handle them.
 			
 			// no we need to do the corresponding collision response handler
-			handleCollision(*timed_hits.begin());
-			
-			curtime = timed_hits.begin()->time;
-			timed_hits.pop_front();
-			
-			/// \todo actually, we should look here if we can find a new collision which happens
-			/// 		due to the changes in trajectories
+			handleCollision(*i);
 		}
+		
+		std::cout << getBall().getPosition() << "\n";
+		
+		// deintersect
+		int dbg_counter = 0;
+		for(bool intersect = true; intersect; )
+		{
+			intersect = false;
+			for(auto i = timed_hits.begin(); i != timed_hits.end(); ++i)
+			{
+				if(collisionDetector.hitTest(*i->first, *i->second))
+				{
+					intersect = true;
+					
+					float msum = 100*(i->first->getInverseMass() + i->second->getInverseMass());
+					
+					const_cast<PhysicObject*>(i->first)->setPosition( i->first->getPosition() 
+												+ i->impactNormal * i->first->getInverseMass() / msum );
+					
+					const_cast<PhysicObject*>(i->second)->setPosition( i->second->getPosition() 
+												- i->impactNormal * i->second->getInverseMass() /msum );
+					
+					dbg_counter++;
+					if(dbg_counter == 10000) 
+					{
+						std::cout << "PROBLEM: " << i->impactNormal << "\n";
+						break;
+					}
+				}
+			}
+		}
+		
+		std::cout << "c: " << getBall().getPosition() << "\n";
 	} 
 	else 
 	{
@@ -300,22 +327,5 @@ void PhysicWorld::handleCollision(TimedCollisionEvent event)
 		
 		ball->setVelocity( vel ) ;
 		mEventQueue.push(PhysicEvent{PhysicEvent::PE_BALL_HIT_GROUND, 0, event.first->getPosition()});
-	}
-	
-	// deintersect
-	int dbg_counter = 0;
-	while(collisionDetector.hitTest(*event.first, *event.second))
-	{
-		const_cast<PhysicObject*>(event.first)->setPosition( event.first->getPosition() 
-									+ event.impactNormal * event.first->getInverseMass() ) ;
-		
-		const_cast<PhysicObject*>(event.second)->setPosition( event.second->getPosition() 
-									- event.impactNormal * event.second->getInverseMass() ) ;
-		
-		dbg_counter++;
-		if(dbg_counter == 10000) {
-			std::cout << "PROBLEM: " << event.impactNormal << "\n";
-			break;
-		}
 	}
 }
