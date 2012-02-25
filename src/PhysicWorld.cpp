@@ -5,8 +5,11 @@
 #include "SDL/SDL.h"
 
 #include <algorithm>
+#include <deque>
 #include <boost/weak_ptr.hpp>
 #include <iostream>
+
+#include "BlobbyDebug.h"
 
 PhysicWorld::PhysicWorld()
 {
@@ -39,10 +42,10 @@ PhysicWorld::PhysicWorld()
 	mObjects[1].setWorld(this);
 	
 	mObjects[2].setDebugName("Ball");
-	mObjects[2].setPosition( Vector2(600, 400) );
+	mObjects[2].setPosition( Vector2(600, 300) );
 	mObjects[2].setRotation( 0 );
-	mObjects[2].setAngularVelocity( 0 );
-	mObjects[2].setAcceleration( Vector2(0, BALL_GRAVITATION) );
+	mObjects[2].setAngularVelocity( 0.1 );
+	mObjects[2].setAcceleration( Vector2(0, 0) );
 	mObjects[2].setVelocity( Vector2(0, 0) );
 	boost::shared_ptr<ICollisionShape> sp2 (new CollisionShapeSphere(BALL_RADIUS));
 	mObjects[2].addCollisionShape( sp2 );
@@ -62,7 +65,7 @@ PhysicWorld::PhysicWorld()
 	
 	mObjects[4].setDebugName("Ground");
 	mObjects[4].setPosition( Vector2(400, 700) );
-	boost::shared_ptr<ICollisionShape> gr (new CollisionShapeBox( Vector2( 1000, 390)));
+	boost::shared_ptr<ICollisionShape> gr (new CollisionShapeBox( Vector2( 1000, 400)));
 	mObjects[4].addCollisionShape( gr );
 	mObjects[4].setCollisionType(4);
 	mObjects[4].setWorld(this);
@@ -92,7 +95,7 @@ void PhysicWorld::step()
 		// we want to determine in which order the collisions happen and when exactly the will occur.
 		// with that information, we are able to sort the collision events
 
-		std::vector<TimedCollisionEvent> timed_hits;
+		std::deque<TimedCollisionEvent> timed_hits;
 		for(auto i = col_candidates.begin(); i != col_candidates.end(); ++i)
 		{
 			TimedCollisionEvent evt = collisionDetector.checkCollision(*i);
@@ -103,7 +106,7 @@ void PhysicWorld::step()
 			}
 		}
 
-		if(!timed_hits.empty())
+		while(!timed_hits.empty())
 		{
 			std::sort(timed_hits.begin(), timed_hits.end());
 
@@ -111,67 +114,17 @@ void PhysicWorld::step()
 			// let's handle them.
 			
 			
-			// simulate 
+			// simulate till first impact
 			for(auto j = mObjects.begin(); j != mObjects.end(); ++j)
 			{
 				j->step(timed_hits.begin()->time - curtime);
 			}
 			
 			// no we need to do the corresponding collision response handler
+			handleCollision(*timed_hits.begin());
 			
-			//const_cast<PhysicObject*>(i->second)->setVelocity( -i->second->getVelocity() );
-			if(timed_hits.begin()->second->getCollisionType() == 2) 
-			{
-				const_cast<PhysicObject*>(timed_hits.begin()->second)->setVelocity( -13 * timed_hits.begin()->impactNormal );
-				mEventQueue.push(PhysicEvent{PhysicEvent::PE_BALL_HIT_BLOBBY, timed_hits.begin()->time, timed_hits.begin()->second->getPosition()});
-			}
-			else if(timed_hits.begin()->first->getCollisionType() == 2 && timed_hits.begin()->second->getCollisionType() == 3) 
-			{
-				//nethit
-				const_cast<PhysicObject*>(timed_hits.begin()->first)->setVelocity( 
-						timed_hits.begin()->first->getVelocity().reflect(timed_hits.begin()->impactNormal)) ;
-			}
-			else if
-			(timed_hits.begin()->first->getCollisionType() == 2 && timed_hits.begin()->second->getCollisionType() == 4) 
-			{
-				PhysicObject* ball = const_cast<PhysicObject*>(timed_hits.begin()->first);
-				// groundhit
-				Vector2 vel =ball->getVelocity();
-				Vector2 dc = vel.decompose(timed_hits.begin()->impactNormal);
-				float e1 = vel.length() * vel.length() +  ball->getAngularVelocity() * ball->getAngularVelocity() * BALL_RADIUS;
-				float dp = dc.x * 1.5;
-				dc.x *= -0.5;
-				float mu = 0.2;
-				
-				for(int i=0; i < 5; ++i)
-				{
-					float cg = 0.2 * mu * dp;
-					if(dc.y + BALL_RADIUS * ball->getAngularVelocity() > cg)
-					{
-						dc.y -= cg;
-						ball->setAngularVelocity( ball->getAngularVelocity() - cg/BALL_RADIUS );
-					}
-					else if (dc.y + BALL_RADIUS * ball->getAngularVelocity() < -mu*dp)
-					{
-						dc.y += cg;
-						ball->setAngularVelocity( ball->getAngularVelocity() + cg/BALL_RADIUS );
-					} 
-					else 
-					{
-						dc.y = BALL_RADIUS * ball->getAngularVelocity();
-					}
-				}
-				std::cout << ball->getAngularVelocity() << "\n";
-				vel = dc.recompose(timed_hits.begin()->impactNormal);
-				
-				float e2 = vel.length() * vel.length() +  ball->getAngularVelocity() * ball->getAngularVelocity() * BALL_RADIUS;
-				std::cout << e1 << " -> " << e2 << "\n";
-				assert( e2 <= e1 );
-				
-				ball->setVelocity( vel ) ;
-				ball->setPosition( ball->getPosition() - timed_hits.begin()->impactNormal) ;
-				//mEventQueue.push(PhysicEvent{PhysicEvent::PE_BALL_HIT_GROUND, 0, timed_hits.begin()->first->getPosition()});
-			}
+			curtime = timed_hits.begin()->time;
+			timed_hits.pop_front();
 		}
 	}
 	
@@ -277,3 +230,58 @@ void PhysicWorld::getSwappedState(RakNet::BitStream* stream) const
 	
 }
 
+void PhysicWorld::handleCollision(TimedCollisionEvent event)
+{
+	if(event.second->getCollisionType() == 2) 
+	{
+		const_cast<PhysicObject*>(event.second)->setVelocity( -13 * event.impactNormal );
+		mEventQueue.push(PhysicEvent{PhysicEvent::PE_BALL_HIT_BLOBBY, event.time, event.second->getPosition()});
+	}
+	else if(event.first->getCollisionType() == 2 && event.second->getCollisionType() == 3) 
+	{
+		//nethit
+		const_cast<PhysicObject*>(event.first)->setVelocity( 
+				event.first->getVelocity().reflect(event.impactNormal)) ;
+	}
+	else if
+	(event.first->getCollisionType() == 2 && event.second->getCollisionType() == 4) 
+	{
+		PhysicObject* ball = const_cast<PhysicObject*>(event.first);
+		// groundhit
+		Vector2 vel =ball->getVelocity();
+		Vector2 dc = vel.decompose(event.impactNormal);
+		float e1 = vel.length() * vel.length() +  ball->getAngularVelocity() * ball->getAngularVelocity() * BALL_RADIUS;
+		float dp = dc.x * 1.5;
+		dc.x *= -0.5;
+		float mu = 1.0;
+		
+		for(int i=0; i < 100; ++i)
+		{
+			float cg = 0.01 * mu * dp;
+			if(dc.y + BALL_RADIUS * ball->getAngularVelocity() > cg)
+			{
+				dc.y -= cg;
+				ball->setAngularVelocity( ball->getAngularVelocity() - cg/BALL_RADIUS );
+			}
+			else if (dc.y + BALL_RADIUS * ball->getAngularVelocity() < -mu*dp)
+			{
+				dc.y += cg;
+				ball->setAngularVelocity( ball->getAngularVelocity() + cg/BALL_RADIUS );
+			} 
+			else 
+			{
+				dc.y = BALL_RADIUS * ball->getAngularVelocity();
+			}
+		}
+		std::cout << ball->getAngularVelocity() << "\n";
+		vel = dc.recompose(event.impactNormal);
+		
+		float e2 = vel.length() * vel.length() +  ball->getAngularVelocity() * ball->getAngularVelocity() * BALL_RADIUS;
+		std::cout << e1 << " -> " << e2 << "\n";
+		assert( e2 <= e1 );
+		
+		ball->setVelocity( vel ) ;
+		ball->setPosition( ball->getPosition() - event.impactNormal * (ball->getPosition().y + BALL_RADIUS - 500) ) ;
+		mEventQueue.push(PhysicEvent{PhysicEvent::PE_BALL_HIT_GROUND, 0, event.first->getPosition()});
+	}
+}

@@ -30,6 +30,8 @@ struct PhysicEvent
 	}
 };
 
+class TimedCollisionEvent;
+
 class PhysicWorld
 {
 	public:
@@ -71,5 +73,7 @@ class PhysicWorld
 	private:
 		std::vector<PhysicObject> mObjects;
 		std::queue<PhysicEvent> mEventQueue;
+		
+		void handleCollision(TimedCollisionEvent event);
 };
 

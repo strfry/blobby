@@ -42,6 +42,7 @@ DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput,
 	mRightInput = rinput;
 
 	mBallDown = false;
+	mIsGameRunning = false;
 
 	mPhysicWorld.step();
 
@@ -103,7 +104,11 @@ void DuelMatch::step()
 		return;
 	
 	// update gravity
-	mPhysicWorld.getBallReference().addForce( Vector2(0, BALL_GRAVITATION));
+	std::cout << " run game: " << mIsGameRunning << " " << mBallDown << "\n";
+	if(mIsGameRunning) 
+	{
+		mPhysicWorld.getBallReference().addForce( Vector2(0, BALL_GRAVITATION));
+	}
 	mPhysicWorld.getBlobReference(LEFT_PLAYER).addForce( Vector2(0, GRAVITATION));
 	mPhysicWorld.getBlobReference(RIGHT_PLAYER).addForce( Vector2(0, GRAVITATION));
 	
@@ -111,7 +116,8 @@ void DuelMatch::step()
 	mLogic->step();
 	
 	// check for all hit events
-	if(!mRemote)
+	// don't process events if ball is already down
+	if(!mRemote && !mBallDown)
 	{
 		// create game events
 		// ball/player hit events:
@@ -120,6 +126,7 @@ void DuelMatch::step()
 		{
 			switch(evt.type) {
 				case PhysicEvent::PE_BALL_HIT_BLOBBY:
+					mIsGameRunning = true;
 					if(evt.position.x < 400) 
 					{
 						events |= ~(!mLogic->isCollisionValid(LEFT_PLAYER)) & EVENT_LEFT_BLOBBY_HIT;
@@ -132,6 +139,7 @@ void DuelMatch::step()
 					}
 					break;
 				case PhysicEvent::PE_BALL_HIT_GROUND:
+					std::cout << "BALL HIT GROUND\n";
 					if(evt.position.x < 400) 
 					{
 						events |= EVENT_BALL_HIT_LEFT_GROUND;
@@ -144,6 +152,9 @@ void DuelMatch::step()
 			}
 		}
 		
+	} else {
+		// just clear the event queue
+		while( PhysicEvent evt = mPhysicWorld.getNextEvent());
 	}
 	
 	// process events
@@ -191,6 +202,7 @@ void DuelMatch::step()
 	{
 		mBallDown = false;
 		resetBall(mLogic->getServingPlayer());
+		mIsGameRunning = false;
 		events |= EVENT_RESET;
 	}
 	
@@ -258,7 +270,7 @@ bool DuelMatch::getBallDown() const
 bool DuelMatch::getBallActive() const 
 {
 	/// \todo i guess this needs to be reworked too
-	return !mBallDown;
+	return mIsGameRunning;
 }
 
 

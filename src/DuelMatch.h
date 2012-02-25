@@ -139,6 +139,7 @@ private:
 	GameLogic mLogic;
 
 	bool mBallDown;
+	bool mIsGameRunning;
 	
 	bool mPaused;
 
