@@ -17,7 +17,7 @@ PhysicWorld::PhysicWorld()
 	mObjects[0].setDebugName("Left Blobby");
 	mObjects[0].setPosition( Vector2(200, 400) );
 	mObjects[0].setAcceleration( Vector2(0, GRAVITATION) );
-	mObjects[0].setVelocity( Vector2(5, 0) );
+	mObjects[0].setVelocity( Vector2(0, 0) );
 	boost::shared_ptr<ICollisionShape> body (new CollisionShapeSphere(BLOBBY_LOWER_RADIUS, Vector2(0, BLOBBY_LOWER_SPHERE)));	
 	boost::shared_ptr<ICollisionShape> head (new CollisionShapeSphere(BLOBBY_UPPER_RADIUS, Vector2(0, -BLOBBY_UPPER_SPHERE)));	
 	mObjects[0].addCollisionShape( body );
@@ -44,7 +44,7 @@ PhysicWorld::PhysicWorld()
 	mObjects[1].setWorld(this);
 	
 	mObjects[2].setDebugName("Ball");
-	mObjects[2].setPosition( Vector2(750, 454+13.02) );
+	mObjects[2].setPosition( Vector2(700, 454 + 13) );
 	mObjects[2].setRotation( 0 );
 	mObjects[2].setAngularVelocity( 0.1 );
 	mObjects[2].setAcceleration( Vector2(0, 0) );
@@ -90,6 +90,7 @@ void PhysicWorld::step()
 	
 	BroadphaseCollisonArray col_candidates = collisionDetector.getCollisionEventsBroadphase(mObjects);
 	
+	int hc = 0;
 	if(!col_candidates.empty())
 	{
 		// now we've got an array of possible collision pairs. Now we need some more precise checks.
@@ -107,10 +108,11 @@ void PhysicWorld::step()
 			}
 		}
 
+		std::sort(timed_hits.begin(), timed_hits.end());
+
 		while(!timed_hits.empty())
 		{
-			std::sort(timed_hits.begin(), timed_hits.end());
-
+			hc++;
 			// now we have the hit events in chronological order.
 			// let's handle them.
 			
@@ -136,6 +138,8 @@ void PhysicWorld::step()
 	{
 		i->step(1 - curtime);
 	}
+	
+	std::cout << "HC: " << hc << "\n";
 	
 	// reset all forces
 	for(auto i = mObjects.begin(); i != mObjects.end(); ++i)
@@ -277,11 +281,11 @@ void PhysicWorld::handleCollision(TimedCollisionEvent event)
 				dc.y = BALL_RADIUS * ball->getAngularVelocity();
 			}
 		}*/
-		std::cout << ball->getAngularVelocity() << "\n";
+		//std::cout << ball->getAngularVelocity() << "\n";
 		vel = dc.recompose(-event.impactNormal);
 		
 		float e2 = vel.length() * vel.length() +  ball->getAngularVelocity() * ball->getAngularVelocity() * BALL_RADIUS;
-		std::cout << e1 << " -> " << e2 << "\n";
+		//std::cout << e1 << " -> " << e2 << "\n";
 		//assert( e2 <= e1 );
 		
 		ball->setVelocity( vel ) ;

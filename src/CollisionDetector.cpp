@@ -211,6 +211,26 @@ bool CollisionDetector::collisionTestBoxSphere(Vector2 pos1,
 	if(dx*dx + dy*dy > (sp->getRadius() * sp->getRadius()))
 		return false;
 	
-	normal = (circle - Vector2(nearx, neary)).normalise();
-	return true;
+	// if sphere center is inside box, we need a little more work for calculating the normal
+	if( circle.x != nearx || circle.y != neary )
+	{
+		normal = (circle - Vector2(nearx, neary)).normalise();
+		return true;
+	}
+	
+	// normal has to point from cicle center to nearest surface point
+	/// \todo optimize
+	if( std::min(std::abs(circle.x - box.upperLeft.x), std::abs(circle.x - box.lowerRight.x)) < 
+			std::min(std::abs(circle.y - box.upperLeft.y), std::abs(circle.y - box.lowerRight.y)))
+	{
+		if(2 * circle.x > box.upperLeft.x + box.lowerRight.x)
+			normal = Vector2(1, 0);
+		else
+			normal = Vector2(-1, 0);
+	} else {
+		if(2 * circle.y > box.upperLeft.y + box.lowerRight.y)
+			normal = Vector2(0, 1);
+		else
+			normal = Vector2(0, -1);
+	}
 }

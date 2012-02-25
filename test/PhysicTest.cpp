@@ -402,17 +402,17 @@ BOOST_AUTO_TEST_CASE( sphere_sphere )
 	Vector2 norm;
 	bool h = d.collisionTestSphereSphere(Vector2(0,0), Vector2(18,0), &csp, &csp, norm);
 	
-	BOOST_CHECK_EQUAL(h, true);
+	BOOST_CHECK(h);
 	BOOST_CHECK_EQUAL(norm, Vector2(-1,0));
 	
 	h = d.collisionTestSphereSphere(Vector2(0,0), Vector2(0,-16), &csp, &csp, norm);
-	BOOST_CHECK_EQUAL(h, true);
+	BOOST_CHECK(h);
 	BOOST_CHECK_EQUAL(norm, Vector2(0,1));
 	
 	// completely in the other
 	CollisionShapeSphere huge = CollisionShapeSphere(100);
 	h = d.collisionTestSphereSphere(Vector2(0,0), Vector2(10,10), &huge, &csp, norm);
-	BOOST_CHECK_EQUAL(h, true);
+	BOOST_CHECK(h);
 	BOOST_CHECK_EQUAL(norm.x, norm.y);
 }
 
@@ -427,18 +427,22 @@ BOOST_AUTO_TEST_CASE( box_sphere )
 	Vector2 norm;
 	bool h = d.collisionTestBoxSphere(Vector2(0,0), Vector2(18,0), &csb, &csp, norm);
 	
-	BOOST_CHECK_EQUAL(h, true);
+	BOOST_CHECK(h);
 	BOOST_CHECK_EQUAL(norm, Vector2(-1,0));
 	/*
 	h = d.collisionTestSphereSphere(Vector2(0,0), Vector2(0,-16), &csp, &csp, norm);
 	BOOST_CHECK_EQUAL(h, true);
 	BOOST_CHECK_EQUAL(norm, Vector2(0,1));
-	
+	*/
 	// completely in the other
-	CollisionShapeSphere huge = CollisionShapeBox(100);
-	h = d.collisionTestSphereSphere(Vector2(0,0), Vector2(10,10), &huge, &csb, norm);
-	BOOST_CHECK_EQUAL(h, true);
-	BOOST_CHECK_EQUAL(norm.x, norm.y);*/
+	CollisionShapeBox huge = CollisionShapeBox( Vector2(200, 200) );
+	h = d.collisionTestBoxSphere(Vector2(0,0), Vector2(10,10), &huge, &csp, norm);
+	BOOST_CHECK(h);
+	BOOST_CHECK( std::abs(norm.length() - 1) < std::numeric_limits<float>::epsilon());
+	
+	h = d.collisionTestBoxSphere(Vector2(0,0), Vector2(98, 0), &huge, &csp, norm);
+	BOOST_CHECK(h);
+	BOOST_CHECK_EQUAL( norm, Vector2(-1, 0));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
