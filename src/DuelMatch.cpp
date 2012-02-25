@@ -104,7 +104,7 @@ void DuelMatch::step()
 		return;
 	
 	// update gravity
-	std::cout << " run game: " << mIsGameRunning << " " << mBallDown << "\n";
+	//std::cout << " run game: " << mIsGameRunning << " " << mBallDown << "\n";
 	if(mIsGameRunning) 
 	{
 		mPhysicWorld.getBallReference().addForce( Vector2(0, BALL_GRAVITATION));
@@ -368,6 +368,7 @@ bool DuelMatch::resetAreaClear() const
 
 bool DuelMatch::roundFinished() const
 {
+	return false;
 	if (resetAreaClear())
 	{
 		if (mBallDown)

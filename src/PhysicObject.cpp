@@ -8,7 +8,8 @@ PhysicObject::PhysicObject(const Vector2& p, const Vector2& v):
 	mVelocity(v),
 	mConnectedWorld(0),
 	mRotation(0),
-	mAngularVelocity(0)
+	mAngularVelocity(0),
+	mInverseMass(0)
 {
 }
 
@@ -186,4 +187,14 @@ float PhysicObject::getAngularVelocity() const
 void PhysicObject::setAngularVelocity( float nrot)
 {
 	mAngularVelocity = nrot;
+}
+
+float PhysicObject::getInverseMass() const
+{
+	return mInverseMass;
+}
+
+void PhysicObject::setInverseMass(float im)
+{
+	mInverseMass = im;
 }

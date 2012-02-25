@@ -66,11 +66,11 @@ TimedCollisionEvent CollisionDetector::checkCollision(BroadphaseCollisionEvent b
 					
 					Vector2 normal;
 					
-					if(collisionTestBoxSphere(statetwo, stateone, box, sphere, normal)) 
+					if(collisionTestBoxSphere(statetwo.pos, stateone.pos, box, sphere, normal)) 
 					{
 						
 						
-						return TimedCollisionEvent{one, two, normal, substep / 16.f};
+						return TimedCollisionEvent{one, two, -normal, substep / 16.f};
 					}
 				} else if(cshape1->getShapeType() == BOX && cshape2->getShapeType() == SPHERE) 
 				{
@@ -79,10 +79,8 @@ TimedCollisionEvent CollisionDetector::checkCollision(BroadphaseCollisionEvent b
 					
 					Vector2 normal;
 					
-					if(collisionTestBoxSphere(stateone, statetwo, box, sphere, normal)) 
+					if(collisionTestBoxSphere(stateone.pos, statetwo.pos, box, sphere, normal)) 
 					{
-						
-						
 						return TimedCollisionEvent{one, two, normal, substep / 16.f};
 					}
 				} 
@@ -93,7 +91,7 @@ TimedCollisionEvent CollisionDetector::checkCollision(BroadphaseCollisionEvent b
 					
 					Vector2 normal;
 					
-					if(collisionTestSphereSphere(stateone, statetwo, sphere1, sphere2, normal)) 
+					if(collisionTestSphereSphere(stateone.pos, statetwo.pos, sphere1, sphere2, normal)) 
 					{
 						
 						
@@ -109,19 +107,77 @@ TimedCollisionEvent CollisionDetector::checkCollision(BroadphaseCollisionEvent b
 	return {0,0,Vector2(), -1};
 }
 
-bool CollisionDetector::collisionTestSphereSphere(PhysicObject::MotionState state1, 
-												PhysicObject::MotionState state2,
+bool CollisionDetector::hitTest(const PhysicObject& one, const PhysicObject& two)
+{
+	PhysicObject::MotionState stateone = one.getMotionState( );
+	PhysicObject::MotionState statetwo = two.getMotionState( );
+	
+	// test each shape against every other one
+	for(int i = 0; i < one.getCollisionShapeCount(); ++i)
+	{
+		auto shape1 = one.getCollisionShape(i);
+		for(int j = 0; j < two.getCollisionShapeCount(); ++j)
+		{
+			auto shape2 = two.getCollisionShape(j);
+			
+			// collision algorithm
+			const ICollisionShape* cshape1 = shape1.lock().get();
+			const ICollisionShape* cshape2 = shape2.lock().get();
+			
+			if(cshape2->getShapeType() == BOX && cshape1->getShapeType() == SPHERE) 
+			{
+				const CollisionShapeSphere* sphere = (const CollisionShapeSphere*)cshape1;
+				const CollisionShapeBox* box = (const CollisionShapeBox*)cshape2;
+				
+				Vector2 normal;
+				
+				if(collisionTestBoxSphere(statetwo.pos, stateone.pos, box, sphere, normal)) 
+				{
+					return true;
+				}
+			} else if(cshape1->getShapeType() == BOX && cshape2->getShapeType() == SPHERE) 
+			{
+				const CollisionShapeSphere* sphere = (const CollisionShapeSphere*)cshape2;
+				const CollisionShapeBox* box = (const CollisionShapeBox*)cshape1;
+				
+				Vector2 normal;
+				
+				if(collisionTestBoxSphere(stateone.pos, statetwo.pos, box, sphere, normal)) 
+				{
+					return true;
+				}
+			} 
+				else if(cshape1->getShapeType() == SPHERE && cshape2->getShapeType() == SPHERE) 
+			{
+				const CollisionShapeSphere* sphere1 = (const CollisionShapeSphere*)cshape1;
+				const CollisionShapeSphere* sphere2 = (const CollisionShapeSphere*)cshape2;
+				
+				Vector2 normal;
+				
+				if(collisionTestSphereSphere(stateone.pos, statetwo.pos, sphere1, sphere2, normal)) 
+				{
+					return true;
+				}
+				
+			}
+		}
+	}
+	
+	return false;
+}
+
+bool CollisionDetector::collisionTestSphereSphere(Vector2 pos1, 
+												Vector2 pos2,
 												const CollisionShapeSphere* s1, 
 												const CollisionShapeSphere* s2, 
 												Vector2& norm)
 {
 	
-	if(	(	state1.pos + s1->getRelativePosition() - 
-			state2.pos - s2->getRelativePosition()	).length() <
+	if(	(	pos1 + s1->getRelativePosition() - 
+			pos2 - s2->getRelativePosition()	).length() <
 							s1->getRadius() + s2->getRadius()) 
 	{			
-		norm = (state1.pos + s1->getRelativePosition() - 
-					state2.pos - s2->getRelativePosition()).normalise();
+		norm = (pos1 + s1->getRelativePosition() - pos2 - s2->getRelativePosition()).normalise();
 		
 		return true;
 	}
@@ -134,14 +190,14 @@ float clamp(float val, float min, float max)
 	return std::max(std::min(max, val), min);
 }
 
-bool CollisionDetector::collisionTestBoxSphere(PhysicObject::MotionState state1, 
-											PhysicObject::MotionState state2,
+bool CollisionDetector::collisionTestBoxSphere(Vector2 pos1, 
+											Vector2 pos2,
 											const CollisionShapeBox* boxshape, 
 											const CollisionShapeSphere* sp, 
 											Vector2& normal)
 {
-	AABBox box = boxshape->getBoundingBox() + state2.pos;
-	Vector2 circle = sp->getRelativePosition() + state1.pos;
+	AABBox box = boxshape->getBoundingBox() + pos2;
+	Vector2 circle = sp->getRelativePosition() + pos1;
 	
 	// closest point to circle within box
 	float nearx = clamp(circle.x, box.upperLeft.x, box.lowerRight.x);

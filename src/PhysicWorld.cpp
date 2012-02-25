@@ -23,6 +23,7 @@ PhysicWorld::PhysicWorld()
 	mObjects[0].addCollisionShape( body );
 	mObjects[0].addCollisionShape( head );
 	mObjects[0].setCollisionType(1);
+	mObjects[0].setInverseMass(0.01);
 	boost::shared_ptr<IPhysicConstraint> con1 (new HorizontalFieldBoundaryConstraint(0, 400 - NET_RADIUS - BLOBBY_LOWER_RADIUS));
 	boost::shared_ptr<IPhysicConstraint> ground (new GroundConstraint(500));
 	mObjects[0].addConstraint (con1);
@@ -39,10 +40,11 @@ PhysicWorld::PhysicWorld()
 	boost::shared_ptr<IPhysicConstraint> con2 (new HorizontalFieldBoundaryConstraint(400 + NET_RADIUS + BLOBBY_LOWER_RADIUS, 800));
 	mObjects[1].addConstraint (con2);
 	mObjects[1].addConstraint (ground);
+	mObjects[1].setInverseMass(0.01);
 	mObjects[1].setWorld(this);
 	
 	mObjects[2].setDebugName("Ball");
-	mObjects[2].setPosition( Vector2(600, 300) );
+	mObjects[2].setPosition( Vector2(750, 454+13.02) );
 	mObjects[2].setRotation( 0 );
 	mObjects[2].setAngularVelocity( 0.1 );
 	mObjects[2].setAcceleration( Vector2(0, 0) );
@@ -52,6 +54,7 @@ PhysicWorld::PhysicWorld()
 	mObjects[2].setCollisionType(2);
 	boost::shared_ptr<IPhysicConstraint> con3 (new HorizontalFieldBoundaryConstraint(BALL_RADIUS, 800 - BALL_RADIUS, 1));
 	mObjects[2].addConstraint (con3);
+	mObjects[2].setInverseMass(0.1);
 	mObjects[2].setWorld(this);
 	
 	mObjects[3].setDebugName("Net");
@@ -62,6 +65,7 @@ PhysicWorld::PhysicWorld()
 	mObjects[3].addCollisionShape( nt );
 	mObjects[3].setCollisionType(3);
 	mObjects[3].setWorld(this);
+	mObjects[3].setInverseMass(0);
 	
 	mObjects[4].setDebugName("Ground");
 	mObjects[4].setPosition( Vector2(400, 700) );
@@ -69,6 +73,7 @@ PhysicWorld::PhysicWorld()
 	mObjects[4].addCollisionShape( gr );
 	mObjects[4].setCollisionType(4);
 	mObjects[4].setWorld(this);
+	mObjects[4].setInverseMass(0);
 }
 
 PhysicWorld::~PhysicWorld()
@@ -77,10 +82,6 @@ PhysicWorld::~PhysicWorld()
 
 void PhysicWorld::step() 
 {
-//	SDL_Delay(50);
-	
-	static CollisionDetector collisionDetector;
-
 	// at first, do some broadphase collision detection:
 	//  we determine all pairs of objects that will intersec if the objects move without interacting
 	//  with each other.
@@ -251,13 +252,13 @@ void PhysicWorld::handleCollision(TimedCollisionEvent event)
 	{
 		PhysicObject* ball = const_cast<PhysicObject*>(event.first);
 		// groundhit
-		Vector2 vel =ball->getVelocity();
-		Vector2 dc = vel.decompose(event.impactNormal);
+		Vector2 vel = ball->getVelocity();
+		Vector2 dc = vel.decompose(-event.impactNormal);
 		float e1 = vel.length() * vel.length() +  ball->getAngularVelocity() * ball->getAngularVelocity() * BALL_RADIUS;
 		float dp = dc.x * 1.5;
 		dc.x *= -0.5;
 		float mu = 1.0;
-		
+		/*
 		for(int i=0; i < 100; ++i)
 		{
 			float cg = 0.01 * mu * dp;
@@ -275,16 +276,32 @@ void PhysicWorld::handleCollision(TimedCollisionEvent event)
 			{
 				dc.y = BALL_RADIUS * ball->getAngularVelocity();
 			}
-		}
+		}*/
 		std::cout << ball->getAngularVelocity() << "\n";
-		vel = dc.recompose(event.impactNormal);
+		vel = dc.recompose(-event.impactNormal);
 		
 		float e2 = vel.length() * vel.length() +  ball->getAngularVelocity() * ball->getAngularVelocity() * BALL_RADIUS;
 		std::cout << e1 << " -> " << e2 << "\n";
-		assert( e2 <= e1 );
+		//assert( e2 <= e1 );
 		
 		ball->setVelocity( vel ) ;
-		ball->setPosition( ball->getPosition() - event.impactNormal * (ball->getPosition().y + BALL_RADIUS - 500) ) ;
 		mEventQueue.push(PhysicEvent{PhysicEvent::PE_BALL_HIT_GROUND, 0, event.first->getPosition()});
+	}
+	
+	// deintersect
+	int dbg_counter = 0;
+	while(collisionDetector.hitTest(*event.first, *event.second))
+	{
+		const_cast<PhysicObject*>(event.first)->setPosition( event.first->getPosition() 
+									+ event.impactNormal * event.first->getInverseMass() ) ;
+		
+		const_cast<PhysicObject*>(event.second)->setPosition( event.second->getPosition() 
+									- event.impactNormal * event.second->getInverseMass() ) ;
+		
+		dbg_counter++;
+		if(dbg_counter == 10000) {
+			std::cout << "PROBLEM: " << event.impactNormal << "\n";
+			break;
+		}
 	}
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PhysicObject.h"
+#include "CollisionDetector.h"
 
 #include "Global.h"
 #include "InputSource.h"
@@ -73,6 +74,7 @@ class PhysicWorld
 	private:
 		std::vector<PhysicObject> mObjects;
 		std::queue<PhysicEvent> mEventQueue;
+		CollisionDetector collisionDetector;
 		
 		void handleCollision(TimedCollisionEvent event);
 };

@@ -59,6 +59,9 @@ class PhysicObject
 		
 		AABBox getBoundingBox() const;
 		
+		float getInverseMass() const;
+		void setInverseMass(float im);
+		
 		
 		// constraint
 		void addConstraint( boost::shared_ptr<IPhysicConstraint> cst );
@@ -121,6 +124,7 @@ class PhysicObject
 		
 		// object geometry/properties
 		unsigned int mCollisionType;
+		float mInverseMass;
 		std::vector<boost::shared_ptr<ICollisionShape> > mCollisionShapes;
 		std::vector<boost::shared_ptr<IPhysicConstraint> > mConstraints;
 		AABBox mBoundingBox;

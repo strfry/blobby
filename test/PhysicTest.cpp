@@ -371,3 +371,74 @@ BOOST_AUTO_TEST_CASE( substep_linear_motion )
 	BOOST_CHECK_EQUAL(po.getMotionState(), ref.getMotionState());
 }
 BOOST_AUTO_TEST_SUITE_END()
+
+
+
+
+
+
+// ****************************************************************************
+// ***		C o l l i s i o n  -   D e t e c t i o n    T e s t				***
+// ****************************************************************************
+
+
+
+BOOST_AUTO_TEST_SUITE( collision_detection )
+
+// required tests for hit test algorithms:
+//  1) some known configurations where the outcome is
+//		directly clear
+//	2) check normal length and direction (normal always has to point from
+//											second to first body)
+//	3) verify that the algorithm works even when one object is completely in the other
+
+BOOST_AUTO_TEST_CASE( sphere_sphere )
+{
+	CollisionDetector d;
+	
+	CollisionShapeSphere csp = CollisionShapeSphere(10);
+	
+	// known configurations and normal direction test
+	Vector2 norm;
+	bool h = d.collisionTestSphereSphere(Vector2(0,0), Vector2(18,0), &csp, &csp, norm);
+	
+	BOOST_CHECK_EQUAL(h, true);
+	BOOST_CHECK_EQUAL(norm, Vector2(-1,0));
+	
+	h = d.collisionTestSphereSphere(Vector2(0,0), Vector2(0,-16), &csp, &csp, norm);
+	BOOST_CHECK_EQUAL(h, true);
+	BOOST_CHECK_EQUAL(norm, Vector2(0,1));
+	
+	// completely in the other
+	CollisionShapeSphere huge = CollisionShapeSphere(100);
+	h = d.collisionTestSphereSphere(Vector2(0,0), Vector2(10,10), &huge, &csp, norm);
+	BOOST_CHECK_EQUAL(h, true);
+	BOOST_CHECK_EQUAL(norm.x, norm.y);
+}
+
+BOOST_AUTO_TEST_CASE( box_sphere )
+{
+	CollisionDetector d;
+	
+	CollisionShapeSphere csp = CollisionShapeSphere(10);
+	CollisionShapeBox 	 csb = CollisionShapeBox(Vector2(20, 20));
+	
+	// known configurations and normal direction test
+	Vector2 norm;
+	bool h = d.collisionTestBoxSphere(Vector2(0,0), Vector2(18,0), &csb, &csp, norm);
+	
+	BOOST_CHECK_EQUAL(h, true);
+	BOOST_CHECK_EQUAL(norm, Vector2(-1,0));
+	/*
+	h = d.collisionTestSphereSphere(Vector2(0,0), Vector2(0,-16), &csp, &csp, norm);
+	BOOST_CHECK_EQUAL(h, true);
+	BOOST_CHECK_EQUAL(norm, Vector2(0,1));
+	
+	// completely in the other
+	CollisionShapeSphere huge = CollisionShapeBox(100);
+	h = d.collisionTestSphereSphere(Vector2(0,0), Vector2(10,10), &huge, &csb, norm);
+	BOOST_CHECK_EQUAL(h, true);
+	BOOST_CHECK_EQUAL(norm.x, norm.y);*/
+}
+
+BOOST_AUTO_TEST_SUITE_END()
