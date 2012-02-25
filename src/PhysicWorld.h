@@ -77,5 +77,6 @@ class PhysicWorld
 		CollisionDetector collisionDetector;
 		
 		void handleCollision(TimedCollisionEvent event);
+		void step_impl(float timestep);
 };
 

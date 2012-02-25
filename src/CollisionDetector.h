@@ -29,9 +29,9 @@ struct TimedCollisionEvent
 class CollisionDetector
 {
 	public:
-		BroadphaseCollisonArray getCollisionEventsBroadphase(const std::vector<PhysicObject>& objects);
+		BroadphaseCollisonArray getCollisionEventsBroadphase(const std::vector<PhysicObject>& objects, float timestep);
 		
-		TimedCollisionEvent checkCollision(BroadphaseCollisionEvent broadphase);
+		TimedCollisionEvent checkCollision(BroadphaseCollisionEvent broadphase, float timestep);
 		
 		bool hitTest(const PhysicObject& o1, const PhysicObject& o2);
 		

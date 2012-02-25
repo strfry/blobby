@@ -44,7 +44,7 @@ PhysicWorld::PhysicWorld()
 	mObjects[1].setWorld(this);
 	
 	mObjects[2].setDebugName("Ball");
-	mObjects[2].setPosition( Vector2(700, 454 + 13) );
+	mObjects[2].setPosition( Vector2(400, 254 + 13) );
 	mObjects[2].setRotation( 0 );
 	mObjects[2].setAngularVelocity( 0.1 );
 	mObjects[2].setAcceleration( Vector2(0, 0) );
@@ -80,7 +80,15 @@ PhysicWorld::~PhysicWorld()
 {
 }
 
-void PhysicWorld::step() 
+void PhysicWorld::step()
+{
+	//for(int i=0; i < 4; ++i)
+	{
+		step_impl(0.25f);
+	}
+}
+
+void PhysicWorld::step_impl(float timestep) 
 {
 	// at first, do some broadphase collision detection:
 	//  we determine all pairs of objects that will intersec if the objects move without interacting
@@ -88,7 +96,7 @@ void PhysicWorld::step()
 	
 	float curtime = 0;
 	
-	BroadphaseCollisonArray col_candidates = collisionDetector.getCollisionEventsBroadphase(mObjects);
+	BroadphaseCollisonArray col_candidates = collisionDetector.getCollisionEventsBroadphase(mObjects, timestep);
 	
 	int hc = 0;
 	if(!col_candidates.empty())
@@ -100,7 +108,7 @@ void PhysicWorld::step()
 		std::deque<TimedCollisionEvent> timed_hits;
 		for(auto i = col_candidates.begin(); i != col_candidates.end(); ++i)
 		{
-			TimedCollisionEvent evt = collisionDetector.checkCollision(*i);
+			TimedCollisionEvent evt = collisionDetector.checkCollision(*i, timestep);
 			// if its real
 			if(evt.first) 
 			{
@@ -109,19 +117,17 @@ void PhysicWorld::step()
 		}
 
 		std::sort(timed_hits.begin(), timed_hits.end());
+		
+		for(auto i = mObjects.begin(); i != mObjects.end(); ++i)
+		{
+			i->step(timestep);
+		}
 
 		while(!timed_hits.empty())
 		{
 			hc++;
 			// now we have the hit events in chronological order.
 			// let's handle them.
-			
-			
-			// simulate till first impact
-			for(auto j = mObjects.begin(); j != mObjects.end(); ++j)
-			{
-				j->step(timed_hits.begin()->time - curtime);
-			}
 			
 			// no we need to do the corresponding collision response handler
 			handleCollision(*timed_hits.begin());
@@ -132,12 +138,16 @@ void PhysicWorld::step()
 			/// \todo actually, we should look here if we can find a new collision which happens
 			/// 		due to the changes in trajectories
 		}
+	} 
+	else 
+	{
+		for(auto i = mObjects.begin(); i != mObjects.end(); ++i)
+		{
+			i->step(timestep);
+		}
 	}
 	
-	for(auto i = mObjects.begin(); i != mObjects.end(); ++i)
-	{
-		i->step(1 - curtime);
-	}
+	
 	
 	std::cout << "HC: " << hc << "\n";
 	

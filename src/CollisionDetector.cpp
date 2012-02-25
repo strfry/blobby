@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <iostream>
 
-BroadphaseCollisonArray CollisionDetector::getCollisionEventsBroadphase(const std::vector<PhysicObject>& objects)
+BroadphaseCollisonArray CollisionDetector::getCollisionEventsBroadphase(const std::vector<PhysicObject>& objects, float timestep)
 {
 	BroadphaseCollisonArray collisions_found;
 	
@@ -13,7 +13,7 @@ BroadphaseCollisonArray CollisionDetector::getCollisionEventsBroadphase(const st
 	
 	for(int i=0; i < objects.size(); ++i)
 	{
-		future_motion_states[i] = objects[i].getPredictedMotionState();
+		future_motion_states[i] = objects[i].getPredictedMotionState(timestep);
 	}
 	
 	// now we check if any of the overlap
@@ -31,7 +31,7 @@ BroadphaseCollisonArray CollisionDetector::getCollisionEventsBroadphase(const st
 	return collisions_found;
 }
 
-TimedCollisionEvent CollisionDetector::checkCollision(BroadphaseCollisionEvent broadphase)
+TimedCollisionEvent CollisionDetector::checkCollision(BroadphaseCollisionEvent broadphase, float timestep)
 {
 	const PhysicObject* one = broadphase.first;
 	const PhysicObject* two = broadphase.second;
@@ -41,10 +41,10 @@ TimedCollisionEvent CollisionDetector::checkCollision(BroadphaseCollisionEvent b
 		std::swap(one, two);
 	
 	/// \todo speed up this with a binary search
-	for(int substep = 0; substep < 16; ++substep)
+	for(int substep = 0; substep < 4; ++substep)
 	{
-		PhysicObject::MotionState stateone = one->getPredictedMotionState( substep / 16.f );
-		PhysicObject::MotionState statetwo = two->getPredictedMotionState( substep / 16.f );
+		PhysicObject::MotionState stateone = one->getPredictedMotionState( timestep * substep / 4.f );
+		PhysicObject::MotionState statetwo = two->getPredictedMotionState( timestep * substep / 4.f );
 		
 		/// \todo use a precise hit test algorithm here
 		// test each shape against every other one
