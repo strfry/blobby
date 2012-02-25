@@ -40,3 +40,12 @@ class GroundConstraint : public IPhysicConstraint
 		float mGroundHeight;
 };
 
+class FixationConstraint : public IPhysicConstraint
+{
+	public:
+		FixationConstraint()
+		{
+		}
+		
+		virtual bool checkAndCorrectConstraint(PhysicObject& object) const;
+};

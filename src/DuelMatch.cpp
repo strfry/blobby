@@ -67,6 +67,8 @@ void DuelMatch::step()
 {
 	events = external_events;
 
+	for(int i=0; i < 4; ++i)
+	{
 	// do steps in physic an logic
 	if (mLeftInput)
 	{
@@ -113,6 +115,7 @@ void DuelMatch::step()
 	mPhysicWorld.getBlobReference(RIGHT_PLAYER).addForce( Vector2(0, GRAVITATION));
 	
 	mPhysicWorld.step();
+	}
 	mLogic->step();
 	
 	// check for all hit events

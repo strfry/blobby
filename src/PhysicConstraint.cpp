@@ -37,3 +37,8 @@ bool GroundConstraint::checkAndCorrectConstraint(PhysicObject& object) const
 	
 	return false;
 }
+
+bool FixationConstraint::checkAndCorrectConstraint(PhysicObject& object) const
+{
+	object.setVelocity( Vector2(0,0) );
+}

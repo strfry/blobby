@@ -32,6 +32,7 @@ struct PhysicEvent
 };
 
 class TimedCollisionEvent;
+class ICollisionResponseHandler;
 
 class PhysicWorld
 {
@@ -76,7 +77,7 @@ class PhysicWorld
 		std::queue<PhysicEvent> mEventQueue;
 		CollisionDetector collisionDetector;
 		
-		void handleCollision(TimedCollisionEvent event);
+		ICollisionResponseHandler* handleCollision(TimedCollisionEvent event);
 		void step_impl(float timestep);
 };
 

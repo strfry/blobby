@@ -1,6 +1,7 @@
 #include "PhysicWorld.h"
 #include "CollisionDetector.h"
 #include "PhysicConstraint.h"
+#include "CollisionResponseHandler.h"
 #include "GameConstants.h"
 #include "SDL/SDL.h"
 
@@ -10,6 +11,14 @@
 #include <iostream>
 
 #include "BlobbyDebug.h"
+
+struct CollisionResponse
+{
+	PhysicObject* first;
+	PhysicObject* second;
+	Vector2 normal;
+	ICollisionResponseHandler* handler;
+};
 
 PhysicWorld::PhysicWorld()
 {
@@ -57,6 +66,8 @@ PhysicWorld::PhysicWorld()
 	mObjects[2].setInverseMass(0.1);
 	mObjects[2].setWorld(this);
 	
+	boost::shared_ptr<IPhysicConstraint> fix (new FixationConstraint());
+	
 	mObjects[3].setDebugName("Net");
 	mObjects[3].setPosition( Vector2(400, 500) );
 	boost::shared_ptr<ICollisionShape> nc (new CollisionShapeBox( Vector2( 2*NET_RADIUS, 2*(500-NET_SPHERE_POSITION))));
@@ -66,6 +77,7 @@ PhysicWorld::PhysicWorld()
 	mObjects[3].setCollisionType(3);
 	mObjects[3].setWorld(this);
 	mObjects[3].setInverseMass(0);
+	mObjects[3].addConstraint (fix);
 	
 	mObjects[4].setDebugName("Ground");
 	mObjects[4].setPosition( Vector2(400, 700) );
@@ -74,6 +86,7 @@ PhysicWorld::PhysicWorld()
 	mObjects[4].setCollisionType(4);
 	mObjects[4].setWorld(this);
 	mObjects[4].setInverseMass(0);
+	mObjects[4].addConstraint (fix);
 }
 
 PhysicWorld::~PhysicWorld()
@@ -122,6 +135,8 @@ void PhysicWorld::step_impl(float timestep)
 		{
 			i->step(timestep);
 		}
+		
+		std::vector<CollisionResponse> responses;
 
 		for(auto i = timed_hits.begin(); i != timed_hits.end(); ++i)
 		{
@@ -130,17 +145,49 @@ void PhysicWorld::step_impl(float timestep)
 			// let's handle them.
 			
 			// no we need to do the corresponding collision response handler
-			handleCollision(*i);
+			ICollisionResponseHandler* resp = handleCollision(*i);
+			if( resp )
+			{
+				responses.push_back( CollisionResponse { const_cast<PhysicObject*>(i->first), 
+														const_cast<PhysicObject*>(i->second), 
+														i->impactNormal, resp} 
+									);
+			}
 		}
 		
-		std::cout << getBall().getPosition() << "\n";
-		
+		// update velocities
+		int c = 0;
+		for(bool move = true; move && c < 20; ++c)
+		{
+			move = false;
+			for(auto i = responses.begin(); i != responses.end(); ++i)
+			{
+				Vector2 impulse = i->handler->getImpulse(i->normal, i->first, i->second);
+				if(impulse.length() >= 1e-4)
+				{
+					i->first->setVelocity( i->first->getVelocity() 
+													+ impulse * i->second->getInverseMass() );
+				
+					i->second->setVelocity( i->second->getVelocity() 
+											- impulse * i->second->getInverseMass() );
+					
+					i->first->step(0);	// update constraints
+					i->second->step(0);
+					move = true;
+				}
+				
+				std::cout << "b: " << getBall().getVelocity().length() << "  " << impulse.length() << "\n";
+				//system("pause");
+				
+			}
+		}
+					
 		// deintersect
 		int dbg_counter = 0;
 		for(bool intersect = true; intersect; )
 		{
 			intersect = false;
-			for(auto i = timed_hits.begin(); i != timed_hits.end(); ++i)
+			for(auto i = responses.begin(); i != responses.end(); ++i)
 			{
 				if(collisionDetector.hitTest(*i->first, *i->second))
 				{
@@ -149,22 +196,20 @@ void PhysicWorld::step_impl(float timestep)
 					float msum = 100*(i->first->getInverseMass() + i->second->getInverseMass());
 					
 					const_cast<PhysicObject*>(i->first)->setPosition( i->first->getPosition() 
-												+ i->impactNormal * i->first->getInverseMass() / msum );
+												+ i->normal * i->first->getInverseMass() / msum );
 					
 					const_cast<PhysicObject*>(i->second)->setPosition( i->second->getPosition() 
-												- i->impactNormal * i->second->getInverseMass() /msum );
-					
+												- i->normal * i->second->getInverseMass() / msum );
 					dbg_counter++;
 					if(dbg_counter == 10000) 
 					{
-						std::cout << "PROBLEM: " << i->impactNormal << "\n";
+						std::cout << "PROBLEM: " << i->normal << "\n";
 						break;
 					}
 				}
 			}
 		}
 		
-		std::cout << "c: " << getBall().getPosition() << "\n";
 	} 
 	else 
 	{
@@ -176,7 +221,7 @@ void PhysicWorld::step_impl(float timestep)
 	
 	
 	
-	std::cout << "HC: " << hc << "\n";
+	//std::cout << "HC: " << hc << "\n";
 	
 	// reset all forces
 	for(auto i = mObjects.begin(); i != mObjects.end(); ++i)
@@ -275,23 +320,25 @@ void PhysicWorld::getSwappedState(RakNet::BitStream* stream) const
 	
 }
 
-void PhysicWorld::handleCollision(TimedCollisionEvent event)
+ICollisionResponseHandler* PhysicWorld::handleCollision(TimedCollisionEvent event)
 {
 	if(event.second->getCollisionType() == 2) 
 	{
-		const_cast<PhysicObject*>(event.second)->setVelocity( -13 * event.impactNormal );
 		mEventQueue.push(PhysicEvent{PhysicEvent::PE_BALL_HIT_BLOBBY, event.time, event.second->getPosition()});
+		return new CollisionResponseHandlerBlobby();
+		//return CollisionResponse { event.first, event.second, event.impactNormal, Vector2(0,0),
+		//									-13 * event.impactNormal - event.second->getVelocity() };
 	}
 	else if(event.first->getCollisionType() == 2 && event.second->getCollisionType() == 3) 
 	{
 		//nethit
-		const_cast<PhysicObject*>(event.first)->setVelocity( 
-				event.first->getVelocity().reflect(event.impactNormal)) ;
+		return new CollisionResponseHandlerIdealElastic();
+	
 	}
 	else if
 	(event.first->getCollisionType() == 2 && event.second->getCollisionType() == 4) 
 	{
-		PhysicObject* ball = const_cast<PhysicObject*>(event.first);
+		const PhysicObject* ball = event.first;
 		// groundhit
 		Vector2 vel = ball->getVelocity();
 		Vector2 dc = vel.decompose(-event.impactNormal);
@@ -325,7 +372,14 @@ void PhysicWorld::handleCollision(TimedCollisionEvent event)
 		//std::cout << e1 << " -> " << e2 << "\n";
 		//assert( e2 <= e1 );
 		
-		ball->setVelocity( vel ) ;
 		mEventQueue.push(PhysicEvent{PhysicEvent::PE_BALL_HIT_GROUND, 0, event.first->getPosition()});
+		//return CollisionResponse { event.first, event.second, event.impactNormal, 
+		//		vel - event.first->getVelocity(), Vector2(0,0) };
+		return new CollisionResponseHandlerIdealElastic();
+	}
+	else
+	{
+		return 0;
+		//return CollisionResponse { 0, 0, Vector2(0,0), Vector2(0, 0), Vector2(0,0) };
 	}
 }
