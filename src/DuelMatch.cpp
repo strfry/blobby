@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DuelMatch.h"
 #include "UserConfig.h"
 #include "GameConstants.h"
+#include "physics/PhysicWorld.h"
 
 #include <cassert>
 #include <iostream>
@@ -44,7 +45,7 @@ DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput,
 	mBallDown = false;
 	mIsGameRunning = false;
 
-	mPhysicWorld.step();
+	mPhysicWorld->step();
 
 	/// \todo we better pass this as a parameter so DuelMatch has no coupeling with UserConfigs...s
 	mLogic->setScoreToWin(IUserConfigReader::createUserConfigReader("config.xml")->getInteger("scoretowin"));
@@ -72,7 +73,7 @@ void DuelMatch::step()
 	// do steps in physic an logic
 	if (mLeftInput)
 	{
-		PhysicObject& blob = mPhysicWorld.getBlobReference(LEFT_PLAYER);
+		PhysicObject& blob = mPhysicWorld->getBlobReference(LEFT_PLAYER);
 		Vector2 vel = blob.getVelocity();
 		vel.x = mLeftInput->getInput().left ? -4.5 : 0 - mLeftInput->getInput().right ? 4.5 : 0;
 		
@@ -87,7 +88,7 @@ void DuelMatch::step()
 	
 	if (mRightInput)
 	{
-		PhysicObject& blob = mPhysicWorld.getBlobReference(RIGHT_PLAYER);
+		PhysicObject& blob = mPhysicWorld->getBlobReference(RIGHT_PLAYER);
 		Vector2 vel = blob.getVelocity();
 		vel.x = mRightInput->getInput().left ? -4.5 : 0 - mRightInput->getInput().right ? 4.5 : 0;
 		
@@ -109,12 +110,12 @@ void DuelMatch::step()
 	//std::cout << " run game: " << mIsGameRunning << " " << mBallDown << "\n";
 	if(mIsGameRunning) 
 	{
-		mPhysicWorld.getBallReference().addForce( Vector2(0, BALL_GRAVITATION));
+		mPhysicWorld->getBallReference().addForce( Vector2(0, BALL_GRAVITATION));
 	}
-	mPhysicWorld.getBlobReference(LEFT_PLAYER).addForce( Vector2(0, GRAVITATION));
-	mPhysicWorld.getBlobReference(RIGHT_PLAYER).addForce( Vector2(0, GRAVITATION));
+	mPhysicWorld->getBlobReference(LEFT_PLAYER).addForce( Vector2(0, GRAVITATION));
+	mPhysicWorld->getBlobReference(RIGHT_PLAYER).addForce( Vector2(0, GRAVITATION));
 	
-	mPhysicWorld.step();
+	mPhysicWorld->step();
 	}
 	mLogic->step();
 	
@@ -125,7 +126,7 @@ void DuelMatch::step()
 		// create game events
 		// ball/player hit events:
 		
-		while( PhysicEvent evt = mPhysicWorld.getNextEvent()) 
+		while( PhysicEvent evt = mPhysicWorld->getNextEvent()) 
 		{
 			switch(evt.type) {
 				case PhysicEvent::PE_BALL_HIT_BLOBBY:
@@ -157,7 +158,7 @@ void DuelMatch::step()
 		
 	} else {
 		// just clear the event queue
-		while( PhysicEvent evt = mPhysicWorld.getNextEvent());
+		while( PhysicEvent evt = mPhysicWorld->getNextEvent());
 	}
 	
 	// process events
@@ -185,7 +186,7 @@ void DuelMatch::step()
 			events |= EVENT_ERROR_RIGHT;
 			if (!(events & EVENT_BALL_HIT_GROUND))
 			{
-				mPhysicWorld.getBallReference().setVelocity( getBallVelocity() * 0.6);
+				mPhysicWorld->getBallReference().setVelocity( getBallVelocity() * 0.6);
 			}
 			
 			// now, the ball is not valid anymore
@@ -280,23 +281,23 @@ bool DuelMatch::getBallActive() const
 bool DuelMatch::getBlobJump(PlayerSide player) const
 {
 	/// \todo replace with more stable algorithm
-	PhysicObject::MotionState state = mPhysicWorld.getBlob(player).getMotionState();
+	PhysicObject::MotionState state = mPhysicWorld->getBlob(player).getMotionState();
 	return !(state.vel.y == 0 && state.pos.y > GROUND_PLANE_HEIGHT - 2);
 }
 
 Vector2 DuelMatch::getBlobPosition(PlayerSide player) const
 {
-	return mPhysicWorld.getBlob(player).getPosition();
+	return mPhysicWorld->getBlob(player).getPosition();
 }
 
 Vector2 DuelMatch::getBallPosition() const
 {
-	return mPhysicWorld.getBall().getPosition();
+	return mPhysicWorld->getBall().getPosition();
 }
 
 Vector2 DuelMatch::getBallVelocity() const
 {
-	return mPhysicWorld.getBall().getVelocity();
+	return mPhysicWorld->getBall().getVelocity();
 }
 
 PlayerSide DuelMatch::getServingPlayer() const
@@ -346,8 +347,8 @@ void DuelMatch::resetBall(PlayerSide player)
 		 ballPosition= Vector2(600, STANDARD_BALL_HEIGHT);
 	//else
 	/// \todo assert here?
-	mPhysicWorld.getBallReference().setPosition( ballPosition );
-	mPhysicWorld.getBallReference().setVelocity( Vector2(0,0) );
+	mPhysicWorld->getBallReference().setPosition( ballPosition );
+	mPhysicWorld->getBallReference().setVelocity( Vector2(0,0) );
 
 /*	mBallRotation = 0.0;
 	mBallAngularVelocity = STANDARD_BALL_ANGULAR_VELOCITY;
@@ -389,7 +390,7 @@ bool DuelMatch::roundFinished() const
 
 float DuelMatch::getBallRotation() const
 {
-	return mPhysicWorld.getBall().getRotation();
+	return mPhysicWorld->getBall().getRotation();
 }
 
 float DuelMatch::lastHitIntensity() const

@@ -19,11 +19,21 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #pragma once
 
-#include "physics/PhysicWorld.h"
+#include <boost/scoped_ptr.hpp>
+#include <boost/noncopyable.hpp>
+
 #include "GameLogic.h"
 #include "Vector.h"
+#include "InputSource.h"
 
 class InputSource;
+class PhysicWorld;
+
+namespace RakNet
+{
+	class BitStream;
+}
+
 
 /*! \class DuelMatch
 	\brief class representing a blobby game.
@@ -34,7 +44,7 @@ class InputSource;
 	similar to a singleton, but it can be instantiated
 	multiple times on a server or be completely unavailable
 */
-class DuelMatch
+class DuelMatch : public boost::noncopyable
 {
 public:
 	// This constructor takes the input sources used to get player input
@@ -92,7 +102,7 @@ public:
 	void getState(RakNet::BitStream* stream) const;
 	void getSwappedState(RakNet::BitStream* stream) const;
 	
-	const PhysicWorld& getWorld() const{ return mPhysicWorld; };
+	const PhysicWorld& getWorld() const;
 	const Clock& getClock() const;
 	Clock& getClock();
 
@@ -135,7 +145,7 @@ private:
 	static DuelMatch* mMainGame;
 	bool mGlobal;
 
-	PhysicWorld mPhysicWorld;
+	boost::scoped_ptr<PhysicWorld> mPhysicWorld;
 
 	InputSource* mLeftInput;
 	InputSource* mRightInput;

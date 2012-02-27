@@ -8,13 +8,6 @@
 #include <vector>
 #include <queue>
 
-const float BLOBBY_SPEED = 4.5; // BLOBBY_SPEED is necessary to determine the size of the input buffer
-
-namespace RakNet
-{
-	class BitStream;
-}
-
 struct PhysicEvent
 {
 	enum Type {

@@ -117,9 +117,9 @@ bool ReplayPlayer::gotoPlayingPosition(int rep_position, DuelMatch* virtual_matc
 	{
 		// reset the match and simulate from start!
 		/// \todo we need to rework this code!
-		DuelMatch nm (0,0,false,false);
-		(*virtual_match) = nm;
-		mPosition = 0;
+		//DuelMatch nm (0,0,false,false);
+		//(*virtual_match) = nm;
+		//mPosition = 0;
 	}
 	
 	// maximum: 100 steps
