@@ -49,6 +49,12 @@ void AABBox::merge(const AABBox& other)
 	lowerRight.y = std::max(lowerRight.y, other.lowerRight.y);
 }
 
+Vector2 AABBox::getCenter() const
+{
+	return 0.5 * (upperLeft + lowerRight);
+}
+
+
 bool AABBox::intersects(const AABBox& other) const
 {
 	Vector2 d1 = other.upperLeft - lowerRight;

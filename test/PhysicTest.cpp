@@ -4,8 +4,8 @@
 #include <iostream>
 #include <iomanip>
 #include <limits>
-#include "PhysicObject.h"
-#include "PhysicWorld.h"
+#include "physics/PhysicObject.h"
+#include "physics/PhysicWorld.h"
 #include "BlobbyDebug.h"
 
 std::ostream& operator<<(std::ostream& stream, const PhysicObject::MotionState& ms)
@@ -14,6 +14,17 @@ std::ostream& operator<<(std::ostream& stream, const PhysicObject::MotionState& 
 	return stream;
 }
 
+std::ostream& operator<<(std::ostream& stream, const AABBox& box)
+{
+	stream << box.upperLeft << ".." << box.lowerRight;
+	return stream;
+}
+
+
+bool operator==(const AABBox& b1, const AABBox& b2) 
+{
+	return b1.upperLeft == b2.upperLeft && b1.lowerRight == b2.lowerRight;
+}
 
 Vector2 getRandVec() 
 {
@@ -219,6 +230,8 @@ BOOST_AUTO_TEST_CASE( constructor )
 	BOOST_CHECK_EQUAL(po.getAcceleration(), Vector2(0,0));
 	BOOST_CHECK_EQUAL(po.getDebugName(), "");
 	BOOST_CHECK_EQUAL(po.getWorld(), (void*)0);
+	BOOST_CHECK_EQUAL(po.getRotation(), 0);
+	BOOST_CHECK_EQUAL(po.getAngularVelocity(), 0);
 }
 
 /// this test checks that setters and getters work as expected, i.e., that getters report
@@ -244,6 +257,14 @@ BOOST_AUTO_TEST_CASE( get_set_round_trip )
 	PhysicWorld w;
 	po.setWorld(&w);
 	BOOST_CHECK_EQUAL(po.getWorld(), &w);
+	
+	float ang = (rand() % 101 - 50)/11.f;
+	po.setRotation(ang);
+	BOOST_CHECK_EQUAL( po.getRotation(), ang );
+	
+	float av = (rand() % 101 - 50)/11.f;
+	po.setAngularVelocity(av);
+	BOOST_CHECK_EQUAL( po.getAngularVelocity(), av );
 }
 
 /// this test checks that position does not change when velocity and acceleration are 0
@@ -251,6 +272,8 @@ BOOST_AUTO_TEST_CASE( no_motion )
 {
 	Vector2 position = getRandVec();
 	PhysicObject po = PhysicObject(position, Vector2(0,0));
+	float ang = (rand() % 101 - 50)/11.f;
+	po.setRotation(ang);
 	
 	for(int i=0; i < 10; ++i)
 	{
@@ -259,6 +282,9 @@ BOOST_AUTO_TEST_CASE( no_motion )
 	
 	BOOST_CHECK_EQUAL(po.getPosition(), position);
 	BOOST_CHECK_EQUAL(po.getVelocity(), Vector2(0,0));
+	BOOST_CHECK_EQUAL(po.getPosition(), position);
+	BOOST_CHECK_EQUAL(po.getRotation(), ang);
+	BOOST_CHECK_EQUAL(po.getAngularVelocity(), 0);
 }
 
 /// this test checks that velocity does not change when acceleration is 0
@@ -268,6 +294,12 @@ BOOST_AUTO_TEST_CASE( linear_motion )
 	Vector2 velocity = getRandVec();
 	PhysicObject po = PhysicObject(position, velocity);
 	
+	float ang = (rand() % 101 - 50) / 11.f;
+	float av = (rand() % 101 - 50) / 101.f;
+	
+	po.setRotation(ang);
+	po.setAngularVelocity(av);
+	
 	for(int i=0; i < 10; ++i)
 	{
 		po.step();
@@ -275,6 +307,8 @@ BOOST_AUTO_TEST_CASE( linear_motion )
 	
 	BOOST_CHECK_EQUAL(po.getPosition(), position + velocity * 10);
 	BOOST_CHECK_EQUAL(po.getVelocity(), velocity);
+	BOOST_CHECK_EQUAL(po.getRotation(), ang + 10 * av);
+	BOOST_CHECK_EQUAL(po.getAngularVelocity(), av);
 }
 
 /// this test checks that velocity does not change when acceleration is 0
@@ -303,8 +337,14 @@ BOOST_AUTO_TEST_CASE( motion_state )
 	Vector2 position = getRandVec();
 	Vector2 velocity = getRandVec();
 	Vector2 acceleration = getRandVec();
+	
+	float ang = (rand() % 101 - 50) / 11.f;
+	float av = (rand() % 101 - 50) / 101.f;
+	
 	PhysicObject po = PhysicObject(position, velocity);
 	po.setAcceleration(acceleration);
+	po.setAngularVelocity(av);
+	po.setRotation(ang);
 	
 	for(int i=0; i < 10; ++i)
 	{
@@ -313,6 +353,8 @@ BOOST_AUTO_TEST_CASE( motion_state )
 	
 	BOOST_CHECK_EQUAL(po.getMotionState().pos, po.getPosition());
 	BOOST_CHECK_EQUAL(po.getMotionState().vel, po.getVelocity());
+	BOOST_CHECK_EQUAL(po.getMotionState().rot, po.getRotation());
+	BOOST_CHECK_EQUAL(po.getMotionState().rev, po.getAngularVelocity());
 }
 
 
@@ -382,8 +424,65 @@ BOOST_AUTO_TEST_SUITE_END()
 // ****************************************************************************
 
 
-
 BOOST_AUTO_TEST_SUITE( collision_detection )
+
+// AABBox
+
+BOOST_AUTO_TEST_CASE( aabbox_ctor )
+{
+	AABBox box;
+	BOOST_CHECK_EQUAL(box.upperLeft, box.lowerRight);
+	BOOST_CHECK_EQUAL(box.upperLeft, Vector2(0,0));
+	BOOST_CHECK_EQUAL(box.getCenter(), Vector2(0,0));
+	
+	Vector2 ul = getRandVec();
+	Vector2 size = getRandVec();
+	size.x = std::abs(size.x);
+	size.y = std::abs(size.y);
+	Vector2 lr = ul + size;
+	
+	AABBox box2 = AABBox(ul, lr);
+	BOOST_CHECK_EQUAL(box2.upperLeft, ul);
+	BOOST_CHECK_EQUAL(box2.lowerRight, lr);
+	
+	
+	AABBox box3 = AABBox( (ul + lr) * 0.5, size * 0.5);
+	BOOST_CHECK_EQUAL(box3.upperLeft, ul);
+	BOOST_CHECK_EQUAL(box3.lowerRight, lr);
+	BOOST_CHECK_EQUAL(box3.upperLeft, (ul + lr) * 0.5 - size * 0.5);
+	BOOST_CHECK_EQUAL(box3.lowerRight, (ul + lr) * 0.5 + size * 0.5);
+	BOOST_CHECK_EQUAL(box3.getCenter(), (ul + lr) * 0.5);
+	
+	// clear method
+	box2.clear();
+	BOOST_CHECK_EQUAL(box2.upperLeft, Vector2(0,0));
+	BOOST_CHECK_EQUAL(box2.lowerRight, Vector2(0,0));
+}
+
+
+BOOST_AUTO_TEST_CASE( aabbox_translation )
+{
+	Vector2 ul = getRandVec();
+	Vector2 size = getRandVec();
+	size.x = std::abs(size.x);
+	size.y = std::abs(size.y);
+	Vector2 lr = ul + size;
+	
+	AABBox box = AABBox(ul, lr);
+	BOOST_CHECK_EQUAL(box.upperLeft, ul);
+	BOOST_CHECK_EQUAL(box.lowerRight, lr);
+	
+	Vector2 center = box.getCenter();
+	
+	Vector2 displacement = getRandVec();
+	box += displacement;
+	BOOST_CHECK_EQUAL(box.upperLeft, ul + displacement);
+	BOOST_CHECK_EQUAL(box.lowerRight, lr + displacement);
+	BOOST_CHECK_EQUAL(box.getCenter(), center + displacement);
+	
+	AABBox ref = AABBox(ul, lr);
+	BOOST_CHECK_EQUAL( box, ref );
+}
 
 // required tests for hit test algorithms:
 //  1) some known configurations where the outcome is
@@ -421,7 +520,7 @@ BOOST_AUTO_TEST_CASE( box_sphere )
 	CollisionDetector d;
 	
 	CollisionShapeSphere csp = CollisionShapeSphere(10);
-	CollisionShapeBox 	 csb = CollisionShapeBox(Vector2(20, 20));
+	CollisionShapeBox 	 csb = CollisionShapeBox(Vector2(10, 10));
 	
 	// known configurations and normal direction test
 	Vector2 norm;
@@ -435,7 +534,7 @@ BOOST_AUTO_TEST_CASE( box_sphere )
 	BOOST_CHECK_EQUAL(norm, Vector2(0,1));
 	*/
 	// completely in the other
-	CollisionShapeBox huge = CollisionShapeBox( Vector2(200, 200) );
+	CollisionShapeBox huge = CollisionShapeBox( Vector2(100, 100) );
 	h = d.collisionTestBoxSphere(Vector2(0,0), Vector2(10,10), &huge, &csp, norm);
 	BOOST_CHECK(h);
 	BOOST_CHECK( std::abs(norm.length() - 1) < std::numeric_limits<float>::epsilon());
@@ -443,6 +542,12 @@ BOOST_AUTO_TEST_CASE( box_sphere )
 	h = d.collisionTestBoxSphere(Vector2(0,0), Vector2(98, 0), &huge, &csp, norm);
 	BOOST_CHECK(h);
 	BOOST_CHECK_EQUAL( norm, Vector2(-1, 0));
+	
+	// at a corner
+	// FAILS
+	h = d.collisionTestBoxSphere(Vector2(0,0), Vector2(95,95), &huge, &csp, norm);
+	BOOST_CHECK(h);
+	BOOST_CHECK_EQUAL( norm.x, norm.y );
 }
 
 BOOST_AUTO_TEST_SUITE_END()
