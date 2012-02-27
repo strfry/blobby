@@ -278,48 +278,6 @@ PhysicEvent PhysicWorld::getNextEvent()
 	}
 }
 
-// -------------------------------------------------
-
-float PhysicWorld::getBlobState(PlayerSide player) const
-{
-	return 0;
-}
-
-// Blobby animation methods
-void PhysicWorld::blobbyAnimationStep(PlayerSide player)
-{
-	
-}
-void PhysicWorld::blobbyStartAnimation(PlayerSide player)
-{
-	
-}
-
-// This reports the intensity of the collision
-// which was detected and also queried last.
-float PhysicWorld::lastHitIntensity() const
-{
-	return 0;
-}
-
-// Set a new state received from server over a RakNet BitStream
-void PhysicWorld::setState(RakNet::BitStream* stream)
-{
-	
-}
-
-// Fill a Bitstream with the state
-void PhysicWorld::getState(RakNet::BitStream* stream) const
-{
-	
-}
-
-// Fill a Bitstream with a side reversed state
-void PhysicWorld::getSwappedState(RakNet::BitStream* stream) const
-{
-	
-}
-
 ICollisionResponseHandler* PhysicWorld::handleCollision(TimedCollisionEvent event)
 {
 	if(event.second->getCollisionType() == 2) 

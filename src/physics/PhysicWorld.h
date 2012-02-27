@@ -49,29 +49,6 @@ class PhysicWorld
 		
 		PhysicEvent getNextEvent();
 		
-		// ------------------
-		//  copied functions
-		// ------------------
-
-		float getBlobState(PlayerSide player) const;
-
-		// Blobby animation methods
-		void blobbyAnimationStep(PlayerSide player);
-		void blobbyStartAnimation(PlayerSide player);
-
-		// This reports the intensity of the collision
-		// which was detected and also queried last.
-		float lastHitIntensity() const;
-
-		// Set a new state received from server over a RakNet BitStream
-		void setState(RakNet::BitStream* stream);
-
-		// Fill a Bitstream with the state
-		void getState(RakNet::BitStream* stream) const;
-
-		// Fill a Bitstream with a side reversed state
-		void getSwappedState(RakNet::BitStream* stream) const;
-		
 	private:
 		std::vector<PhysicObject> mObjects;
 		std::queue<PhysicEvent> mEventQueue;

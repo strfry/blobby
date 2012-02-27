@@ -391,3 +391,23 @@ float DuelMatch::getBallRotation() const
 {
 	return mPhysicWorld.getBall().getRotation();
 }
+
+float DuelMatch::lastHitIntensity() const
+{
+	return 0.f;
+}
+
+void DuelMatch::getState(RakNet::BitStream* stream) const
+{
+	
+}
+
+void DuelMatch::getSwappedState(RakNet::BitStream* stream) const
+{
+	
+}
+
+float DuelMatch::getBlobState(PlayerSide player) const
+{
+	return 0;
+}

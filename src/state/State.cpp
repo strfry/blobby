@@ -78,9 +78,9 @@ void State::presentGame(const DuelMatch& match)
 		match.getServingPlayer() == LEFT_PLAYER, match.getServingPlayer() == RIGHT_PLAYER);
 		
 	rmanager.setBlob(LEFT_PLAYER, match.getBlobPosition(LEFT_PLAYER),
-							match.getWorld().getBlobState(LEFT_PLAYER));
+							match.getBlobState(LEFT_PLAYER));
 	rmanager.setBlob(RIGHT_PLAYER, match.getBlobPosition(RIGHT_PLAYER),
-							match.getWorld().getBlobState(RIGHT_PLAYER));
+							match.getBlobState(RIGHT_PLAYER));
 	
 	rmanager.setBall(match.getBallPosition(), match.getBallRotation());
 			
@@ -89,18 +89,18 @@ void State::presentGame(const DuelMatch& match)
 	int events = match.getEvents();
 	if(events & DuelMatch::EVENT_LEFT_BLOBBY_HIT)
 	{
-		smanager.playSound("sounds/bums.wav", match.getWorld().lastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
+		smanager.playSound("sounds/bums.wav", match.lastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
 		Vector2 hitPos = match.getBallPosition() +
 				(match.getBlobPosition(LEFT_PLAYER) - match.getBallPosition()).normalise().scaled(31.5);
-		BloodManager::getSingleton().spillBlood(hitPos, match.getWorld().lastHitIntensity(), 0);
+		BloodManager::getSingleton().spillBlood(hitPos, match.lastHitIntensity(), 0);
 	}
 	
 	if (events & DuelMatch::EVENT_RIGHT_BLOBBY_HIT)
 	{
-		smanager.playSound("sounds/bums.wav", match.getWorld().lastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
+		smanager.playSound("sounds/bums.wav", match.lastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
 		Vector2 hitPos = match.getBallPosition() +
 				(match.getBlobPosition(RIGHT_PLAYER) - match.getBallPosition()).normalise().scaled(31.5);
-		BloodManager::getSingleton().spillBlood(hitPos, match.getWorld().lastHitIntensity(), 1);
+		BloodManager::getSingleton().spillBlood(hitPos, match.lastHitIntensity(), 1);
 	}
 	
 	if (events & DuelMatch::EVENT_ERROR)

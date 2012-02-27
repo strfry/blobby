@@ -268,12 +268,12 @@ bool NetworkGame::step()
 	{
 		RakNet::BitStream stream;
 		stream.Write((unsigned char)ID_BALL_PLAYER_COLLISION);
-		stream.Write(mMatch->getWorld().lastHitIntensity());
+		stream.Write(mMatch->lastHitIntensity());
 		stream.Write(LEFT_PLAYER);
 		
 		RakNet::BitStream switchStream;
 		switchStream.Write((unsigned char)ID_BALL_PLAYER_COLLISION);
-		switchStream.Write(mMatch->getWorld().lastHitIntensity());
+		switchStream.Write(mMatch->lastHitIntensity());
 		switchStream.Write(RIGHT_PLAYER);
 		
 		broadcastBitstream(&stream, &switchStream);
@@ -283,12 +283,12 @@ bool NetworkGame::step()
 	{
 		RakNet::BitStream stream;
 		stream.Write((unsigned char)ID_BALL_PLAYER_COLLISION);
-		stream.Write(mMatch->getWorld().lastHitIntensity());
+		stream.Write(mMatch->lastHitIntensity());
 		stream.Write(RIGHT_PLAYER);
 		
 		RakNet::BitStream switchStream;
 		switchStream.Write((unsigned char)ID_BALL_PLAYER_COLLISION);
-		switchStream.Write(mMatch->getWorld().lastHitIntensity());
+		switchStream.Write(mMatch->lastHitIntensity());
 		switchStream.Write(LEFT_PLAYER);
 		
 		broadcastBitstream(&stream, &switchStream);
@@ -390,15 +390,14 @@ bool NetworkGame::step()
 
 void NetworkGame::broadcastPhysicState()
 {
-	const PhysicWorld& world = mMatch->getWorld();
 	RakNet::BitStream stream;
 	stream.Write((unsigned char)ID_PHYSIC_UPDATE);
 	stream.Write((unsigned char)ID_TIMESTAMP);
 	stream.Write(RakNet::GetTime());
 	if (mSwitchedSide == LEFT_PLAYER)
-		world.getSwappedState(&stream);
+		mMatch->getSwappedState(&stream);
 	else
-		world.getState(&stream);
+		mMatch->getState(&stream);
 	mServer.Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0,
 		mLeftPlayer, false);
 
@@ -407,9 +406,9 @@ void NetworkGame::broadcastPhysicState()
 	stream.Write((unsigned char)ID_TIMESTAMP);
 	stream.Write(RakNet::GetTime());
 	if (mSwitchedSide == RIGHT_PLAYER)
-		world.getSwappedState(&stream);
+		mMatch->getSwappedState(&stream);
 	else
-		world.getState(&stream);
+		mMatch->getState(&stream);
 	mServer.Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0,
 		mRightPlayer, false);
 }

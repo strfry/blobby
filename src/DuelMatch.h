@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #pragma once
 
-#include "PhysicWorld.h"
+#include "physics/PhysicWorld.h"
 #include "GameLogic.h"
 #include "Vector.h"
 
@@ -87,6 +87,10 @@ public:
 	Vector2 getBallVelocity() const;
 	float   getBallRotation() const;
 	Vector2 getBlobPosition(PlayerSide player) const;
+	float lastHitIntensity() const;
+	float getBlobState(PlayerSide player) const;
+	void getState(RakNet::BitStream* stream) const;
+	void getSwappedState(RakNet::BitStream* stream) const;
 	
 	const PhysicWorld& getWorld() const{ return mPhysicWorld; };
 	const Clock& getClock() const;
