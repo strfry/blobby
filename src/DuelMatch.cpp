@@ -32,6 +32,7 @@ DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput,
 				bool global, bool remote):mLogic(createGameLogic("rules.lua")),
 					mPaused(false), events(0), external_events(0), mRemote(remote)
 {
+	mPhysicWorld.reset( new PhysicWorld() );
 	mGlobal = global;
 	if (mGlobal)
 	{
@@ -70,52 +71,52 @@ void DuelMatch::step()
 
 	for(int i=0; i < 4; ++i)
 	{
-	// do steps in physic an logic
-	if (mLeftInput)
-	{
-		PhysicObject& blob = mPhysicWorld->getBlobReference(LEFT_PLAYER);
-		Vector2 vel = blob.getVelocity();
-		vel.x = mLeftInput->getInput().left ? -4.5 : 0 - mLeftInput->getInput().right ? 4.5 : 0;
-		
-		if(mLeftInput->getInput().up)
+		// do steps in physic an logic
+		if (mLeftInput)
 		{
-			blob.addForce( Vector2(0, -BLOBBY_JUMP_BUFFER) );
-			if(!getBlobJump(LEFT_PLAYER))
-				vel.y = -BLOBBY_JUMP_ACCELERATION;
+			PhysicObject& blob = mPhysicWorld->getBlobReference(LEFT_PLAYER);
+			Vector2 vel = blob.getVelocity();
+			vel.x = mLeftInput->getInput().left ? -4.5 : 0 - mLeftInput->getInput().right ? 4.5 : 0;
+			
+			if(mLeftInput->getInput().up)
+			{
+				blob.addForce( Vector2(0, -BLOBBY_JUMP_BUFFER) );
+				if(!getBlobJump(LEFT_PLAYER))
+					vel.y = -BLOBBY_JUMP_ACCELERATION;
+			}
+			blob.setVelocity(vel);
 		}
-		blob.setVelocity(vel);
-	}
-	
-	if (mRightInput)
-	{
-		PhysicObject& blob = mPhysicWorld->getBlobReference(RIGHT_PLAYER);
-		Vector2 vel = blob.getVelocity();
-		vel.x = mRightInput->getInput().left ? -4.5 : 0 - mRightInput->getInput().right ? 4.5 : 0;
 		
-		if( mRightInput->getInput().up)
+		if (mRightInput)
 		{
-			blob.addForce( Vector2(0, -BLOBBY_JUMP_BUFFER) );
-			if(!getBlobJump(RIGHT_PLAYER) )
-				vel.y = -BLOBBY_JUMP_ACCELERATION;
+			PhysicObject& blob = mPhysicWorld->getBlobReference(RIGHT_PLAYER);
+			Vector2 vel = blob.getVelocity();
+			vel.x = mRightInput->getInput().left ? -4.5 : 0 - mRightInput->getInput().right ? 4.5 : 0;
+			
+			if( mRightInput->getInput().up)
+			{
+				blob.addForce( Vector2(0, -BLOBBY_JUMP_BUFFER) );
+				if(!getBlobJump(RIGHT_PLAYER) )
+					vel.y = -BLOBBY_JUMP_ACCELERATION;
+			}
+			blob.setVelocity(vel);
 		}
-		blob.setVelocity(vel);
-	}
+			
+		// in pause mode, step does nothing except input being set
+		/// \todo find out why we do set input in pause mode!
+		if(mPaused)
+			return;
 		
-	// in pause mode, step does nothing except input being set
-	/// \todo find out why we do set input in pause mode!
-	if(mPaused)
-		return;
-	
-	// update gravity
-	//std::cout << " run game: " << mIsGameRunning << " " << mBallDown << "\n";
-	if(mIsGameRunning) 
-	{
-		mPhysicWorld->getBallReference().addForce( Vector2(0, BALL_GRAVITATION));
-	}
-	mPhysicWorld->getBlobReference(LEFT_PLAYER).addForce( Vector2(0, GRAVITATION));
-	mPhysicWorld->getBlobReference(RIGHT_PLAYER).addForce( Vector2(0, GRAVITATION));
-	
-	mPhysicWorld->step();
+		// update gravity
+		//std::cout << " run game: " << mIsGameRunning << " " << mBallDown << "\n";
+		if(mIsGameRunning) 
+		{
+			mPhysicWorld->getBallReference().addForce( Vector2(0, BALL_GRAVITATION));
+		}
+		mPhysicWorld->getBlobReference(LEFT_PLAYER).addForce( Vector2(0, GRAVITATION));
+		mPhysicWorld->getBlobReference(RIGHT_PLAYER).addForce( Vector2(0, GRAVITATION));
+		
+		mPhysicWorld->step();
 	}
 	mLogic->step();
 	
