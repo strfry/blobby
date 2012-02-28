@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <deque>
+#include <map>
 #include <boost/weak_ptr.hpp>
 #include <iostream>
 
@@ -34,9 +35,10 @@ PhysicWorld::PhysicWorld()
 	mObjects[0].setCollisionType(1);
 	mObjects[0].setInverseMass(0.01);
 	boost::shared_ptr<IPhysicConstraint> con1 (new HorizontalFieldBoundaryConstraint(0, 400 - NET_RADIUS - BLOBBY_LOWER_RADIUS));
-	boost::shared_ptr<IPhysicConstraint> ground (new GroundConstraint(500));
+	boost::shared_ptr<IPhysicConstraint> ground (new GroundConstraint(501));
 	mObjects[0].addConstraint (con1);
 	mObjects[0].addConstraint (ground);
+	mObjects[0].setType (POT_KINEMATIC);
 	mObjects[0].setWorld(this);
 	
 	mObjects[1].setDebugName("Right Blobby");
@@ -51,9 +53,10 @@ PhysicWorld::PhysicWorld()
 	mObjects[1].addConstraint (ground);
 	mObjects[1].setInverseMass(0.01);
 	mObjects[1].setWorld(this);
+	mObjects[1].setType (POT_KINEMATIC);
 	
 	mObjects[2].setDebugName("Ball");
-	mObjects[2].setPosition( Vector2(400, 254 + 13) );
+	mObjects[2].setPosition( Vector2(200, 254 + 13) );
 	mObjects[2].setRotation( 0 );
 	mObjects[2].setAngularVelocity( 0.1 );
 	mObjects[2].setAcceleration( Vector2(0, 0) );
@@ -65,12 +68,13 @@ PhysicWorld::PhysicWorld()
 	mObjects[2].addConstraint (con3);
 	mObjects[2].setInverseMass(0.1);
 	mObjects[2].setWorld(this);
+	mObjects[2].setType (POT_DYNAMIC);
 	
 	boost::shared_ptr<IPhysicConstraint> fix (new FixationConstraint());
 	
 	mObjects[3].setDebugName("Net");
 	mObjects[3].setPosition( Vector2(400, 500) );
-	boost::shared_ptr<ICollisionShape> nc (new CollisionShapeBox( Vector2( 2*NET_RADIUS, 2*(500-NET_SPHERE_POSITION))));
+	boost::shared_ptr<ICollisionShape> nc (new CollisionShapeBox( Vector2( NET_RADIUS, (500-NET_SPHERE_POSITION))));
 	mObjects[3].addCollisionShape( nc );
 	boost::shared_ptr<ICollisionShape> nt (new CollisionShapeSphere( NET_RADIUS, Vector2(0, 500-NET_SPHERE_POSITION)) );
 	mObjects[3].addCollisionShape( nt );
@@ -78,15 +82,17 @@ PhysicWorld::PhysicWorld()
 	mObjects[3].setWorld(this);
 	mObjects[3].setInverseMass(0);
 	mObjects[3].addConstraint (fix);
+	mObjects[3].setType (POT_STATIC);
 	
 	mObjects[4].setDebugName("Ground");
 	mObjects[4].setPosition( Vector2(400, 700) );
-	boost::shared_ptr<ICollisionShape> gr (new CollisionShapeBox( Vector2( 1000, 400)));
+	boost::shared_ptr<ICollisionShape> gr (new CollisionShapeBox( Vector2( 500, 200)));
 	mObjects[4].addCollisionShape( gr );
 	mObjects[4].setCollisionType(4);
 	mObjects[4].setWorld(this);
 	mObjects[4].setInverseMass(0);
 	mObjects[4].addConstraint (fix);
+	mObjects[4].setType (POT_STATIC);
 }
 
 PhysicWorld::~PhysicWorld()
@@ -100,6 +106,17 @@ void PhysicWorld::step()
 		step_impl(0.25f);
 	}
 }
+
+struct CollisionResponseImpulse
+{
+	int count;
+	Vector2 impulse;
+	
+	CollisionResponseImpulse() : count(0)
+	{
+		
+	}
+};
 
 void PhysicWorld::step_impl(float timestep) 
 {
@@ -157,31 +174,34 @@ void PhysicWorld::step_impl(float timestep)
 		
 		// update velocities
 		int c = 0;
-		for(bool move = true; move && c < 20; ++c)
+		std::map<PhysicObject*, CollisionResponseImpulse> impulses;
+		
+		for(auto i = responses.begin(); i != responses.end(); ++i)
 		{
-			move = false;
-			for(auto i = responses.begin(); i != responses.end(); ++i)
+			Vector2 impulse = i->handler->getImpulse(i->normal, i->first, i->second);
+			if(impulse.length() >= 1e-4)
 			{
-				Vector2 impulse = i->handler->getImpulse(i->normal, i->first, i->second);
-				if(impulse.length() >= 1e-4)
+				if(i->first->getType() == POT_DYNAMIC) 
 				{
-					i->first->setVelocity( i->first->getVelocity() 
-													+ impulse * i->second->getInverseMass() );
-				
-					i->second->setVelocity( i->second->getVelocity() 
-											- impulse * i->second->getInverseMass() );
-					
-					i->first->step(0);	// update constraints
-					i->second->step(0);
-					move = true;
+					impulses[i->first].impulse += impulse;
+					impulses[i->first].count++;
 				}
-				
-				std::cout << "b: " << getBall().getVelocity().length() << "  " << impulse.length() << "\n";
-				//system("pause");
-				
+				if(i->second->getType() == POT_DYNAMIC)
+				{
+					impulses[i->second].impulse -= impulse;
+					impulses[i->second].count++;
+				}
 			}
+			
 		}
-					
+		
+		for(auto i = impulses.begin(); i != impulses.end(); ++i)
+		{
+			i->first->setVelocity( i->first->getVelocity() + i->second.impulse / i->second.count );
+		}
+		
+		//std::cout << getBall().getVelocity() << "\n";
+		
 		// deintersect
 		int dbg_counter = 0;
 		for(bool intersect = true; intersect; )
@@ -201,7 +221,7 @@ void PhysicWorld::step_impl(float timestep)
 					const_cast<PhysicObject*>(i->second)->setPosition( i->second->getPosition() 
 												- i->normal * i->second->getInverseMass() / msum );
 					dbg_counter++;
-					if(dbg_counter == 10000) 
+					if(dbg_counter == 1000) 
 					{
 						std::cout << "PROBLEM: " << i->normal << "\n";
 						break;

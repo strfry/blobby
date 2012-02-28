@@ -198,3 +198,12 @@ void PhysicObject::setInverseMass(float im)
 {
 	mInverseMass = im;
 }
+PhysicObjectType PhysicObject::getType() const
+{
+	return mType;
+}
+
+void PhysicObject::setType(PhysicObjectType type)
+{
+	mType = type;
+}

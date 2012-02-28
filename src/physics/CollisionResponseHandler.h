@@ -21,7 +21,7 @@ class CollisionResponseHandlerBlobby : public ICollisionResponseHandler
 	{
 		// obj1 : Blobby
 		// obj2 : Ball
-		float incoming_vel = obj2->getVelocity().dotProduct(normal);
+		/*float incoming_vel = obj2->getVelocity().dotProduct(normal);
 		if(incoming_vel > 1e-5) 
 		{
 			Vector2 impulse = obj2->getVelocity().normalise() * std::min(1.f, incoming_vel);
@@ -33,7 +33,8 @@ class CollisionResponseHandlerBlobby : public ICollisionResponseHandler
 			Vector2 impulse = normal.normalise() * std::min(1.f, savedImpulse);
 			savedImpulse -= std::min(1.f, savedImpulse);
 			return impulse;
-		}
+		}*/
+		return 13 * normal + obj2->getVelocity();
 	}
 	
 	float savedImpulse;
@@ -49,7 +50,7 @@ class CollisionResponseHandlerIdealElastic : public ICollisionResponseHandler
 	virtual Vector2 getImpulse(Vector2 normal, PhysicObject* obj1, PhysicObject* obj2)
 	{
 		float incoming_vel = obj1->getVelocity().dotProduct(-normal);
-		if(incoming_vel > 0) 
+		/*if(incoming_vel > 0) 
 		{
 			Vector2 impulse = normal.normalise() * std::min(1.f, incoming_vel);
 			savedImpulse += impulse;
@@ -60,7 +61,8 @@ class CollisionResponseHandlerIdealElastic : public ICollisionResponseHandler
 			Vector2 impulse = savedImpulse.normalise() * std::min(1.f, savedImpulse.length());
 			savedImpulse -= impulse;
 			return impulse;
-		}
+		}*/
+		return normal * incoming_vel * 2; 
 	}
 	
 	Vector2 savedImpulse;

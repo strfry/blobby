@@ -10,6 +10,13 @@
 
 class PhysicWorld;
 
+enum PhysicObjectType
+{
+	POT_STATIC,
+	POT_KINEMATIC,
+	POT_DYNAMIC
+};
+
 class PhysicObject
 {
 	public:
@@ -61,6 +68,8 @@ class PhysicObject
 		
 		float getInverseMass() const;
 		void setInverseMass(float im);
+		PhysicObjectType getType() const;
+		void setType(PhysicObjectType type);
 		
 		
 		// constraint
@@ -124,6 +133,7 @@ class PhysicObject
 		
 		// object geometry/properties
 		unsigned int mCollisionType;
+		PhysicObjectType mType;
 		float mInverseMass;
 		std::vector<boost::shared_ptr<ICollisionShape> > mCollisionShapes;
 		std::vector<boost::shared_ptr<IPhysicConstraint> > mConstraints;
