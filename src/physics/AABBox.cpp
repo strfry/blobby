@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <algorithm>
 
+// constructors
+
 AABBox::AABBox() : upperLeft(), lowerRight()
 {
 }
@@ -36,11 +38,33 @@ AABBox::AABBox(Vector2 center, float half_width, float half_height) :
 {
 };
 
+// modifying
+
 void AABBox::clear()
 {
 	upperLeft.clear();
 	lowerRight.clear();
 }
+
+
+AABBox& AABBox::operator+=(Vector2 vec)
+{
+	upperLeft += vec;
+	lowerRight += vec;
+	return *this;
+}
+
+AABBox AABBox::operator+(Vector2 vec) const
+{
+	return AABBox(upperLeft + vec, lowerRight + vec);
+}
+
+Vector2 AABBox::getCenter() const
+{
+	return 0.5 * (upperLeft + lowerRight);
+}
+
+// merging and intersection tests
 
 AABBox& AABBox::merge(const AABBox& other)
 {
@@ -50,11 +74,6 @@ AABBox& AABBox::merge(const AABBox& other)
 	lowerRight.y = std::max(lowerRight.y, other.lowerRight.y);
 	
 	return *this;
-}
-
-Vector2 AABBox::getCenter() const
-{
-	return 0.5 * (upperLeft + lowerRight);
 }
 
 
@@ -85,15 +104,5 @@ bool AABBox::isPointInside(Vector2 point) const {
 	return point > upperLeft && point < lowerRight;
 }
 
-AABBox& AABBox::operator+=(Vector2 vec)
-{
-	upperLeft += vec;
-	lowerRight += vec;
-	return *this;
-}
 
-AABBox AABBox::operator+(Vector2 vec) const
-{
-	return AABBox(upperLeft + vec, lowerRight + vec);
-}
 

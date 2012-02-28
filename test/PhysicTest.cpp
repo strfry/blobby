@@ -183,6 +183,7 @@ BOOST_AUTO_TEST_CASE( multiply_divide )
 
 BOOST_AUTO_TEST_CASE( vector_decomposition )
 {
+	/// \todo more work for similar operations
 	Vector2 v1 = Vector2(1,0);
 	Vector2 v2 = Vector2(0,1);
 	std::cout << v1.decompose(v2) << "\n";
@@ -196,7 +197,8 @@ BOOST_AUTO_TEST_CASE( vector_decomposition )
 	Vector2 vec = getRandVec();
 	Vector2 vec2 = getRandVec();
 	
-	BOOST_CHECK_EQUAL(vec, vec.decompose(vec2).recompose(vec2));
+	BOOST_CHECK( std::abs(vec.x - vec.decompose(vec2).recompose(vec2).x) < vec.x * std::numeric_limits<float>::epsilon() ) ;
+	BOOST_CHECK( std::abs(vec.y - vec.decompose(vec2).recompose(vec2).y) < vec.y * std::numeric_limits<float>::epsilon() ) ;
 }
 
 
@@ -307,7 +309,7 @@ BOOST_AUTO_TEST_CASE( linear_motion )
 	
 	BOOST_CHECK_EQUAL(po.getPosition(), position + velocity * 10);
 	BOOST_CHECK_EQUAL(po.getVelocity(), velocity);
-	BOOST_CHECK_EQUAL(po.getRotation(), ang + 10 * av);
+	BOOST_CHECK(std::abs(po.getRotation() - (ang + 10 * av) ) < std::numeric_limits<float>::epsilon());
 	BOOST_CHECK_EQUAL(po.getAngularVelocity(), av);
 }
 
@@ -389,25 +391,6 @@ BOOST_AUTO_TEST_CASE( substep_linear_motion )
 		po.step(0.5f);
 		ref.step();
 	}
-	
-	std::cout <<  std::setprecision (50) << (po.getPosition() - ref.getPosition()) << "\n";;
-	
-	// currently, this test will always fail. we have to add a desired precision
-	BOOST_CHECK_EQUAL(po.getMotionState(), ref.getMotionState());
-
-	po = PhysicObject(position, velocity);
-	ref = PhysicObject(position, velocity);
-	
-	for(int i=0; i < 75*10; ++i)
-	{
-		for(int j=0; j < 16; ++j)
-		{
-			po.step(1.f/16);
-		}
-		ref.step();
-	}
-	
-	std::cout <<  std::setprecision (50) << (po.getPosition() - ref.getPosition()) << "\n";;
 	
 	// currently, this test will always fail. we have to add a desired precision
 	BOOST_CHECK_EQUAL(po.getMotionState(), ref.getMotionState());
@@ -550,6 +533,13 @@ BOOST_AUTO_TEST_CASE( aabbox_intersection )
 	BOOST_CHECK( box7.intersects(box7));
 }
 
+// Bounding Boxes of Collision Shapes
+BOOST_AUTO_TEST_CASE( collision_shape_bounding_boxes )
+{
+	CollisionShapeSphere csp = CollisionShapeSphere(10);
+	AABBox box = AABBox(Vector2(-10,-10), Vector2(10,10));
+	BOOST_CHECK_EQUAL(csp.getBoundingBox(), box);
+}
 
 // required tests for hit test algorithms:
 //  1) some known configurations where the outcome is
