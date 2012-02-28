@@ -31,7 +31,8 @@ AABBox::AABBox(Vector2 uL, Vector2 lR) :
 };
 
 AABBox::AABBox(Vector2 center, float half_width, float half_height) : 
-	upperLeft(center - Vector2(half_width, half_height)), lowerRight(center + Vector2(half_width, half_height))	
+	upperLeft(center - Vector2(half_width, half_height)), 
+	lowerRight(center + Vector2(half_width, half_height))	
 {
 };
 
@@ -41,12 +42,14 @@ void AABBox::clear()
 	lowerRight.clear();
 }
 
-void AABBox::merge(const AABBox& other)
+AABBox& AABBox::merge(const AABBox& other)
 {
 	upperLeft.x = std::min(upperLeft.x, other.upperLeft.x);
 	upperLeft.y = std::min(upperLeft.y, other.upperLeft.y);
 	lowerRight.x = std::max(lowerRight.x, other.lowerRight.x);
 	lowerRight.y = std::max(lowerRight.y, other.lowerRight.y);
+	
+	return *this;
 }
 
 Vector2 AABBox::getCenter() const
@@ -68,6 +71,14 @@ bool AABBox::intersects(const AABBox& other) const
 
 	return true;
 
+}
+
+bool AABBox::isBoxInside(const AABBox& other) const
+{
+	return other.upperLeft.x >= upperLeft.x && 
+			other.upperLeft.y >= upperLeft.y && 
+			other.lowerRight.x <= lowerRight.x &&
+			other.lowerRight.y <= lowerRight.y;
 }
 
 bool AABBox::isPointInside(Vector2 point) const {

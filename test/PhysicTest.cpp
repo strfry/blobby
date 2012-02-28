@@ -446,7 +446,7 @@ BOOST_AUTO_TEST_CASE( aabbox_ctor )
 	BOOST_CHECK_EQUAL(box2.lowerRight, lr);
 	
 	
-	AABBox box3 = AABBox( (ul + lr) * 0.5, size * 0.5);
+	AABBox box3 = AABBox( (ul + lr) * 0.5, size.x * 0.5, size.y * 0.5);
 	BOOST_CHECK_EQUAL(box3.upperLeft, ul);
 	BOOST_CHECK_EQUAL(box3.lowerRight, lr);
 	BOOST_CHECK_EQUAL(box3.upperLeft, (ul + lr) * 0.5 - size * 0.5);
@@ -481,8 +481,75 @@ BOOST_AUTO_TEST_CASE( aabbox_translation )
 	BOOST_CHECK_EQUAL(box.getCenter(), center + displacement);
 	
 	AABBox ref = AABBox(ul, lr);
-	BOOST_CHECK_EQUAL( box, ref );
+	BOOST_CHECK_EQUAL( box, ref + displacement );
 }
+
+BOOST_AUTO_TEST_CASE( aabbox_merging )
+{
+	/// \todo maybe some more testing here!
+	// given values
+	AABBox box1 = AABBox(Vector2(-5, -2), Vector2(3, 6));
+	AABBox box2 = AABBox(Vector2(-2, 5), Vector2(12, 15));
+	AABBox box3 = box1;
+	box1.merge(box2);
+	BOOST_CHECK_EQUAL( box1, AABBox(Vector2(-5, -2), Vector2(12, 15)) );
+	
+	BOOST_CHECK( box1.isBoxInside(box2) );
+	BOOST_CHECK( box1.isBoxInside(box3) );
+	BOOST_CHECK( !box3.isBoxInside(box1) );
+	BOOST_CHECK( !box2.isBoxInside(box1) );
+	
+	// random values
+	Vector2 hs = getRandVec();
+	AABBox box4 = AABBox(getRandVec(), std::abs(hs.x), std::abs(hs.y));
+	Vector2 hs2 = getRandVec();
+	AABBox box5 = AABBox(getRandVec(), std::abs(hs2.x), std::abs(hs2.y));
+	AABBox box6 = box4;
+	AABBox box7 = box5;
+	
+	box7.merge(box6);
+	box4.merge(box5);
+	BOOST_CHECK_EQUAL( box4, box7 );
+	
+	BOOST_CHECK( box4.isBoxInside(box5) );
+	BOOST_CHECK( box4.isBoxInside(box6) );
+	
+	BOOST_CHECK( !box5.isBoxInside(box4) );
+	BOOST_CHECK( !box6.isBoxInside(box4) );
+	
+	AABBox box8 = AABBox(getRandVec(), std::abs(hs.x), std::abs(hs.y));
+	AABBox box9 = box8;
+	BOOST_CHECK_EQUAL(box8.merge(box8), box9);
+}
+
+BOOST_AUTO_TEST_CASE( aabbox_intersection )
+{
+	/// \todo maybe some more testing here!
+	// given values
+	AABBox box1 = AABBox(Vector2(-5, -2), Vector2(3, 6));
+	AABBox box2 = AABBox(Vector2(-2, 5), Vector2(12, 15));
+
+	BOOST_CHECK( box1.intersects(box2) );
+	BOOST_CHECK( box2.intersects(box1) );
+	
+	AABBox box3 = AABBox(Vector2(-10, -2), Vector2(10, 2));
+	AABBox box4 = AABBox(Vector2(-2, -10), Vector2(2, 10));
+
+	BOOST_CHECK( box3.intersects(box4) );
+	BOOST_CHECK( box4.intersects(box3) );
+	
+	AABBox box5 = AABBox(Vector2(-10, 0), Vector2(10, 20));
+	AABBox box6 = AABBox(Vector2(2, 2), Vector2(4, 7));
+
+	BOOST_CHECK( box5.intersects(box6) );
+	BOOST_CHECK( box6.intersects(box5) );
+	BOOST_CHECK( box5.isBoxInside(box6) );
+	
+	Vector2 size = getRandVec();
+	AABBox box7 = AABBox(getRandVec(), std::abs(size.x), std::abs(size.y));
+	BOOST_CHECK( box7.intersects(box7));
+}
+
 
 // required tests for hit test algorithms:
 //  1) some known configurations where the outcome is

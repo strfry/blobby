@@ -46,10 +46,21 @@ struct AABBox
 	void clear();
 	
 	// info
+	/// gets the center of this box
+	/// \return (upperLeft + lowerRight) / 2
 	Vector2 getCenter() const;
 	
-	void merge(const AABBox& other);
+	/// resizes the box in such a way that the old box and other fit into the new
+	/// box. 
+	/// \return *this
+	/// \post b1.merge(b2) == b2.merge(b1)
+	/// \post this.merge(other).isBoxInside(other) == true
+	AABBox& merge(const AABBox& other);
 	bool intersects(const AABBox& other) const;
+	
+	/// checks if \p other is inside the box
+	bool isBoxInside(const AABBox& other) const;
+	/// checks if \p point is inside this box
 	bool isPointInside(Vector2 point) const;
 	
 	/// moves the box by vec
