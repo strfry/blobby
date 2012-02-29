@@ -67,6 +67,7 @@ struct BufferedImage
 	};
 };
 
+class AABBox;
 
 /*! \class RenderManager
 	\brief class for managing rendering
@@ -199,6 +200,9 @@ public:
 	
 	//Draws a blob 
 	virtual void drawBlob(const Vector2& pos, const Color& col){};
+	
+	// Draws a box
+	virtual void drawBox(const AABBox& box) {};
 
 	// Enables particle drawing
 	virtual void startDrawParticles() {};

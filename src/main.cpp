@@ -32,6 +32,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "state/State.h"
 #include "SpeedController.h"
 #include "Blood.h"
+#include "DuelMatch.h"
+#include "physics/IPhysicWorld.h"
+#include "physics/PhysicObject.h"
 
 #include <ctime>
 #include <cstring>
@@ -257,6 +260,18 @@ int main(int argc, char* argv[])
 			if (!scontroller.doFramedrop())
 			{
 				rmanager->draw();
+				// debug draw
+				
+				DuelMatch* match = DuelMatch::getMainGame();
+				
+				if(match)
+				{
+				// debug draw
+				for(int i=0; i < match->getWorld().getObjectCount(); ++i)
+				{
+					rmanager->drawBox( match->getWorld().getObject(i).getBoundingBox() + match->getWorld().getObject(i).getPosition() );
+				}
+				}
 				IMGUI::getSingleton().end();
 				BloodManager::getSingleton().step();
 				rmanager->refresh();

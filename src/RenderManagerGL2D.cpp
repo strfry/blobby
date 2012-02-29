@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* includes */
 #include "FileExceptions.h"
+#include "physics/AABBox.h"
 
 /* implementation */
 #if HAVE_LIBGL
@@ -706,6 +707,25 @@ void RenderManagerGL2D::refresh()
 	//std::cerr << debugBindTextureCount << "\n";
 	debugBindTextureCount = 0;
 	
+}
+
+void RenderManagerGL2D::drawBox(const AABBox& box)
+{
+	
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_ALPHA_TEST);
+	
+	GLubyte c[3] = {255,0,0};
+	glColor3ubv(c);
+	glBegin(GL_LINE_LOOP);
+		glVertex2f(box.upperLeft.x, box.upperLeft.y);
+		glVertex2f(box.lowerRight.x, box.upperLeft.y);
+		glVertex2f(box.lowerRight.x, box.lowerRight.y);
+		glVertex2f(box.upperLeft.x, box.lowerRight.y);
+	glEnd();
+	
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_ALPHA_TEST);
 }
 
 #else
