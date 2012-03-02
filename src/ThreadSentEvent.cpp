@@ -106,8 +106,8 @@ void ThreadEventManager::send(ThreadSentEvent event, const ThreadID& target) con
 	{
 		if(it->first.first == target.getThread() && it->first.second == event.message)
 		{
-			/// \todo oops, we don't know about the Blobby Thread here :(
-			(*it->second)(0, event);
+			/// \todo we have a const_cast here!
+			(*it->second)(const_cast<BlobbyThread*>(mThread), event);
 		}		
 	}
 
