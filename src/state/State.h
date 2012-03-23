@@ -38,12 +38,15 @@ protected:
 	// static protected helper function that 
 	// draws the game. It is in State because
 	// this functionality is shared by 
-	// LocalGameState, NetworkGameState and ReplayMenuState
+	// LocalGameState, NetworkGameState and ReplayState
 	static void presentGame(const DuelMatch* match);
 public:
 	virtual ~State() {}
 	virtual void step() = 0;
 	static State* getCurrentState();
+	
+	virtual const char* getStateName() const = 0;
+	static const char* getCurrenStateName();
 };
 
 class MainMenuState : public State
@@ -53,6 +56,7 @@ public:
 	MainMenuState();
 	virtual ~MainMenuState();
 	virtual void step();
+	virtual const char* getStateName() const;
 };
 
 class CreditsState : public State
@@ -60,6 +64,7 @@ class CreditsState : public State
 public:
 	CreditsState();
 	virtual void step();
+	virtual const char* getStateName() const;
 private:
 	float mYPosition;
 };

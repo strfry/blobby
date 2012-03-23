@@ -21,9 +21,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <list>
 
+#include <boost/scoped_ptr.hpp>
+
 #include "Global.h"
 #include "raknet/NetworkTypes.h"
-#include "UserConfig.h"
 #include "SpeedController.h"
 #include "InputSource.h"
 #include "RakNetPacket.h"
@@ -74,11 +75,11 @@ private:
 	PacketQueue mPacketQueue;
 
 	DuelMatch* mMatch;
-	DummyInputSource* mLeftInput;
-	DummyInputSource* mRightInput;
+	boost::scoped_ptr<DummyInputSource> mLeftInput;
+	boost::scoped_ptr<DummyInputSource> mRightInput;
 	PlayerSide mWinningPlayer;
 
-	ReplayRecorder* mRecorder;
+	boost::scoped_ptr<ReplayRecorder> mRecorder;
 
 	bool mPausing;
 

@@ -16,6 +16,9 @@ set(common_SRC
 	PhysicWorld.cpp PhysicWorld.h
 	SpeedController.cpp SpeedController.h
 	UserConfig.cpp UserConfig.h
+	File.cpp File.h
+	FileWrite.cpp FileWrite.h
+	FileRead.cpp FileRead.h
 	)
 	
 set (blobby_SRC ${common_SRC}
@@ -23,6 +26,7 @@ set (blobby_SRC ${common_SRC}
 	TextManager.cpp TextManager.h
 	main.cpp
 	IMGUI.cpp IMGUI.h
+	LagDetectionSystem.cpp LagDetectionSystem.h
 	InputDevice.cpp InputDevice.h
 	InputManager.cpp InputManager.h
 	InputSource.cpp InputSource.h
@@ -36,14 +40,21 @@ set (blobby_SRC ${common_SRC}
 	BotAPICalculations.cpp BotAPICalculations.h
 	SoundManager.cpp SoundManager.h
 	Vector.h
+	ReplayRecorder.cpp ReplayRecorder.h
+	ReplayPlayer.cpp ReplayPlayer.h
+	ReplayLoader.cpp
 	state/State.cpp state/State.h
 	state/LocalGameState.cpp state/LocalGameState.h
 	state/NetworkState.cpp state/NetworkState.h
 	state/OptionsState.cpp state/OptionsState.h
+	state/NetworkSearchState.cpp state/NetworkSearchState.h
+	state/ReplayState.cpp state/ReplayState.h
+	state/ReplaySelectionState.cpp state/ReplaySelectionState.h
 	)
 	
 set (blobby-server_SRC ${common_SRC}
-	DedicatedServer.cpp DedicatedServer.h
+	server/DedicatedServer.cpp server/DedicatedServer.h
+	server/NetworkPlayer.cpp server/NetworkPlayer.h
 	)
 
 find_package(Boost REQUIRED)

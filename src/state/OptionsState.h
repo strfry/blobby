@@ -23,12 +23,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "UserConfig.h"
 #include "State.h"
 
+/*! \class OptionState
+	\brief State for managing the main options menu
+*/
 class OptionState : public State
 {
 public:
 	OptionState();
 	virtual ~OptionState();
 	virtual void step();
+	virtual const char* getStateName() const;
 private:
 	UserConfig mOptionConfig;
 	std::vector<std::string> mScriptNames;
@@ -39,12 +43,16 @@ private:
 	unsigned mBotStrength[MAX_PLAYERS];
 };
 
+/*! \class GraphicOptionsState
+	\brief State for managing the graphics options menu
+*/
 class GraphicOptionsState : public State
 {
 public:
 	GraphicOptionsState();
 	virtual ~GraphicOptionsState();
 	virtual void step();
+	virtual const char* getStateName() const;
 private:
 	UserConfig mOptionConfig;
 	bool mSaveConfig;
@@ -55,12 +63,16 @@ private:
 	bool mShowShadow;
 };
 
+/*! \class InputOptionsState
+	\brief State for managing the input options menu
+*/
 class InputOptionsState : public State
 {
 public:
 	InputOptionsState();
 	virtual ~InputOptionsState();
 	virtual void step();
+	virtual const char* getStateName() const;
 private:
 	UserConfig mOptionConfig;
 	bool mSaveConfig;
@@ -87,12 +99,16 @@ private:
 	std::string mRightBlobbyJoystickJump;
 };
 
+/*! \class MiscOptionsState
+	\brief State for managing the misc options menu
+*/
 class MiscOptionsState : public State
 {
 public:
 	MiscOptionsState();
 	virtual ~MiscOptionsState();
 	virtual void step();
+	virtual const char* getStateName() const;
 private:
 	UserConfig mOptionConfig;
 	std::vector<std::string> mBackgrounds;

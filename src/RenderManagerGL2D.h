@@ -42,6 +42,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "RenderManager.h"
 
+/*! \class RenderManagerGL2D
+	\brief RenderManager on top of OpenGL
+	\details This render manager uses OpenGL for drawing, SDL is only used for loading
+			the images.
+*/
 class RenderManagerGL2D : public RenderManager
 {
 private:
@@ -92,8 +97,7 @@ private:
 	Color mLeftBlobColor;
 	Color mRightBlobColor;
 
-	void drawQuad(float x, float y);
-	void drawQuad2(float x, float y, float width, float height);
+	void drawQuad(float x, float y, float width, float height);
 	void drawQuad(float x, float y, const Texture& tex);
 	GLuint loadTexture(SDL_Surface* surface, bool specular);
 	int getNextPOT(int npot);

@@ -32,35 +32,14 @@ namespace RakNet
 	class BitStream;
 }
 
+/*! \brief blobby world
+	\details This class encapuslates the physical world where blobby happens. It manages the two blobs,
+			the ball and collisions between them and the environment, it calculates object movements etc.
+	\todo remove all game logic related stuff!
+*/
 class PhysicWorld
 {
-private:
-	inline bool playerTopBallCollision(int player) const;
-	inline bool playerBottomBallCollision(int player) const;
-	bool resetAreaClear()const;
 
-	// Do all blobby-related physic stuff which is independent from states
-	void handleBlob(PlayerSide player);
-
-	// Detect and handle ball to blobby collisions
-	void checkBlobbyBallCollision(PlayerSide player);
-	
-	// sets current_state to working state and prepares new working state
-	void finishState();
-
-	bool mBallHitByBlob[MAX_PLAYERS];
-
-	PlayerInput mPlayerInput[MAX_PLAYERS];
-
-	bool mIsGameRunning;
-	bool mIsBallValid;
-
-	float mLastHitIntensity;
-	float mTimeSinceBallout;
-	
-	/// \todo hier safeptr verwenden; current_state nie null, working_state ändert sich nicht
-	PhysicWorldState* mCurrentState;
-	PhysicWorldState* mWorkingState;
 public:
 	PhysicWorld();
 	~PhysicWorld();
@@ -108,7 +87,7 @@ public:
 	// wants to know, which player begins.
 	void reset(PlayerSide player);
 
-	// This resets the player to their starting Positions
+	// This resets the player to their starting positions
 	void resetPlayer();
 
 	// Important: This assumes a fixed framerate of 60 FPS!
@@ -129,8 +108,51 @@ public:
 	//Input stuff for recording and playing replays
 	const PlayerInput* getPlayersInput() const;
 	
-	
 	PhysicWorldState* getWorldState() const;
+	#ifdef DEBUG
+	bool checkPhysicStateValidity() const;
+	#endif
+
+private:
+	inline bool playerTopBallCollision(int player) const;
+	inline bool playerBottomBallCollision(int player) const;
+	bool resetAreaClear()const;
+
+	// Do all blobby-related physic stuff which is independent from states
+	void handleBlob(PlayerSide player);
+
+	// Detect and handle ball to blobby collisions
+	void handleBlobbyBallCollision(PlayerSide player);
+
+	// sets current_state to working state and prepares new working state
+	void finishState();
+	
+	bool mBallHitByBlob[MAX_PLAYERS];
+
+	Vector2 mBlobPosition[MAX_PLAYERS];
+	Vector2 mBallPosition;
+
+	Vector2 mBlobVelocity[MAX_PLAYERS];
+	Vector2 mBallVelocity;
+
+	float mBallRotation;
+	float mBallAngularVelocity;
+	float mBlobState[MAX_PLAYERS];
+	float mCurrentBlobbyAnimationSpeed[MAX_PLAYERS];
+
+	PlayerInput mPlayerInput[MAX_PLAYERS];
+
+	bool mIsGameRunning;
+	bool mIsBallValid;
+
+	float mLastHitIntensity;
+	///! \todo thats not relevant for physics! It's game logic!!
+	float mTimeSinceBallout;
+
+		
+	/// \todo hier safeptr verwenden; current_state nie null, working_state ändert sich nicht
+	PhysicWorldState* mCurrentState;
+	PhysicWorldState* mWorkingState;
 };
 
 

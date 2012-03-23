@@ -36,7 +36,8 @@ enum ObjectType
 	ACTIVEEDITBOX,
 	SELECTBOX,
 	ACTIVESELECTBOX,
-	BLOB
+	BLOB,
+	CHAT
 };
 
 struct QueueObject
@@ -114,34 +115,34 @@ void IMGUI::end()
 				rmanager.drawImage(obj.text, obj.pos1);
 				break;
 			case OVERLAY:
-				rmanager.drawOverlay(0.6, obj.pos1, obj.pos2, obj.col);
+				rmanager.drawOverlay(0.65, obj.pos1, obj.pos2, obj.col);
 				break;
 			case TEXT:
 				rmanager.drawText(obj.text, obj.pos1, obj.flags);
 				break;
 			case SCROLLBAR:
-				rmanager.drawOverlay(0.4, obj.pos1, obj.pos1 + Vector2(210.0, 26.0));
+				rmanager.drawOverlay(0.5, obj.pos1, obj.pos1 + Vector2(210.0, 26.0));
 				rmanager.drawImage("gfx/scrollbar.bmp",obj.pos1 + Vector2(obj.pos2.x * 200.0 + 5 , 13));
 				break;
 			case ACTIVESCROLLBAR:
-				rmanager.drawOverlay(0.3, obj.pos1, obj.pos1 + Vector2(210.0, 26.0));
+				rmanager.drawOverlay(0.4, obj.pos1, obj.pos1 + Vector2(210.0, 26.0));
 				rmanager.drawImage("gfx/scrollbar.bmp",obj.pos1 + Vector2(obj.pos2.x * 200.0 + 5 , 13));
 				break;
 			case EDITBOX:
 				FontSize = (obj.flags & TF_SMALL_FONT ? FONT_WIDTH_SMALL : FONT_WIDTH_NORMAL);
-				rmanager.drawOverlay(0.4, obj.pos1, obj.pos1 + Vector2(10+obj.length*FontSize, 10+FontSize));
+				rmanager.drawOverlay(0.5, obj.pos1, obj.pos1 + Vector2(10+obj.length*FontSize, 10+FontSize));
 				rmanager.drawText(obj.text, obj.pos1+Vector2(5, 5), obj.flags);
 				break;
 			case ACTIVEEDITBOX:
 				FontSize = (obj.flags & TF_SMALL_FONT ? FONT_WIDTH_SMALL : FONT_WIDTH_NORMAL);
-				rmanager.drawOverlay(0.2, obj.pos1, obj.pos1 + Vector2(10+obj.length*FontSize, 10+FontSize));
+				rmanager.drawOverlay(0.3, obj.pos1, obj.pos1 + Vector2(10+obj.length*FontSize, 10+FontSize));
 				rmanager.drawText(obj.text, obj.pos1+Vector2(5, 5), obj.flags);
 				if (obj.pos2.x >= 0)
 					rmanager.drawOverlay(1.0, Vector2((obj.pos2.x)*FontSize+obj.pos1.x+5, obj.pos1.y+5), Vector2((obj.pos2.x)*FontSize+obj.pos1.x+5+3, obj.pos1.y+5+FontSize), Color(255,255,255));
 				break;
 			case SELECTBOX:
 				FontSize = (obj.flags & TF_SMALL_FONT ? (FONT_WIDTH_SMALL+LINE_SPACER_SMALL) : (FONT_WIDTH_NORMAL+LINE_SPACER_NORMAL));
-				rmanager.drawOverlay(0.4, obj.pos1, obj.pos2);
+				rmanager.drawOverlay(0.5, obj.pos1, obj.pos2);
 				for (unsigned int c = 0; c < obj.entries.size(); c++)
 				{
 					if(c == obj.selected)
@@ -152,10 +153,21 @@ void IMGUI::end()
 				break;
 			case ACTIVESELECTBOX:
 				FontSize = (obj.flags & TF_SMALL_FONT ? (FONT_WIDTH_SMALL+LINE_SPACER_SMALL) : (FONT_WIDTH_NORMAL+LINE_SPACER_NORMAL));
-				rmanager.drawOverlay(0.2, obj.pos1, obj.pos2);
+				rmanager.drawOverlay(0.3, obj.pos1, obj.pos2);
 				for (unsigned int c = 0; c < obj.entries.size(); c++)
 				{
 					if(c == obj.selected)
+						rmanager.drawText(obj.entries[c], Vector2(obj.pos1.x+5, obj.pos1.y+(c*FontSize)+5), obj.flags | TF_HIGHLIGHT);
+					else
+						rmanager.drawText(obj.entries[c], Vector2(obj.pos1.x+5, obj.pos1.y+(c*FontSize)+5), obj.flags);
+				}
+				break;
+			case CHAT:
+				FontSize = (obj.flags & TF_SMALL_FONT ? (FONT_WIDTH_SMALL+LINE_SPACER_SMALL) : (FONT_WIDTH_NORMAL+LINE_SPACER_NORMAL));
+				rmanager.drawOverlay(0.5, obj.pos1, obj.pos2);
+				for (unsigned int c = 0; c < obj.entries.size(); c++)
+				{
+					if (obj.text[c] == 'R' )
 						rmanager.drawText(obj.entries[c], Vector2(obj.pos1.x+5, obj.pos1.y+(c*FontSize)+5), obj.flags | TF_HIGHLIGHT);
 					else
 						rmanager.drawText(obj.entries[c], Vector2(obj.pos1.x+5, obj.pos1.y+(c*FontSize)+5), obj.flags);
@@ -742,15 +754,15 @@ SelectBoxAction IMGUI::doSelectbox(int id, const Vector2& pos1, const Vector2& p
 	return changed;
 }
 
-void IMGUI::doChatbox(int id, const Vector2& pos1, const Vector2& pos2, const std::vector<std::string>& entries, int& selected, unsigned int flags)
+void IMGUI::doChatbox(int id, const Vector2& pos1, const Vector2& pos2, const std::vector<std::string>& entries, int& selected, const std::vector<bool>& local, unsigned int flags)
 {
+	assert( entries.size() == local.size() );
 	int FontSize = (flags & TF_SMALL_FONT ? (FONT_WIDTH_SMALL+LINE_SPACER_SMALL) : (FONT_WIDTH_NORMAL+LINE_SPACER_NORMAL));
-	SelectBoxAction changed = SBA_NONE;
 	QueueObject obj;
 	obj.id = id;
 	obj.pos1 = pos1;
 	obj.pos2 = pos2;
-	obj.type = SELECTBOX;
+	obj.type = CHAT;
 	obj.flags = flags;
 
 	const int itemsPerPage = int(pos2.y - pos1.y - 10) / FontSize;
@@ -783,7 +795,6 @@ void IMGUI::doChatbox(int id, const Vector2& pos1, const Vector2& pos2, const st
 		// React to keyboard input.
 		if (id == mActiveButton)
 		{
-			obj.type = ACTIVESELECTBOX;
 			switch (mLastKeyAction)
 			{
 				case DOWN:
@@ -817,7 +828,6 @@ void IMGUI::doChatbox(int id, const Vector2& pos1, const Vector2& pos2, const st
 		Vector2 mousepos = InputManager::getSingleton()->position();
 		if (mousepos.x > pos1.x && mousepos.y > pos1.y && mousepos.x < pos2.x && mousepos.y < pos2.y)
 		{
-			obj.type = ACTIVESELECTBOX;
 			if (InputManager::getSingleton()->click())
 				mActiveButton = id;
 		}
@@ -857,9 +867,30 @@ void IMGUI::doChatbox(int id, const Vector2& pos1, const Vector2& pos2, const st
 	{
 		int last = selected + 1;
 		first = last - itemsPerPage;
+		/// \todo maybe we should adapt selected so we even can't scroll up further!
+		// we don't want negative chatlog, so we just scroll upward without coming to negative
+		// elements.
 		if (first < 0)
+		{
+			// increase last element so we alway draw itemsPerPage items
+			last -= first;
 			first = 0;
+		}
+		
+		// check that we don't create out of bounds problems
+		if(last > entries.size())
+		{
+			last = entries.size();
+		}
+			
 		obj.entries = std::vector<std::string>(entries.begin()+first, entries.begin()+last);
+		// HACK: we use taxt to store information which text is from local player and which from
+		//			remote player.
+		obj.text = "";
+		for(int i = first; i < last; ++i)
+		{
+			obj.text += local[i] ? 'L' : 'R';
+		}
 	}
 	else
 		obj.entries = std::vector<std::string>();

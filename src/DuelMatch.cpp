@@ -17,8 +17,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
-#include "UserConfig.h"
+#include "IUserConfigReader.h"
 #include "DuelMatch.h"
+#include "UserConfig.h"
 #include "ThreadSentEvent.h"
 #include "ReplayRecorder.h"
 
@@ -48,10 +49,24 @@ DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput,
 	mPhysicWorld.resetPlayer();
 	mPhysicWorld.step();
 
-	UserConfig gameConfig;
-	gameConfig.loadFile("config.xml");
-	mLogic->setScoreToWin(gameConfig.getInteger("scoretowin"));
-};
+	/// \todo we better pass this as a parameter so DuelMatch has no coupeling with UserConfigs...s
+	mLogic->setScoreToWin(IUserConfigReader::createUserConfigReader("config.xml")->getInteger("scoretowin"));
+}
+
+void DuelMatch::reset()
+{
+	mPhysicWorld = PhysicWorld();
+	mLogic = createGameLogic("rules.lua");
+	
+	mBallDown = false;
+
+	mPhysicWorld.resetPlayer();
+	mPhysicWorld.step();
+	
+	/// \todo we better pass this as a parameter so DuelMatch has no coupeling with UserConfigs...s
+	mLogic->setScoreToWin(IUserConfigReader::createUserConfigReader("config.xml")->getInteger("scoretowin"));
+
+}
 
 DuelMatch::~DuelMatch()
 {
@@ -86,12 +101,15 @@ void DuelMatch::step()
 	// check for all hit events
 	if(!mRemote)
 	{
-		if (mPhysicWorld.ballHitLeftPlayer())
+		// create game events
+		// ball/player hit events:
+		if (mPhysicWorld.ballHitLeftPlayer() && mLogic->isCollisionValid(LEFT_PLAYER))
 			events |= EVENT_LEFT_BLOBBY_HIT;
 
-		if (mPhysicWorld.ballHitRightPlayer())
+		if (mPhysicWorld.ballHitRightPlayer() && mLogic->isCollisionValid(RIGHT_PLAYER))
 			events |= EVENT_RIGHT_BLOBBY_HIT;
 
+		// ball/ground hit events:
 		if(mPhysicWorld.ballHitLeftGround())
 			events |= EVENT_BALL_HIT_LEFT_GROUND;
 
@@ -166,6 +184,11 @@ void DuelMatch::setScore(int left, int right)
 void DuelMatch::trigger(int event)
 {
 	external_events |= event;
+}
+
+void DuelMatch::resetTriggeredEvents()
+{
+	external_events = 0;
 }
 
 void DuelMatch::pause()
@@ -255,10 +278,10 @@ const PlayerInput* DuelMatch::getPlayersInput() const
 	return mPhysicWorld.getPlayersInput();
 }
 
-void DuelMatch::setPlayersInput(const PlayerInput* input)
+void DuelMatch::setPlayersInput(const PlayerInput& left, const PlayerInput& right)
 {
-	mPhysicWorld.setLeftInput(input[LEFT_PLAYER]);
-	mPhysicWorld.setRightInput(input[RIGHT_PLAYER]);
+	mPhysicWorld.setLeftInput( left );
+	mPhysicWorld.setRightInput( right );
 }
 
 void DuelMatch::setServingPlayer(PlayerSide side)

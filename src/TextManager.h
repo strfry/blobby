@@ -60,8 +60,11 @@ class TextManager{
 			RP_PLAY,
 			RP_DELETE,
 			RP_CHECKSUM,
+			RP_VERSION,
+			RP_FILE_OUTDATED,
 			RP_FILE_CORRUPT,
 			RP_SAVE_NAME,
+			RP_WAIT_REPLAY,
 			RP_SAVE,
 			
 			// game texts
@@ -135,6 +138,8 @@ class TextManager{
 			OP_WEAK,
 			OP_MEDIUM,
 			OP_STRONG,
+			
+			UPDATE_NOTIFICATION,
 			
 			COUNT
 		};

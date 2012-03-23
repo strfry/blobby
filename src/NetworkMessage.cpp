@@ -23,10 +23,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <cstring>
 
-ServerInfo::ServerInfo(RakNet::BitStream& stream, const char* ip)
+ServerInfo::ServerInfo(RakNet::BitStream& stream, const char* ip, uint16_t p)
 {
 	strncpy(hostname, ip, sizeof(hostname));
 	hostname[sizeof(hostname) - 1] = 0;
+	
+	port = p;
 
 	stream.Read(activegames);
 	stream.Read(gamespeed);
@@ -35,8 +37,9 @@ ServerInfo::ServerInfo(RakNet::BitStream& stream, const char* ip)
 	stream.Read(description, sizeof(description));
 }
 
-ServerInfo::ServerInfo(UserConfig& config)
+ServerInfo::ServerInfo(const UserConfig& config)
 {
+	/// \todo we only need a config reader here!
 	memset(this, 0, sizeof(ServerInfo));
 	std::string tmp;
 	tmp = config.getString("name");
@@ -79,7 +82,9 @@ const size_t ServerInfo::BLOBBY_SERVER_PRESENT_PACKET_SIZE = sizeof((unsigned ch
 
 bool operator == (const ServerInfo& lval, const ServerInfo& rval)
 {
-	return !strncmp(lval.hostname, rval.hostname,
+	// check if ip and port are identical!
+	/// \todo maybe we should user raknets pladerId directly?
+	return lval.port == rval.port && !strncmp(lval.hostname, rval.hostname,
 			sizeof(lval.hostname));
 }
 

@@ -72,6 +72,13 @@ void fork_to_background();
 void wait_and_restart_child();
 void setup_physfs(char* argv0);
 
+// server workload statistics
+int SWLS_PacketCount = 0;
+int SWLS_Connections = 0;
+int SWLS_Games		 = 0;
+int SWLS_GameSteps	 = 0;
+int SWLS_RunningTime = 0;
+
 // functions for processing certain network packets
 void createNewGame();
 
@@ -137,10 +144,14 @@ int main(int argc, char** argv)
 		
 		while ((packet = receivePacket(&server)))
 		{
+			
+			SWLS_PacketCount++;
+			
 			switch(packet->data[0])
 			{
 				case ID_NEW_INCOMING_CONNECTION:
 					clients++;
+					SWLS_Connections++;
 					syslog(LOG_DEBUG, "New incoming connection, %d clients connected now", clients);
 					break;
 				case ID_CONNECTION_LOST:
@@ -230,8 +241,12 @@ int main(int argc, char** argv)
 						
 						NetworkPlayer leftPlayer = firstPlayer;
 						NetworkPlayer rightPlayer = secondPlayer;
-						PlayerSide switchSide;
+						PlayerSide switchSide = NO_PLAYER;
 						
+						if(RIGHT_PLAYER == firstPlayer.getDesiredSide())
+						{
+							std::swap(leftPlayer, rightPlayer);
+						} 
 						if (secondPlayer.getDesiredSide() == firstPlayer.getDesiredSide())
 						{
 							if (secondPlayer.getDesiredSide() == LEFT_PLAYER)
@@ -239,11 +254,6 @@ int main(int argc, char** argv)
 							if (secondPlayer.getDesiredSide() == RIGHT_PLAYER)
 								switchSide = LEFT_PLAYER;
 						}
-						
-						if(RIGHT_PLAYER == firstPlayer.getDesiredSide())
-						{
-							std::swap(leftPlayer, rightPlayer);
-						} 
 						
 						
 						boost::shared_ptr<NetworkGame> newgame (new NetworkGame(
@@ -255,10 +265,11 @@ int main(int argc, char** argv)
 						playermap[leftPlayer.getID()] = newgame;
 						playermap[rightPlayer.getID()] = newgame;
 						gamelist.push_back(newgame);
+						SWLS_Games++;
 						
 						#ifdef DEBUG
-						std::cout 	<< "NEW GAME CREATED:\t"<<leftPlayer.binaryAddress << " : " << leftPlayer.port << "\n"
-									<< "\t\t\t" << rightPlayer.binaryAddress << " : " << rightPlayer.port << "\n";
+						std::cout 	<< "NEW GAME CREATED:\t"<<leftPlayer.getID().binaryAddress << " : " << leftPlayer.getID().port << "\n"
+									<< "\t\t\t" << rightPlayer.getID().binaryAddress << " : " << rightPlayer.getID().port << "\n";
 						#endif			
 
 						firstPlayer = NetworkPlayer();
@@ -292,7 +303,9 @@ int main(int argc, char** argv)
 					if (wrongPackageSize)
 					{
 						printf("major: %d minor: %d\n", major, minor);
-						stream2.Write((unsigned char)ID_UNKNOWN_CLIENT);
+						stream2.Write((unsigned char)ID_VERSION_MISMATCH);
+						stream2.Write((int)BLOBBY_VERSION_MAJOR);
+						stream2.Write((int)BLOBBY_VERSION_MINOR);
 						server.Send(&stream2, LOW_PRIORITY,
 									RELIABLE_ORDERED, 0, packet->playerId,
 									false);
@@ -301,7 +314,9 @@ int main(int argc, char** argv)
 						|| (major == BLOBBY_VERSION_MAJOR && minor < BLOBBY_VERSION_MINOR))
 					// Check if the packet contains matching version numbers
 					{
-						stream2.Write((unsigned char)ID_OLD_CLIENT);
+						stream2.Write((unsigned char)ID_VERSION_MISMATCH);
+						stream2.Write((int)BLOBBY_VERSION_MAJOR);
+						stream2.Write((int)BLOBBY_VERSION_MINOR);
 												server.Send(&stream2, LOW_PRIORITY,
 							RELIABLE_ORDERED, 0, packet->playerId,
 							false);
@@ -337,8 +352,20 @@ int main(int argc, char** argv)
 		// now, step through all network games and process input - if a game ended, delete it
 		// -------------------------------------------------------------------------------
 		
+		SWLS_RunningTime++;
+		
+		if(SWLS_RunningTime % (75 * 60 * 60 /*1h*/) == 0 )
+		{
+			std::cout << "Blobby Server Status Report " << (SWLS_RunningTime / 75 / 60 / 60) << "h running \n";
+			std::cout << " packet count: " << SWLS_PacketCount << "\n";
+			std::cout << " accepted connections: " << SWLS_Connections << "\n";
+			std::cout << " started games: " << SWLS_Games << "\n";
+			std::cout << " game steps: " << SWLS_GameSteps << "\n";
+		}
+		
 		for (GameList::iterator iter = gamelist.begin(); gamelist.end() != iter; ++iter)
 		{
+			SWLS_GameSteps++;
 			if (!(*iter)->step())
 			{
 				iter = gamelist.erase(iter);

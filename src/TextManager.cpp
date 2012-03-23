@@ -20,10 +20,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "TextManager.h"
 
-#include <iostream>
-#include <physfs.h>
-#include "tinyxml/tinyxml.h"
 #include "Global.h"
+#include "FileRead.h"
+
+#include "tinyxml/tinyxml.h"
+
+#include <iostream>
 #include <algorithm>
 
 TextManager* TextManager::mSingleton = 0;
@@ -74,27 +76,26 @@ std::string TextManager::getLang() const{
 	return lang;
 }
 
-bool TextManager::loadFromXML(std::string file){
+/// \todo why no const std::string& ?
+bool TextManager::loadFromXML(std::string filename){
 	// create and load file
-	PHYSFS_file* fileHandle = PHYSFS_openRead(file.c_str());
-	if (!fileHandle)
-		throw FileLoadException(file);
+	FileRead file(filename);
 
-	int fileLength = PHYSFS_fileLength(fileHandle);
-	char* fileBuffer = new char[fileLength + 1];
-	PHYSFS_read(fileHandle, fileBuffer, 1, fileLength);
+	int fileLength = file.length();
+	boost::shared_array<char> fileBuffer(new char[fileLength + 1]);
+	file.readRawBytes( fileBuffer.get(), fileLength );
+	// null-terminate
 	fileBuffer[fileLength] = 0;
-	
 	
 	// parse file
 	TiXmlDocument language_data;
-	language_data.Parse(fileBuffer);
-	delete[] fileBuffer;
-	PHYSFS_close(fileHandle);
+	language_data.Parse(fileBuffer.get());
+	fileBuffer.reset(0);
+	file.close();
 
 	if (language_data.Error())
 	{
-		std::cerr << "Warning: Parse error in " << file;
+		std::cerr << "Warning: Parse error in " << filename;
 		std::cerr << "!" << std::endl;
 	}
 
@@ -102,34 +103,55 @@ bool TextManager::loadFromXML(std::string file){
 	if (!language)
 		return false;
 	
+	int num_strings = mStrings.size();
+	int found_count = 0;
+	
 	// this loop assumes that the strings in the xml file are in the correct order
 	//  in each step, it reads the next string element and writes it to the next position in mStrings
 	for (	TiXmlElement* stringel = language->FirstChildElement("string"); 
 			stringel; 
-			stringel = stringel->NextSiblingElement("string")){
+			stringel = stringel->NextSiblingElement("string"))
+	
+	{
 		
-		
+		/// \todo we don't check for duplicate entries!
 		const char* e = stringel->Attribute("english");
 		const char* t = stringel->Attribute("translation");
 		if (t && e){
 			// search the english string and replace it with the translation
 			std::vector<std::string>::iterator found = std::find(mStrings.begin(), mStrings.end(), e);
 			if(found != mStrings.end())
+			{
+				found_count++;
 				*found = t;
+			}
 			else
-				std::cerr<<"error in language file: entry "<<e<<" -> "<<t<<" invalid\n";
+				std::cerr << "error in language file: entry " << e << " -> " << t << " invalid\n";
 		
-		}else if(t){
-			std::cerr<<"error in language file: english not found for "<<t<<"\n";
-		}else if(e){
-			std::cerr<<"error in language file: translation not found for "<<e<<"\n";
+		} 
+		else if(t)
+		{
+			std::cerr << "error in language file: english not found for " << t << std::endl;
 		}
+		else if(e)
+		{
+			std::cerr << "error in language file: translation not found for " << e << std::endl;
+		}
+		
+	}
+	
+	// do we check if we got all?
+	if(num_strings != found_count)
+	{
+		std::cerr << "missing translations: got " << found_count << 
+					" out of " << num_strings << " translation entries" << std::endl; 
 	}
 	
 	return true;
 }
 
-void TextManager::setDefault(){
+void TextManager::setDefault()
+{
 	// Hardcoded default language
 	mStrings[LBL_OK] = "ok";
 	mStrings[LBL_CANCEL] = "cancel";
@@ -155,7 +177,10 @@ void TextManager::setDefault(){
 	mStrings[RP_DELETE] = "delete";
 	mStrings[RP_CHECKSUM] = "checksum error";
 	mStrings[RP_FILE_CORRUPT] = "file is corrupt";
+	mStrings[RP_VERSION] = "version error";
+	mStrings[RP_FILE_OUTDATED] = "file is outdated";
 	mStrings[RP_SAVE_NAME] = "name of the replay:";
+	mStrings[RP_WAIT_REPLAY] = "receiving replay...";
 	mStrings[RP_SAVE] = "save replay";
 	
 	mStrings[GAME_WIN] = "has won the game!";
@@ -226,6 +251,8 @@ void TextManager::setDefault(){
 	mStrings[OP_WEAK] = "weak";
 	mStrings[OP_MEDIUM] = "medium";
 	mStrings[OP_STRONG] = "strong";
+	
+	mStrings[UPDATE_NOTIFICATION] = "please visit http://blobby.sourceforge.net/ for a new version of blobby volley";
 }
 
 std::map<std::string, std::string> TextManager::language_names;

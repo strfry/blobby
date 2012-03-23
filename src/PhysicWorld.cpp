@@ -33,6 +33,10 @@ const float BLOBBY_ANIMATION_SPEED = 0.5;
 const float STANDARD_BALL_ANGULAR_VELOCITY = 0.1;
 const float STANDARD_BALL_HEIGHT = 269 + BALL_RADIUS;
 
+// helper function for setting FPU precision
+
+inline void set_fpu_single_precision();
+
 PhysicWorld::PhysicWorld() : mWorkingState(new PhysicWorldState()), mCurrentState(new PhysicWorldState())
 {
 	reset(LEFT_PLAYER);
@@ -256,6 +260,8 @@ void PhysicWorld::handleBlob(PlayerSide player)
 	// Reset ball to blobby collision
 	mBallHitByBlob[player] = false;
 
+	float currentBlobbyGravity = GRAVITATION;
+
 	if (mPlayerInput[player].up)
 	{
 		if (blobbyHitGround(player))
@@ -276,12 +282,13 @@ void PhysicWorld::handleBlob(PlayerSide player)
 		(mPlayerInput[player].right ? BLOBBY_SPEED : 0) -
 		(mPlayerInput[player].left ? BLOBBY_SPEED : 0);
 
-	// Acceleration Integration
-	mWorkingState->mBlobVelocity[player].y += GRAVITATION;
-
-	// Compute new position
-	mWorkingState->mBlobPosition[player] += mWorkingState->mBlobVelocity[player];
-
+	// compute blobby fall movement (dt = 1)
+	// ds = a/2 * dt^2 + v * dt
+	mWorkingState->mBlobPosition[player] += Vector2(0, 0.5f * currentBlobbyGravity ) + mWorkingState->mBlobVelocity[player];
+	// dv = a * dt
+	mWorkingState->mBlobVelocity[player].y += currentBlobbyGravity;
+	
+	// Hitting the ground
 	if (mWorkingState->mBlobPosition[player].y > GROUND_PLANE_HEIGHT)
 	{
 		if(mWorkingState->mBlobVelocity[player].y > 3.5)
@@ -296,7 +303,7 @@ void PhysicWorld::handleBlob(PlayerSide player)
 	blobbyAnimationStep(player);
 }
 
-void PhysicWorld::checkBlobbyBallCollision(PlayerSide player)
+void PhysicWorld::handleBlobbyBallCollision(PlayerSide player)
 {
 	// Check for bottom circles
 	if(playerBottomBallCollision(player))
@@ -337,18 +344,21 @@ void PhysicWorld::step()
 	handleBlob(LEFT_PLAYER);
 	handleBlob(RIGHT_PLAYER);
 
-	// Ball Gravitation
+	// Move ball when game is running
 	if (mIsGameRunning)
+	{
+		// dt = 1 !!
+		// move ball ds = a/2 * dt^2 + v * dt
+		mWorkingState->mBallPosition += Vector2(0, 0.5f * BALL_GRAVITATION) + mWorkingState->mBallVelocity;
+		// dv = a*dt
 		mWorkingState->mBallVelocity.y += BALL_GRAVITATION;
-
-	// move ball
-	mWorkingState->mBallPosition += mWorkingState->mBallVelocity;
+	} 
 
 	// Collision detection
 	if(mIsBallValid)
 	{
-		checkBlobbyBallCollision(LEFT_PLAYER);
-		checkBlobbyBallCollision(RIGHT_PLAYER);
+		handleBlobbyBallCollision(LEFT_PLAYER);
+		handleBlobbyBallCollision(RIGHT_PLAYER);
 	}
 	// Ball to ground Collision
 	else if (mWorkingState->mBallPosition.y + BALL_RADIUS > 500.0)
@@ -613,4 +623,52 @@ const PlayerInput* PhysicWorld::getPlayersInput() const
 PhysicWorldState* PhysicWorld::getWorldState() const
 {
 	return mCurrentState;
+}
+
+// debugging:
+#ifdef DEBUG
+
+#include <iostream>
+
+bool PhysicWorld::checkPhysicStateValidity() const
+{
+	// check for blobby ball collisions
+	if(playerTopBallCollision(LEFT_PLAYER) || playerBottomBallCollision(LEFT_PLAYER))
+	{
+		std::cout << mBallPosition.x << " " << mBallPosition.y << "\n";
+		std::cout << mBlobPosition[LEFT_PLAYER].x << " " << mBlobPosition[LEFT_PLAYER].y << "\n";
+		return false;
+	}
+	
+	if(playerTopBallCollision(RIGHT_PLAYER) || playerBottomBallCollision(RIGHT_PLAYER))
+	{
+		std::cout << mBallPosition.x << " " << mBallPosition.y << "\n";
+		std::cout << mBlobPosition[RIGHT_PLAYER].x << " " << mBlobPosition[RIGHT_PLAYER].y << "\n";
+
+		return false;
+	}
+	
+	return true;
+}
+
+#endif
+
+
+inline void set_fpu_single_precision()
+{
+#if defined(i386) || defined(__x86_64) // We need to set a precision for diverse x86 hardware
+	#if defined(__GNUC__)
+		volatile short cw;
+		asm volatile ("fstcw %0" : "=m"(cw));
+		cw = cw & 0xfcff;
+		asm volatile ("fldcw %0" :: "m"(cw));
+	#elif defined(_MSC_VER)
+		short cw;
+		asm fstcw cw;
+		cw = cw & 0xfcff;
+		asm fldcw cw;
+	#endif
+#else
+	#warning FPU precision may not conform to IEEE 754
+#endif
 }

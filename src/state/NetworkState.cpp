@@ -18,7 +18,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
 #include <algorithm>
-#include <sstream>
 #include <iostream>
 #include <ctime>
 
@@ -26,23 +25,21 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "NetworkMessage.h"
 #include "NetworkGame.h"
 #include "TextManager.h"
-#include "Blood.h"
+#include "FileWrite.h"
 
 #include "raknet/RakClient.h"
+#include "raknet/RakServer.h"
 #include "raknet/PacketEnumerations.h"
 #include "raknet/GetTime.h"
-
-#include <physfs.h>
 
 #include <boost/lexical_cast.hpp>
 
 #include "IMGUI.h"
 #include "SoundManager.h"
 #include "LocalInputSource.h"
-#include "raknet/RakServer.h"
 #include "RakNetPacket.h"
 #include "DuelMatch.h"
-// We don't need the stringcompressor
+#include "UserConfig.h"
 
 NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port):
 	mLeftPlayer(LEFT_PLAYER),
@@ -50,12 +47,14 @@ NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port):
 {	
 	IMGUI::getSingleton().resetSelection();
 	mWinningPlayer = NO_PLAYER;
+	/// \todo we need read-only access here!
 	UserConfig config;
 	config.loadFile("config.xml");
 	mOwnSide = (PlayerSide)config.getInteger("network_side");
 	mUseRemoteColor = config.getBool("use_remote_color");
 	mLocalInput = new LocalInputSource(mOwnSide);
 	mSaveReplay = false;
+	mWaitingForReplay = false;
 	mFilename = boost::lexical_cast<std::string> (std::time(0));
 
 	RenderManager::getSingleton().redraw();
@@ -178,6 +177,21 @@ void NetworkGameState::step()
 				mFakeMatch->setServingPlayer(mServingPlayer);
 				// sync the clocks... normally, they should not differ
 				mFakeMatch->getClock().setTime(time);
+				
+				/// \attention
+				/// we can get a problem here:
+				/// assume the packet informing about the game event which lead to this
+				///	either BALL_GROUND_COLLISION or BALL_PLAYER_COLLISION got stalled
+				/// and arrives at the same time time as this packet. Then we get the following behaviour:
+				/// we set the score to the right value... the event causing the score to happen gets processed
+				///  -> that player scores -> score is off!
+				///
+				/// i don't have a clean fix for this right now, so we'll have to live with a workaround for now
+				/// we just order the game to reset all triggered events.
+				mFakeMatch->resetTriggeredEvents();
+				/// \todo a good fix would involve ensuring we process all events in the right order
+				
+			
 				break;
 			}
 			case ID_BALL_GROUND_COLLISION:
@@ -312,29 +326,29 @@ void NetworkGameState::step()
 
 				// Insert Message in the log and focus the last element
 				mChatlog.push_back((std::string) message);
+				mChatOrigin.push_back(false);
 				mSelectedChatmessage = mChatlog.size() - 1;
 				SoundManager::getSingleton().playSound("sounds/chat.wav", ROUND_START_SOUND_VOLUME);
 				break;
 			}
 			case ID_REPLAY:
 			{
+				/// \todo we should take more action if server sends replay
+				///		even if not requested!
+				if(!mWaitingForReplay)
+					break;
+				
 				RakNet::BitStream stream((char*)packet->data, packet->length, false);
 				stream.IgnoreBytes(1);	// ID_REPLAY
 				int length;
 				stream.Read(length);
 				char* data = new char[length];
 				stream.Read(data, length);
-				PHYSFS_file* fileHandle = PHYSFS_openWrite((std::string("replays/") + mFilename + std::string(".bvr")).c_str());
-				if (!fileHandle)
-				{
-					std::cerr << "Warning: Unable to write to ";
-					std::cerr << PHYSFS_getWriteDir() << std::string("replays/") + mFilename + std::string(".bvr");
-					std::cerr << std::endl;
-					return;
-				}
-			
-				PHYSFS_write(fileHandle, data, 1, length);
-				PHYSFS_close(fileHandle);
+				// may throw!
+				FileWrite file((std::string("replays/") + mFilename + std::string(".bvr")));
+				file.write(data, length);
+				file.close();
+				mWaitingForReplay = false;
 				break;
 			}
 			default:
@@ -387,11 +401,24 @@ void NetworkGameState::step()
 				mClient->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0);
 			}
 			mSaveReplay = false;
+			mWaitingForReplay = true;
 			imgui.resetSelection();
 		}
 		if (imgui.doButton(GEN_ID, Vector2(440, 330), TextManager::getSingleton()->getString(TextManager::LBL_CANCEL)))
 		{
 			mSaveReplay = false;
+			imgui.resetSelection();
+		}
+		imgui.doCursor();
+	} 
+	else if (mWaitingForReplay)
+	{
+		imgui.doOverlay(GEN_ID, Vector2(150, 200), Vector2(650, 400));
+		imgui.doText(GEN_ID, Vector2(190, 220), TextManager::getSingleton()->getString(TextManager::RP_WAIT_REPLAY));
+		if (imgui.doButton(GEN_ID, Vector2(440, 330), TextManager::getSingleton()->getString(TextManager::LBL_CANCEL)))
+		{
+			mSaveReplay = false;
+			mWaitingForReplay = false;
 			imgui.resetSelection();
 		}
 		imgui.doCursor();
@@ -506,14 +533,14 @@ void NetworkGameState::step()
 		}
 		case PLAYER_WON:
 		{
-			std::stringstream tmp;
+			std::string tmp;
 			if(mWinningPlayer==LEFT_PLAYER)
-				tmp << mLeftPlayer.getName();
+				tmp = mLeftPlayer.getName();
 			else
-				tmp << mRightPlayer.getName();
+				tmp = mRightPlayer.getName();
 			imgui.doOverlay(GEN_ID, Vector2(200, 150), Vector2(700, 450));
 			imgui.doImage(GEN_ID, Vector2(200, 250), "gfx/pokal.bmp");
-			imgui.doText(GEN_ID, Vector2(274, 240), tmp.str());
+			imgui.doText(GEN_ID, Vector2(274, 240), tmp);
 			imgui.doText(GEN_ID, Vector2(274, 300), TextManager::getSingleton()->getString(TextManager::GAME_WIN));
 			if (imgui.doButton(GEN_ID, Vector2(290, 360), TextManager::getSingleton()->getString(TextManager::LBL_OK)))
 			{
@@ -539,7 +566,7 @@ void NetworkGameState::step()
 				mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
 			}
 			// Chat
-			imgui.doChatbox(GEN_ID, Vector2(10, 190), Vector2(790, 450), mChatlog, mSelectedChatmessage);
+			imgui.doChatbox(GEN_ID, Vector2(10, 190), Vector2(790, 450), mChatlog, mSelectedChatmessage, mChatOrigin);
 			if (imgui.doEditbox(GEN_ID, Vector2(30, 460), 30, mChattext, mChatCursorPosition, 0, true))
 			{
 
@@ -554,6 +581,7 @@ void NetworkGameState::step()
 					stream.Write(message, sizeof(message));
 					mClient->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0);
 					mChatlog.push_back(mChattext);
+					mChatOrigin.push_back(true);
 					mSelectedChatmessage = mChatlog.size() - 1;
 					mChattext = "";
 					mChatCursorPosition = 0;
@@ -573,6 +601,11 @@ void NetworkGameState::step()
 			imgui.doCursor();
 		}
 	}
+}
+
+const char* NetworkGameState::getStateName() const
+{
+	return "NetworkGameState";
 }
 
 NetworkHostState::NetworkHostState()
@@ -732,5 +765,10 @@ void NetworkHostState::step()
 				mNetworkGame->step();
 		}
 	}
+}
+
+const char* NetworkHostState::getStateName() const
+{
+	return "NetworkHostState";
 }
 

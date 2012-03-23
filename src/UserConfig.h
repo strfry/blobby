@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #pragma once 
 
+#include "IUserConfigReader.h"
+
 #include <string>
 #include <vector>
 
@@ -29,23 +31,27 @@ struct UserConfigVar
 	std::string DefaultValue;	  
 };
 
-class UserConfig
+/*! \class UserConfig
+	\brief user configuration from xml data
+	\details This class manages user configurations read from/written to xml data.
+			It allows saving/loading from disk and getting/setting floats, booleans, 
+				strings and integers by name
+*/
+class UserConfig: public IUserConfigReader
 {
 public:
 	~UserConfig();
 	
 	bool loadFile(const std::string& filename);
-	bool saveFile(const std::string& filename);
+	bool saveFile(const std::string& filename) const;
 
 	void setValue(const std::string& name, const std::string& value);
-	std::string getValue(const std::string& name);
-	UserConfigVar* createVar(const std::string& name, 
-			const std::string& defaultValue);
+	std::string getValue(const std::string& name) const;
 
-	float getFloat(const std::string& name);
-	std::string getString(const std::string& name);
-	bool getBool(const std::string& name);
-	int getInteger(const std::string& name);
+	float getFloat(const std::string& name) const;
+	std::string getString(const std::string& name) const;
+	bool getBool(const std::string& name) const;
+	int getInteger(const std::string& name) const;
 
 	void setFloat(const std::string& name, float value);
 	void setString(const std::string& name, const std::string& value);
@@ -55,5 +61,7 @@ public:
 private:
 	std::vector<UserConfigVar*> mVars;
 	bool mChangeFlag;
-	UserConfigVar *findVarByName(const std::string& Name);
+	UserConfigVar *findVarByName(const std::string& Name) const;
+	UserConfigVar* createVar(const std::string& name, 
+			const std::string& defaultValue);
 };

@@ -19,8 +19,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <iostream>
 #include <cassert>
-#include <boost/scoped_array.hpp>
-#include <physfs.h> 
+#include "FileRead.h"
 #include "SoundManager.h"
 #include "Global.h"
 
@@ -28,20 +27,17 @@ SoundManager* SoundManager::mSingleton;
 
 Sound* SoundManager::loadSound(const std::string& filename)
 {
-	PHYSFS_file* fileHandle = PHYSFS_openRead(filename.c_str());
-	if (!fileHandle)
-		throw FileLoadException(std::string(filename));
-	int fileLength = PHYSFS_fileLength(fileHandle);
+	FileRead file(filename);
+	int fileLength = file.length();
 	
-	// safe file data into a scopred_array to ensure it is deleten properly
+	// safe file data into a shared_array to ensure it is deleten properly
 	// in case of exceptions
-	boost::scoped_array<PHYSFS_uint8> fileBuffer (new PHYSFS_uint8[fileLength]);
+	boost::shared_array<char> fileBuffer = file.readRawBytes( fileLength );
 	
-	PHYSFS_read(fileHandle, fileBuffer.get(), 1, fileLength);
 	SDL_RWops* rwops = SDL_RWFromMem(fileBuffer.get(), fileLength);
 	
 	// we don't need the file handle anymore
-	PHYSFS_close(fileHandle);
+	file.close();
 
 	SDL_AudioSpec newSoundSpec;
 	Uint8* newSoundBuffer;
@@ -115,8 +111,7 @@ bool SoundManager::playSound(const std::string& filename, float volume)
 	}
 	catch (const FileLoadException& exception)
 	{
-		std::cerr << "Warning: Couldn't load "
-			<< exception.filename << " !" << std::endl;
+		std::cerr << "Warning: " << exception.what() << std::endl;
 		return false;
 	}
 	return true;

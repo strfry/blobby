@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "State.h"
 
 #include "LocalGameState.h"
-#include "ReplayState.h"
+#include "ReplaySelectionState.h"
 #include "NetworkState.h"
 #include "NetworkSearchState.h"
 #include "OptionsState.h"
@@ -32,7 +32,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SpeedController.h"
 #include "Blood.h"
 
-#include <physfs.h>
 #include <algorithm>
 
 State* State::mCurrentState = 0;
@@ -60,7 +59,7 @@ void State::deleteCurrentState()
 	///			first. 
 	///			So, if the construction of the new state fails, the old is 
 	///			already deleted and we have now way to roll back.
-	///			Second, we need to methods were one should be sufficient.
+	///			Second, we need two methods were one should be sufficient.
 	delete mCurrentState;
 	mCurrentState = 0;
 }
@@ -107,6 +106,11 @@ void State::presentGame(const DuelMatch* match)
 	if (events & DuelMatch::EVENT_ERROR)
 		smanager.playSound("sounds/pfiff.wav", ROUND_START_SOUND_VOLUME);
 
+}
+
+const char* State::getCurrenStateName()
+{
+	return getCurrentState()->getStateName();
 }
 
 MainMenuState::MainMenuState()
@@ -162,7 +166,7 @@ void MainMenuState::step()
 	if (imgui.doButton(GEN_ID, Vector2(434.0, 470.0), TextManager::getSingleton()->getString(TextManager::MNU_LABEL_REPLAY)))
 	{
 		deleteCurrentState();
-		setCurrentState(new ReplayMenuState());
+		setCurrentState(new ReplaySelectionState());
 	}
 
 	if (imgui.doButton(GEN_ID, Vector2(434.0, 500.0), TextManager::getSingleton()->getString(TextManager::MNU_LABEL_CREDITS)))
@@ -183,6 +187,11 @@ void MainMenuState::step()
 		SDL_Quit();
 		exit(0);
 	}
+}
+
+const char* MainMenuState::getStateName() const
+{
+	return "MainMenuState";
 }
 
 CreditsState::CreditsState()
@@ -229,5 +238,10 @@ void CreditsState::step()
 		setCurrentState(new MainMenuState());
 		return;
 	}
+}
+
+const char* CreditsState::getStateName() const
+{
+	return "CreditsState";
 }
 

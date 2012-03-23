@@ -19,7 +19,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "LocalGameState.h"
 
-#include <sstream>
 #include <boost/lexical_cast.hpp>
 
 #include "DuelMatch.h"
@@ -30,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "TextManager.h"
 #include "SpeedController.h"
 #include "Blood.h"
+#include "IUserConfigReader.h"
 #include "ThreadSentEvent.h"
 #include "BlobbyThread.h"
 #include <ctime>
@@ -82,17 +82,14 @@ LocalGameState::LocalGameState()
 	mLeftPlayer.loadFromConfig("left");
 	mRightPlayer.loadFromConfig("right");
 	
-	UserConfig gameConfig;
-	gameConfig.loadFile("config.xml");
-	
 	SoundManager::getSingleton().playSound("sounds/pfiff.wav", ROUND_START_SOUND_VOLUME);
 
-	mRecorder = new ReplayRecorder(MODE_RECORDING_DUEL);
+	mRecorder = new ReplayRecorder();
 	mRecorder->setPlayerNames(mLeftPlayer.getName(), mRightPlayer.getName());
-	mRecorder->setServingPlayer(LEFT_PLAYER);
+	mRecorder->setGameSpeed((float)IUserConfigReader::createUserConfigReader("config.xml")->getInteger("gamefps"));
 	
 	mMatch.reset(new DuelMatchThread(mLeftPlayer.getInputSource(), mRightPlayer.getInputSource(), 
-								gameConfig.getInteger("gamefps"), true, false, mRecorder));
+								(float)IUserConfigReader::createUserConfigReader("config.xml")->getInteger("gamefps"), true, false, mRecorder));
 	assert(mMatch);
 	
 	mMatch->getEventManager().addCallback(GameEventSoundCallback, TE_GAME_EVENT, SDL_ThreadID());
@@ -149,16 +146,14 @@ void LocalGameState::step()
 	}
 	else if (mWinner)
 	{
-		UserConfig gameConfig;
-		gameConfig.loadFile("config.xml");
-		std::stringstream tmp;
+		std::string tmp;
 		if(mMatch->getWinningPlayer() == LEFT_PLAYER)
-			tmp << mLeftPlayer.getName();
+			tmp = mLeftPlayer.getName();
 		else
-			tmp << mRightPlayer.getName();
+			tmp = mRightPlayer.getName();
 		imgui.doOverlay(GEN_ID, Vector2(200, 150), Vector2(700, 450));
 		imgui.doImage(GEN_ID, Vector2(200, 250), "gfx/pokal.bmp");
-		imgui.doText(GEN_ID, Vector2(274, 250), tmp.str());
+		imgui.doText(GEN_ID, Vector2(274, 250), tmp);
 		imgui.doText(GEN_ID, Vector2(274, 300), TextManager::getSingleton()->getString(TextManager::GAME_WIN));
 		if (imgui.doButton(GEN_ID, Vector2(290, 350), TextManager::getSingleton()->getString(TextManager::LBL_OK)))
 		{
@@ -195,11 +190,6 @@ void LocalGameState::step()
 			mMatch->pause();
 		}
 	}
-	else if (mRecorder->endOfFile())
-	{
-		deleteCurrentState();
-		setCurrentState(new MainMenuState);
-	}
 	else
 	{
 		mRecorder->record(mMatch->getPlayersInput());
@@ -213,4 +203,8 @@ void LocalGameState::step()
 	}
 }
 
+const char* LocalGameState::getStateName() const
+{
+	return "LocalGameState";
+}
 

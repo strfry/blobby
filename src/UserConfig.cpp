@@ -18,27 +18,49 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
 #include <iostream>
-#include <physfs.h>
+#include "FileRead.h"
+#include "FileWrite.h"
 #include "tinyxml/tinyxml.h"
 #include "UserConfig.h"
 #include "Global.h"
+#include <map>
+
+std::map<std::string, boost::shared_ptr<IUserConfigReader> > userConfigCache;
+
+boost::shared_ptr<IUserConfigReader> IUserConfigReader::createUserConfigReader(const std::string& file)
+{
+	// if we have this userconfig already cached, just return from cache
+	std::map<std::string, boost::shared_ptr<IUserConfigReader> >:: iterator cfg_cached = userConfigCache.find(file);
+	if( cfg_cached != userConfigCache.end() )
+	{
+		return cfg_cached->second;
+	}
+	
+	// otherwise, load user config...
+	UserConfig* uc = new UserConfig();
+	uc->loadFile(file);
+	boost::shared_ptr<IUserConfigReader> config(uc);
+	
+	// ... and add to cache
+	userConfigCache[file] = config;
+	
+	return config;
+}
+
+
 
 bool UserConfig::loadFile(const std::string& filename)
 {
-	PHYSFS_file* fileHandle = PHYSFS_openRead(filename.c_str());
-	if (!fileHandle)
-	{
-		throw FileLoadException(filename);
-	}
-
-	int fileLength = PHYSFS_fileLength(fileHandle);
-	char* fileBuffer = new char[fileLength + 1];
-	PHYSFS_read(fileHandle, fileBuffer, 1, fileLength);
+	FileRead file(filename);
+	int fileLength = file.length();
+	boost::shared_array<char> fileBuffer(new char[fileLength + 1]);
+	/// \todo our new file interface must be improved so we can load the whole file as null terminated string
+	file.readRawBytes( fileBuffer.get(), fileLength );
+	// null-terminate
 	fileBuffer[fileLength] = 0;
 	TiXmlDocument configDoc;
-	configDoc.Parse(fileBuffer);
-	delete[] fileBuffer;
-	PHYSFS_close(fileHandle);
+	configDoc.Parse(fileBuffer.get());
+	fileBuffer.reset(0);
 
 	if (configDoc.Error())
 	{
@@ -65,50 +87,61 @@ bool UserConfig::loadFile(const std::string& filename)
 			value = c;
 		createVar(name, value);
 	}
+	
 	return true;
 }
 
-bool UserConfig::saveFile(const std::string& filename)
+bool UserConfig::saveFile(const std::string& filename) const
 {
-	PHYSFS_file* fileHandle = PHYSFS_openWrite(filename.c_str());
-	if (!fileHandle)
-		return false;
+	// this trows an exception if the file could not be opened for writing
+	FileWrite file(filename);
 
-	const char xmlHeader[] =
+	const std::string xmlHeader =
 		"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n<userconfig>\n";
-	const char xmlFooter[] = "</userconfig>\n\n";
+	
+	const std::string xmlFooter = "</userconfig>\n\n";
+	
+	file.write(xmlHeader);
 
-	PHYSFS_write(fileHandle, xmlHeader, 1, sizeof(xmlHeader) - 1);
 	for (unsigned int i = 0; i < mVars.size(); ++i)
 	{
 		char writeBuffer[256];
 		int charsWritten = snprintf(writeBuffer, 256,
 			"\t<var name=\"%s\" value=\"%s\"/>\n",
 			mVars[i]->Name.c_str(), mVars[i]->Value.c_str());
-		PHYSFS_write (fileHandle, writeBuffer, 1, charsWritten);
+		
+		file.write(writeBuffer, charsWritten);
 	}
 
-	PHYSFS_write(fileHandle, xmlFooter, 1, sizeof(xmlFooter) - 1);
-	PHYSFS_close(fileHandle);
+	file.write(xmlFooter);
+	file.close();
+	
+	// we have to make sure that we don't cache any outdated user configs
+	std::map<std::string, boost::shared_ptr<IUserConfigReader> >:: iterator cfg_cached = userConfigCache.find(filename);
+	if( cfg_cached != userConfigCache.end() )
+	{
+		userConfigCache.erase(cfg_cached);
+	}
+	
 	return true;
 }
 
-float UserConfig::getFloat(const std::string& name)
+float UserConfig::getFloat(const std::string& name) const
 {
 	return atof(getValue(name).c_str());
 }
 
-std::string UserConfig::getString(const std::string& name)
+std::string UserConfig::getString(const std::string& name) const
 {
 	return getValue(name);
 }
 
-bool UserConfig::getBool(const std::string& name)
+bool UserConfig::getBool(const std::string& name) const
 {
 	return (getValue(name) == "true") ? true : false;
 }
 
-int UserConfig::getInteger(const std::string& name)
+int UserConfig::getInteger(const std::string& name) const
 {
 	return atoi(getValue(name).c_str());
 }
@@ -165,7 +198,7 @@ void UserConfig::setValue(const std::string& name, const std::string& value)
 	var->Value = value;
 }
 
-std::string UserConfig::getValue(const std::string& name)
+std::string UserConfig::getValue(const std::string& name) const
 {
 	UserConfigVar *var = findVarByName(name);
 	if (!var)
@@ -183,7 +216,7 @@ UserConfig::~UserConfig()
 		delete mVars[i];
 }
 
-UserConfigVar* UserConfig::findVarByName(const std::string& name)
+UserConfigVar* UserConfig::findVarByName(const std::string& name) const
 {
 	for (unsigned int i = 0; i < mVars.size(); ++i)
 		if (mVars[i]->Name == name) return mVars[i];

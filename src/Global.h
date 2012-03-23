@@ -28,14 +28,23 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define GP2X GP2X
 #endif
 
+/*!	\def DEBUG
+	\brief Enable debugging support
+	\details when this marko is present, Blobby generates some additional debugging code
+			usefull for tracking down bugs.
+*/
+
 const int BLOBBY_PORT = 1234;
 
 const int BLOBBY_VERSION_MAJOR = 0;
-const int BLOBBY_VERSION_MINOR = 92;
+const int BLOBBY_VERSION_MINOR = 98;
 
 const int BLOBBY_GRAPHIC_FPS = 60;
+// will be set to 1.0 when we have our new replay format!
+const unsigned char REPLAY_FILE_VERSION_MAJOR = 1;
+const unsigned char REPLAY_FILE_VERSION_MINOR = 0;
 
-const char AppTitle[] = "Blobby Volley 2 version 0.9c";
+const char AppTitle[] = "Blobby Volley 2 Version 1.0 RC1";
 
 const float ROUND_START_SOUND_VOLUME = 0.2;
 const float BALL_HIT_PLAYER_SOUND_VOLUME = 0.4;
@@ -101,37 +110,6 @@ struct Color
 
 };
 
-struct SDL_Surface;
-struct BufferedImage
-{
-	int w;
-	int h;
-	union
-	{
-		SDL_Surface* sdlImage;
-		unsigned glHandle;
-	};
-};
-
-struct FileLoadException : public std::exception
-{
-	std::string filename;
-	FileLoadException(std::string name) : filename(name)
-	{
-		error = "Couldn't load " + filename;;
-	}
-	
-	~FileLoadException() throw() {}
-
-	virtual const char* what() const throw()
-	{
-		return error.c_str();
-	}
-	
-private:
-	std::string error;
-};
-
 
 struct ExtensionUnsupportedException : public std::exception
 {
@@ -145,25 +123,6 @@ struct ScriptException : public std::exception
 	std::string luaerror;
 	~ScriptException() throw() {}
 };
-
-inline void set_fpu_single_precision()
-{
-#if defined(i386) || defined(__x86_64) // We need to set a precision for diverse x86 hardware
-	#if defined(__GNUC__)
-		volatile short cw;
-		asm volatile ("fstcw %0" : "=m"(cw));
-		cw = cw & 0xfcff;
-		asm volatile ("fldcw %0" :: "m"(cw));
-	#elif defined(_MSC_VER)
-		short cw;
-		asm fstcw cw;
-		cw = cw & 0xfcff;
-		asm fldcw cw;
-	#endif
-#else
-	#warning FPU precision may not conform to IEEE 754
-#endif
-}
 
 /// we need to define this constant to make it compile with strict c++98 mode
 #undef M_PI

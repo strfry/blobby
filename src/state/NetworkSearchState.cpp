@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "IMGUI.h"
 #include "raknet/RakServer.h"
 #include "RakNetPacket.h"
+#include "IUserConfigReader.h"
 
 NetworkSearchState::NetworkSearchState()
 {
@@ -37,6 +38,7 @@ NetworkSearchState::NetworkSearchState()
 	mServerBoxPosition = 0;
 	mDisplayInfo = false;
 	mEnteringServer = false;
+	mDisplayUpdateNotification = false;
 
 	mPingClient = new RakClient;
 }
@@ -94,7 +96,7 @@ void NetworkSearchState::step()
 					stream.IgnoreBytes(1);	//ID_BLOBBY_SERVER_PRESENT
 					ServerInfo info(stream,
 						(*iter)->PlayerIDToDottedIP(
-							packet->playerId));
+							packet->playerId), packet->playerId.port);
 
 					if (std::find(
 							mScannedServers.begin(),
@@ -115,33 +117,23 @@ void NetworkSearchState::step()
 					skip = true;
 					break;
 				}
-				case ID_OLD_CLIENT:
+				case ID_VERSION_MISMATCH:
 				{
-					/// \todo what should we do here? we need to send a notification
-					///			to the user, but we still need to make sure that 
-					///			one can play on not-updated servers.
-					///			just changing the server name seems like a start
-					///			but we have to do something better!
+					// this packet is send when the client is older than the server!
+					// so 
 					RakNet::BitStream stream((char*)packet->data,
 						packet->length, false);
-					printf("server is a blobby server\n");
-					stream.IgnoreBytes(1);	//ID_BLOBBY_SERVER_PRESENT
-					ServerInfo info(stream,	(*iter)->PlayerIDToDottedIP(packet->playerId) );
+					stream.IgnoreBytes(1);	// ID_VERSION_MISMATCH
 					
-					// we adapt info to indicate that this client is outdated
-					const char* OLD_CLIENT_SERVER_MSG = "This server uses a newer Version of Blobby Volley. "
-														"You might be unable to play on it.";
-					const char* OLD_CLIENT_SERVER_NAME = "updated server";
-					/// \todo add information about servers version numbers here!
-					std::strncpy(info.name, OLD_CLIENT_SERVER_NAME, strlen(OLD_CLIENT_SERVER_NAME));
-					std::strncpy(info.description, OLD_CLIENT_SERVER_MSG, strlen(OLD_CLIENT_SERVER_MSG));
+					// default values if server does not send versions.
+					// thats the 0.9 behaviour
+					int smajor = 0, sminor = 9;		
+					stream.Read(smajor);	// load server version information
+					stream.Read(sminor);
+					printf("found blobby server with version %d.%d\n", smajor, sminor);
 					
-					if (std::find(
-							mScannedServers.begin(),
-							mScannedServers.end(),
-							info) == mScannedServers.end() ){
-						mScannedServers.push_back(info);
-					}
+					mDisplayUpdateNotification = true;
+					
 					// the RakClient will be deleted, so
 					// we must free the packet here
 					packet.reset();
@@ -173,7 +165,7 @@ void NetworkSearchState::step()
 				printf("got ping response by \"%s\", trying to connect\n", hostname.c_str());
 				RakClient* newClient = new RakClient;
 				newClient->Connect(
-					hostname.c_str(), BLOBBY_PORT, 0, 0, RAKNET_THREAD_SLEEP_TIME);
+					hostname.c_str(), packet->playerId.port, 0, 0, RAKNET_THREAD_SLEEP_TIME);
 				mQueryClients.push_back(newClient);
 			}
 			default:
@@ -234,6 +226,7 @@ void NetworkSearchState::step()
 		if (imgui.doButton(GEN_ID, Vector2(270.0, 300.0), TextManager::getSingleton()->getString(TextManager::LBL_OK)))
 		{
 			//std::string server = mScannedServers[mSelectedServer].hostname;
+			/// \todo possibility to use custom port, too
 			deleteCurrentState();
 			setCurrentState(new NetworkGameState(mEnteredServer.c_str(), BLOBBY_PORT));
 			return;
@@ -291,15 +284,26 @@ void NetworkSearchState::step()
 	if (imgui.doButton(GEN_ID, Vector2(230, 530), TextManager::getSingleton()->getString(TextManager::LBL_OK)) 
 							&& !mScannedServers.empty() || doEnterServer)
 	{
-		std::string server = mScannedServers[mSelectedServer].hostname;
+		ServerInfo server = mScannedServers[mSelectedServer];
 		deleteCurrentState();
-		setCurrentState(new NetworkGameState(server.c_str(), BLOBBY_PORT));
+		setCurrentState(new NetworkGameState(server.hostname, server.port));
 	}
 	if (imgui.doButton(GEN_ID, Vector2(480, 530), TextManager::getSingleton()->getString(TextManager::LBL_CANCEL)))
 	{
 		deleteCurrentState();
 		setCurrentState(new MainMenuState);
 	}
+	
+	if(mDisplayUpdateNotification)
+	{
+		imgui.doOverlay(GEN_ID, Vector2(71, 572), Vector2(729, 590), Color(128, 0, 0));
+		imgui.doText(GEN_ID, Vector2(85, 577), TextManager::getSingleton()->getString(TextManager::UPDATE_NOTIFICATION), TF_SMALL_FONT);
+	}
+}
+
+const char* NetworkSearchState::getStateName() const
+{
+	return "NetworkSearchState";
 }
 
 // the different networkmodi classes (online/LAN)
@@ -311,17 +315,25 @@ OnlineSearchState::OnlineSearchState()
 
 void OnlineSearchState::searchServers()
 {
+	/// \todo does anyone know how exaclty mPingClient works?
 	mScannedServers.clear();
 	//TODO: Insert Masterserverconnection code here! At the moment we are using the old code here!
 	mPingClient->PingServer("blobby.blub-game.com", BLOBBY_PORT, 0, true);
+	/// \todo thats a hack to make us use our speed server. add a better 
+	///			method to connect to servers with arbitrary Ports
+	mPingClient->PingServer("blobby.blub-game.com", BLOBBY_PORT + 1, 0, true);
 	mPingClient->PingServer("pgb.game-host.org", BLOBBY_PORT, 0, true);
 	
-	UserConfig config;
-	config.loadFile("config.xml");
+	/// \todo check if we already try to connect to this one!
 	mPingClient->PingServer(
-		config.getString("network_last_server").c_str(),
+		IUserConfigReader::createUserConfigReader("config.xml")->getString("network_last_server").c_str(),
 		BLOBBY_PORT, 0, true);
 	
+}
+
+const char* OnlineSearchState::getStateName() const
+{
+	return "OnlineSearchState";
 }
 
 LANSearchState::LANSearchState()
@@ -333,4 +345,9 @@ void LANSearchState::searchServers()
 {
 	mScannedServers.clear();
 	mPingClient->PingServer("255.255.255.255", BLOBBY_PORT, 0, true);
+}
+
+const char* LANSearchState::getStateName() const
+{
+	return "LANSearchState";
 }
