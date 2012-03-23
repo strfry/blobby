@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,12 +18,16 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
+/* header include */
+#include "IMGUI.h"
+
+/* includes */
 #include <queue>
 #include <cassert>
 
 #include <SDL/SDL.h>
 
-#include "IMGUI.h"
+/* implementation */
 
 enum ObjectType
 {
@@ -211,6 +216,11 @@ void IMGUI::doText(int id, const Vector2& position, const std::string& text, uns
 	mQueue->push(obj);
 }
 
+void IMGUI::doText(int id, const Vector2& position, TextManager::STRING text, unsigned int flags)
+{
+	doText(id, position, TextManager::getSingleton()->getString(text), flags);
+}
+
 void IMGUI::doOverlay(int id, const Vector2& pos1, const Vector2& pos2, const Color& col)
 {
 	QueueObject obj;
@@ -221,6 +231,11 @@ void IMGUI::doOverlay(int id, const Vector2& pos1, const Vector2& pos2, const Co
 	obj.col = col;
 	mQueue->push(obj);
 	RenderManager::getSingleton().redraw();
+}
+
+bool IMGUI::doButton(int id, const Vector2& position, TextManager::STRING text, unsigned int flags)
+{
+	return doButton(id, position, TextManager::getSingleton()->getString(text), flags);
 }
 
 bool IMGUI::doButton(int id, const Vector2& position, const std::string& text, unsigned int flags)

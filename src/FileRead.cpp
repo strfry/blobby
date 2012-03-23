@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,12 +18,29 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
+/* header include */
 #include "FileRead.h"
 
+/* includes */
+#include <cassert>
+
 #include <physfs.h>
+
+#include <boost/scoped_array.hpp>
+
+#include "tinyxml/tinyxml.h"
+
+extern "C"
+{
+#include "lua/lua.h"
+#include "lua/lauxlib.h"
+#include "lua/lualib.h"
+}
+
 #include "Global.h"
 
-#include <cassert>
+
+/* implementation */
 
 FileRead::FileRead() 
 {
@@ -99,7 +117,7 @@ std::string FileRead::readString()
 		{
 			if(buffer[i] == 0) 
 			{
-				seek( tell() - 32 + i + 1);
+				seek( tell() - maxread + i + 1);
 				return read;
 			} 
 			else 
@@ -116,4 +134,65 @@ std::string FileRead::readString()
 	assert(0);	// did not find zero-terminated-string
 }
 
+// reading lua script
 
+struct ReaderInfo
+{
+	FileRead file;
+	char buffer[2048];
+};
+
+static const char* chunkReader(lua_State* state, void* data, size_t *size)
+{
+	ReaderInfo* info = (ReaderInfo*) data;
+	
+	int bytesRead = 2048;
+	if(info->file.length() - info->file.tell() < 2048)
+	{
+		bytesRead = info->file.length() - info->file.tell();
+	}
+	
+	info->file.readRawBytes(info->buffer, bytesRead);
+	// if this doesn't throw, bytesRead is the actual number of bytes read
+	/// \todo we must do sth about this code, its just plains awful. 
+	/// 		File interface has to be improved to support such buffered reading.
+	*size = bytesRead;
+	if (bytesRead == 0)
+	{
+		return 0;
+	}
+	else
+	{
+		return info->buffer;
+	}
+}
+
+
+int FileRead::readLuaScript(const std::string& filename, lua_State* mState)
+{
+	ReaderInfo info;
+	info.file.open(filename);
+
+	return lua_load(mState, chunkReader, &info, filename.c_str());
+}
+
+boost::shared_ptr<TiXmlDocument> FileRead::readXMLDocument(const std::string& filename)
+{
+	// create and load file
+	FileRead file(filename);
+
+	// thats quite ugly
+	int fileLength = file.length();
+	boost::scoped_array<char> fileBuffer(new char[fileLength + 1]);
+	file.readRawBytes( fileBuffer.get(), fileLength );
+	// null-terminate
+	fileBuffer[fileLength] = 0;
+	
+	// parse file
+	boost::shared_ptr<TiXmlDocument> xml = boost::shared_ptr<TiXmlDocument> (new TiXmlDocument());
+	xml->Parse(fileBuffer.get());
+	
+	/// \todo do error handling here?
+	
+	return xml;
+}

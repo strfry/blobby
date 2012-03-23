@@ -20,9 +20,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #pragma once
 
 #include "File.h"
+#include <boost/shared_ptr.hpp>
+ 
+// forward declarations for convenience functions
+struct lua_State;
+class TiXmlDocument;
 
 /**
 	\class FileRead
+	\brief Extension of file interface for reading file access.	
+	\details Provides various methods
+			for reading numbers, strings and raw bytes from a file.
+	\todo add more convenience methods for easier integration with lua script loading
+			and tinyXML.
+	\sa FileWrite
 */
 class FileRead : public File
 {
@@ -31,7 +42,7 @@ class FileRead : public File
 		/// \brief default ctor
 		/// \details File has to be opended with open()
 		/// \throw nothing
-		explicit FileRead() nothrow(true);
+		explicit FileRead();
 		
 		/// \brief constructor which opens a file.
 		/// \param filename File to be opened for reading
@@ -47,7 +58,7 @@ class FileRead : public File
 		/// destructor, closes the file (if any open)
 		/// \sa close()
 		/// \throw nothing
-		~FileRead() nothrow(true);
+		~FileRead();
 		
 		// ------------------------------------
 		//  reading interface
@@ -80,4 +91,12 @@ class FileRead : public File
 		/// \throw PhysfsException when Physfs reports an error
 		/// \throw NoFileOpenedException when called while no file is opened.
 		std::string readString();
+		
+		
+		// -----------------------------------------------------------------------------------------
+		// 								LUA/XML reading helper function
+		// -----------------------------------------------------------------------------------------
+		static int readLuaScript(const std::string& filename, lua_State* mState);
+		
+		static boost::shared_ptr<TiXmlDocument> readXMLDocument(const std::string& filename);
 };

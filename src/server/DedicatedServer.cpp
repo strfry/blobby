@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,28 +18,24 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
+/* header include */
+#include "DedicatedServer.h"
+
+/* includes */
 #include <cstdlib>
 #include <iostream>
-#include <physfs.h>
 #include <cstdio>
-#include <errno.h>
-#include <unistd.h>
 #include <ctime>
 
-#ifndef WIN32
-#include <syslog.h>
-#include <sys/wait.h>
-#else
-#include <cstdarg>
-#endif
+#include <errno.h>
+#include <unistd.h>
 
 #include "raknet/RakServer.h"
 #include "raknet/PacketEnumerations.h"
 #include "raknet/GetTime.h"
-#include <SDL/SDL_timer.h>
-// We need no stringcompressor only for the names
 
-#include "DedicatedServer.h"
+#include <SDL/SDL_timer.h>
+
 #include "InputSource.h"
 #include "PhysicWorld.h"
 #include "NetworkGame.h"
@@ -47,6 +44,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SpeedController.h"
 #include "RakNetPacket.h"
 #include "NetworkPlayer.h"
+#include "FileSystem.h"
+
+// platform specific
+#ifndef WIN32
+#include <syslog.h>
+#include <sys/wait.h>
+#else
+#include <cstdarg>
+#endif
+
+
+
+/* implementation */
 
 #ifdef WIN32
 #undef main
@@ -86,6 +96,8 @@ int main(int argc, char** argv)
 {
 	process_arguments(argc, argv);
 	
+	FileSystem fileSys(argv[0]);
+	
 	if (!g_run_in_foreground)
 	{
 		fork_to_background();
@@ -114,13 +126,22 @@ int main(int argc, char** argv)
 
 	NetworkPlayer firstPlayer;
 
-	config.loadFile("server.xml");
-
-	int port = config.getInteger("port");
-	float speed = config.getFloat("speed");
+	int port = BLOBBY_PORT;
+	try 
+	{
+		config.loadFile("server.xml");
+		port = config.getInteger("port");
+	} 
+	catch (std::exception& e) 
+	{
+		syslog(LOG_ERR, "server.xml not found. Falling back to default values.");
+	}
+	
 	int clients = 0;
 
 	ServerInfo myinfo(config);
+	
+	float speed = myinfo.gamespeed;
 
 	if (!server.Start(150, 0, 1, port))
 	{
@@ -499,18 +520,17 @@ void wait_and_restart_child()
 
 void setup_physfs(char* argv0)
 {
-	PHYSFS_init(argv0);
-	PHYSFS_addToSearchPath("data", 1);
+	FileSystem& fs = FileSystem::getSingleton();
+	fs.addToSearchPath("data");
 	
 	#if defined(WIN32)
 	// Just write in installation directory
-	PHYSFS_setWriteDir("data");
+	fs.setWriteDir("data");
 	#else
-	std::string userdir = PHYSFS_getUserDir();
+	std::string userdir = fs.getUserDir();
 	std::string userAppend = ".blobby";
 	std::string homedir = userdir + userAppend;
-	PHYSFS_addToSearchPath(homedir.c_str(), 0);
-	PHYSFS_setWriteDir(homedir.c_str());
+	fs.setWriteDir(homedir);
 	#endif
 
 }

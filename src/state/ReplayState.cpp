@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,7 +18,12 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
+/* header include */
 #include "ReplayState.h"
+
+/* includes */
+#include <sstream>
+
 #include "IMGUI.h"
 #include "ReplayPlayer.h"
 #include "DuelMatch.h"
@@ -25,17 +31,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "TextManager.h"
 #include "SpeedController.h"
 #include "IUserConfigReader.h"
-#include <sstream>
 #include "ReplaySelectionState.h"
 
+
+/* implementation */
 ReplayState::ReplayState() :
 	mLeftPlayer(LEFT_PLAYER),
 	mRightPlayer(RIGHT_PLAYER)
 {
 	IMGUI::getSingleton().resetSelection();
-
-	mReplayMatch = 0;
-	mReplayPlayer = 0;
 
 	mLeftPlayer.loadFromConfig("left");
 	mRightPlayer.loadFromConfig("right");
@@ -49,17 +53,19 @@ ReplayState::ReplayState() :
 
 void ReplayState::loadReplay(const std::string& file)
 {
-	mReplayPlayer = new ReplayPlayer();
+	mReplayPlayer.reset( new ReplayPlayer() );
 
 	//try
 	//{
 		mReplayPlayer->load(std::string("replays/" + file + ".bvr"));
-		mReplayMatch = new DuelMatch(0, 0, true, false, 0);
-		mReplayMatch->setServingPlayer(mReplayPlayer->getServingPlayer());
+		mReplayMatch.reset(new DuelMatch(0, 0, true, false, 0));
 		RenderManager::getSingleton().setPlayernames(
 			mReplayPlayer->getPlayerName(LEFT_PLAYER), mReplayPlayer->getPlayerName(RIGHT_PLAYER));
 		SoundManager::getSingleton().playSound(
 				"sounds/pfiff.wav", ROUND_START_SOUND_VOLUME);
+		
+		mLeftPlayer.setColor(mReplayPlayer->getBlobColor(LEFT_PLAYER));
+		mRightPlayer.setColor(mReplayPlayer->getBlobColor(RIGHT_PLAYER));
 		
 		SpeedController::getMainInstance()->setSpeed(
 				(float)IUserConfigReader::createUserConfigReader("config.xml")->getInteger("gamefps")
@@ -105,20 +111,22 @@ void ReplayState::step()
 	
 	if(mPositionJump != -1)
 	{
-		if(mReplayPlayer->gotoPlayingPosition(mPositionJump, mReplayMatch))
+		if(mReplayPlayer->gotoPlayingPosition(mPositionJump, mReplayMatch.get()))
 			mPositionJump = -1;
 	}
 		else if(!mPaused)
 	{
 		while( mSpeedTimer >= 8)
 		{
-			mPaused = !mReplayPlayer->play(mReplayMatch);
+			mPaused = !mReplayPlayer->play(mReplayMatch.get());
 			mSpeedTimer -= 8;
-			presentGame(mReplayMatch);
+			presentGame(mReplayMatch.get());
 		} 
 		mSpeedTimer += mSpeedValue;
 		
 	}
+	
+	mReplayMatch->getClock().setTime( mReplayPlayer->getReplayPosition() / mReplayPlayer->getGameSpeed() );
 
 	rmanager->setBlobColor(LEFT_PLAYER, mLeftPlayer.getColor());
 	rmanager->setBlobColor(RIGHT_PLAYER, mRightPlayer.getColor());
@@ -212,13 +220,13 @@ void ReplayState::step()
 		imgui.doOverlay(GEN_ID, Vector2(200, 150), Vector2(650, 450));
 		imgui.doImage(GEN_ID, Vector2(200, 250), "gfx/pokal.bmp");
 		imgui.doText(GEN_ID, Vector2(274, 250), tmp.str());
-		imgui.doText(GEN_ID, Vector2(274, 300), TextManager::getSingleton()->getString(TextManager::GAME_WIN));
-		if (imgui.doButton(GEN_ID, Vector2(290, 350), TextManager::getSingleton()->getString(TextManager::LBL_OK)))
+		imgui.doText(GEN_ID, Vector2(274, 300), TextManager::GAME_WIN);
+		if (imgui.doButton(GEN_ID, Vector2(290, 350), TextManager::LBL_OK))
 		{
 			deleteCurrentState();
 			setCurrentState(new ReplaySelectionState());
 		}
-		if (imgui.doButton(GEN_ID, Vector2(400, 350), TextManager::getSingleton()->getString(TextManager::RP_SHOW_AGAIN)))
+		if (imgui.doButton(GEN_ID, Vector2(400, 350), TextManager::RP_SHOW_AGAIN))
 		{
 			/// \todo how do we handle reload?
 		}

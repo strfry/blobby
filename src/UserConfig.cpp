@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,14 +18,21 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
-#include <iostream>
-#include "FileRead.h"
-#include "FileWrite.h"
-#include "tinyxml/tinyxml.h"
+/* header include */
 #include "UserConfig.h"
-#include "Global.h"
+
+/* includes */
+#include <iostream>
 #include <map>
 
+#include "tinyxml/tinyxml.h"
+
+#include "Global.h"
+#include "FileRead.h"
+#include "FileWrite.h"
+
+
+/* implementation */
 std::map<std::string, boost::shared_ptr<IUserConfigReader> > userConfigCache;
 
 boost::shared_ptr<IUserConfigReader> IUserConfigReader::createUserConfigReader(const std::string& file)
@@ -51,29 +59,19 @@ boost::shared_ptr<IUserConfigReader> IUserConfigReader::createUserConfigReader(c
 
 bool UserConfig::loadFile(const std::string& filename)
 {
-	FileRead file(filename);
-	int fileLength = file.length();
-	boost::shared_array<char> fileBuffer(new char[fileLength + 1]);
-	/// \todo our new file interface must be improved so we can load the whole file as null terminated string
-	file.readRawBytes( fileBuffer.get(), fileLength );
-	// null-terminate
-	fileBuffer[fileLength] = 0;
-	TiXmlDocument configDoc;
-	configDoc.Parse(fileBuffer.get());
-	fileBuffer.reset(0);
+	boost::shared_ptr<TiXmlDocument> configDoc = FileRead::readXMLDocument(filename);
 
-	if (configDoc.Error())
+	if (configDoc->Error())
 	{
 		std::cerr << "Warning: Parse error in " << filename;
 		std::cerr << "!" << std::endl;
 	}
 
 	TiXmlElement* userConfigElem =
-		configDoc.FirstChildElement("userconfig");
+		configDoc->FirstChildElement("userconfig");
 	if (userConfigElem == NULL)
 		return false;
-	for (TiXmlElement* varElem =
-		userConfigElem->FirstChildElement("var");
+	for (TiXmlElement* varElem = userConfigElem->FirstChildElement("var");
 		varElem != NULL;
 		varElem = varElem->NextSiblingElement("var"))
 	{
@@ -96,8 +94,7 @@ bool UserConfig::saveFile(const std::string& filename) const
 	// this trows an exception if the file could not be opened for writing
 	FileWrite file(filename);
 
-	const std::string xmlHeader =
-		"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n<userconfig>\n";
+	const std::string xmlHeader = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n<userconfig>\n";
 	
 	const std::string xmlFooter = "</userconfig>\n\n";
 	

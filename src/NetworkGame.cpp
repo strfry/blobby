@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,20 +18,25 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
+/* header include */
+#include "NetworkGame.h"
+
+/* includes */
 #include <sstream>
 
-#include "NetworkGame.h"
-#include "NetworkMessage.h"
-#include "ReplayRecorder.h"
 #include "raknet/RakServer.h"
 #include "raknet/BitStream.h"
 #include "raknet/GetTime.h"
 #include "DuelMatch.h"
 
-#include "FileRead.h"
-#include <physfs.h> // still needed for file deletion
 
-// We don't need the stringcompressor
+#include "NetworkMessage.h"
+#include "ReplayRecorder.h"
+#include "FileRead.h"
+#include "FileSystem.h"
+
+
+/* implementation */
 
 NetworkGame::NetworkGame(RakServer& server,
 			PlayerID leftPlayer, PlayerID rightPlayer,
@@ -58,6 +64,10 @@ NetworkGame::NetworkGame(RakServer& server,
 
 	mPausing = false;
 
+	mRecorder.reset(new ReplayRecorder());
+	mRecorder->setPlayerNames(mLeftPlayerName.c_str(), mRightPlayerName.c_str());
+	mRecorder->setPlayerColors(leftColor, rightColor);
+	mRecorder->setGameSpeed(SpeedController::getMainInstance()->getSpeed());
 
 	// buffer for playernames
 	char name[16];
@@ -226,32 +236,11 @@ bool NetworkGame::step()
 			}
 			case ID_REPLAY:
 			{
-				// this should ensure that the created temponaries have unique names
-				std::stringstream temp;
-				temp << "replays/";
-				temp << RakNet::GetTime();
-				temp << packet->playerId.binaryAddress;
-				std::string filename = temp.str();
-				mRecorder->save(filename);
-				
-				// this may throw FileLoadExcpetion if
-				// the file could not be opened
-				/// \todo is the server secured against beeing crashed by exceptiong
-				///  i guess it's not
-				/// \todo if this throws an exception, we do not delete the file!
-				FileRead file(filename);
-				
-				int length = file.length();
-				boost::shared_array<char> filecontent = file.readRawBytes( length );
-				
 				RakNet::BitStream stream;
 				stream.Write((unsigned char)ID_REPLAY);
-				stream.Write( length );
-				stream.Write(filecontent.get(), length);
+				mRecorder->save(stream);
 				mServer.Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0, packet->playerId, false);
 				
-				file.close();	// make sure we close the file
-				PHYSFS_delete(filename.c_str());
 				break;
 			}
 			default:

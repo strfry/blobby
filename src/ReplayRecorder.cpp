@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,19 +18,28 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
+/* header include */
 #include "ReplayRecorder.h"
-#include "IReplayLoader.h"
-#include "FileWrite.h"
-#include "tinyxml/tinyxml.h"
 
+/* includes */
 #include <algorithm>
 #include <iostream>
 #include <sstream>
-#include <boost/crc.hpp>
-#include <SDL/SDL.h>
-#include "Global.h"
 #include <ctime>
 
+#include <boost/crc.hpp>
+
+#include "tinyxml/tinyxml.h"
+
+#include "raknet/BitStream.h"
+
+#include <SDL/SDL.h>
+
+#include "Global.h"
+#include "IReplayLoader.h"
+#include "FileWrite.h"
+
+/* implementation */
 ChecksumException::ChecksumException(std::string filename, uint32_t expected, uint32_t real)
 {
 	std::stringstream errorstr;
@@ -109,6 +119,49 @@ void ReplayRecorder::save(const std::string& filename) const
 	file.close();
 }
 
+void ReplayRecorder::save(RakNet::BitStream& stream) const
+{
+	char name[16];
+	strncpy(name, mPlayerNames[LEFT_PLAYER].c_str(), sizeof(name));
+	stream.Write(name, sizeof(name));
+	strncpy(name, mPlayerNames[RIGHT_PLAYER].c_str(), sizeof(name));
+	stream.Write(name, sizeof(name));
+	stream.Write((int)mPlayerColors[LEFT_PLAYER].toInt());
+	stream.Write((int)mPlayerColors[RIGHT_PLAYER].toInt());
+	stream.Write((int)mGameSpeed);
+	stream.Write((int)mSaveData.size());
+	stream.Write(reinterpret_cast<const char*>(&mSaveData[0]), mSaveData.size());
+}
+
+void ReplayRecorder::receive(RakNet::BitStream& stream)
+{
+	char name[16];
+	stream.Read(name, sizeof(name));
+	name[15] = 0;
+	mPlayerNames[LEFT_PLAYER] = name;
+	stream.Read(name, sizeof(name));
+	name[15] = 0;
+	mPlayerNames[RIGHT_PLAYER] = name;
+	
+	int col;
+	stream.Read(col);
+	mPlayerColors[LEFT_PLAYER] = col;
+	stream.Read(col);
+	mPlayerColors[RIGHT_PLAYER] = col;
+	stream.Read(col);
+	mGameSpeed = col;
+	
+	stream.Read(col);
+	mSaveData.reserve(col);
+	
+	for(int i = 0; i < col; ++i)
+	{
+		char c;
+		stream.Read(c);
+		mSaveData.push_back(c);
+	}
+}
+
 void ReplayRecorder::writeFileHeader(FileWrite& file, uint32_t checksum) const
 {
 	file.write(validHeader, sizeof(validHeader));
@@ -158,14 +211,20 @@ void ReplayRecorder::writeAttributesSection(FileWrite& file) const
 	uint32_t gamelength = mSaveData.size();	/// \attention 1 byte = 1 step is assumed here
 	uint32_t gameduration = gamelength / gamespeed;
 	uint32_t gamedat = std::time(0);
+	uint32_t leftcol = mPlayerColors[LEFT_PLAYER].toInt();
+	uint32_t rightcol = mPlayerColors[RIGHT_PLAYER].toInt();
 	// check that we can really safe time in gamedat. ideally, we should use a static assertion here
-	assert(sizeof(uint32_t) >= sizeof(time_t) );
+	//static_assert (sizeof(uint32_t) >= sizeof(time_t), "time_t does not fit into 32bit" );
 	
 	file.write(attr_header, sizeof(attr_header));
 	file.writeUInt32(gamespeed);
 	file.writeUInt32(gameduration);
 	file.writeUInt32(gamelength);
 	file.writeUInt32(gamedat);
+	
+	// write blob colors
+	file.writeUInt32(leftcol);
+	file.writeUInt32(rightcol);
 	
 	// write names
 	file.writeNullTerminated(mPlayerNames[LEFT_PLAYER]);
@@ -226,6 +285,12 @@ void ReplayRecorder::setPlayerNames(const std::string& left, const std::string& 
 {
 	mPlayerNames[LEFT_PLAYER] = left;
 	mPlayerNames[RIGHT_PLAYER] = right;
+}
+
+void ReplayRecorder::setPlayerColors(Color left, Color right)
+{
+	mPlayerColors[LEFT_PLAYER] = left;
+	mPlayerColors[RIGHT_PLAYER] = right;
 }
 
 void ReplayRecorder::setGameSpeed(int fps)

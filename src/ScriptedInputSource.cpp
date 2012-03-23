@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,11 +18,15 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
+/* header include */
 #include "ScriptedInputSource.h"
-#include "DuelMatch.h"
-#include "GameConstants.h"
-#include "BotAPICalculations.h"
-#include "FileRead.h"
+
+/* includes */
+#include <cmath>
+#include <algorithm>
+#include <iostream>
+
+#include <SDL/SDL.h>
 
 extern "C"
 {
@@ -30,11 +35,12 @@ extern "C"
 #include "lua/lualib.h"
 }
 
-#include <iostream>
-#include <SDL/SDL.h>
-#include <cmath>
-#include <algorithm>
+#include "DuelMatch.h"
+#include "GameConstants.h"
+#include "BotAPICalculations.h"
+#include "FileRead.h"
 
+/* implementation */
 DuelMatch* ScriptedInputSource::mMatch = 0;
 ScriptedInputSource* ScriptedInputSource::mCurrentSource = 0;
 
@@ -84,39 +90,6 @@ float ScriptedInputSource::coordinate<vel_x>::convert (float val) {
 template<>
 float ScriptedInputSource::coordinate<vel_y>::convert (float val) {
 	return -val;
-}
-
-
-
-struct ReaderInfo
-{
-	FileRead file;
-	char buffer[2048];
-};
-
-static const char* chunkReader(lua_State* state, void* data, size_t *size)
-{
-	ReaderInfo* info = (ReaderInfo*) data;
-	
-	int bytesRead = 2048;
-	if(info->file.length() - info->file.tell() < 2048)
-	{
-		bytesRead = info->file.length() - info->file.tell();
-	}
-	
-	info->file.readRawBytes(info->buffer, bytesRead);
-	// if this doesn't throw, bytesRead is the actual number of bytes read
-	/// \todo we must do sth about this code, its just plains awful. 
-	/// 		File interface has to be improved to support such buffered reading.
-	*size = bytesRead;
-	if (bytesRead == 0)
-	{
-		return 0;
-	}
-	else
-	{
-		return info->buffer;
-	}
 }
 
 ScriptedInputSource::ScriptedInputSource(const std::string& filename,
@@ -185,16 +158,12 @@ ScriptedInputSource::ScriptedInputSource(const std::string& filename,
 	
 	//lua_register(mState, "parabel", parabel);
 
-	ReaderInfo info;
-	info.file.open(filename);
-	
-	int error;
-	error = lua_load(mState, chunkReader, &info, filename.c_str());
-	info.file.close();
+	int error = FileRead::readLuaScript(filename, mState);
 	
 	if (error == 0)
 		error = lua_pcall(mState, 0, 6, 0);
-		if (error)
+	
+	if (error)
 	{
 		std::cerr << "Lua Error: " << lua_tostring(mState, -1);
 		std::cerr << std::endl;

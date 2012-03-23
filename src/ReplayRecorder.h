@@ -31,6 +31,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 class FileWrite;
 
+namespace RakNet
+{
+	class BitStream;
+}
+
+/*! \class ChecksumException
+	\brief thrown when actual and expected file checksum mismatch
+*/
 struct ChecksumException : public std::exception
 {
 	ChecksumException(std::string filename, uint32_t expected, uint32_t real);
@@ -41,6 +49,9 @@ struct ChecksumException : public std::exception
 	std::string error;
 };
 
+/*! \class VersionMismatchException
+	\brief thrown when replays of incompatible version are loaded.
+*/
 struct VersionMismatchException : public std::exception
 {
 	VersionMismatchException(const std::string& filename, uint8_t major, uint8_t minor);
@@ -64,9 +75,12 @@ public:
 	~ReplayRecorder();
 
 	void save(const std::string& filename) const;
+	void save(RakNet::BitStream& stream) const;
+	void receive(RakNet::BitStream& stream);
 	void record(const PlayerInput* input);
 	
 	void setPlayerNames(const std::string& left, const std::string& right);
+	void setPlayerColors(Color left, Color right);
 	void setGameSpeed(int fps);
 private:
 
@@ -80,6 +94,7 @@ private:
 
 	// general replay attributes
 	std::string mPlayerNames[MAX_PLAYERS];
+	Color mPlayerColors[MAX_PLAYERS];
 	int mGameSpeed;
 	
 	

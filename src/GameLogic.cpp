@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,10 +18,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
+/* header include */
+#include "GameLogic.h"
+
+/* includes */
 #include <cassert>
 #include <cmath>
-
-#include "GameLogic.h"
+#include <iostream>
 
 extern "C"
 {
@@ -30,7 +34,9 @@ extern "C"
 }
 
 #include "FileRead.h"
-#include <iostream>
+
+
+/* implementation */
 
 // copied from ScriptedInputSource
 /// \todo avoid code duplication
@@ -70,7 +76,7 @@ static const char* chunkReader(lua_State* state, void* data, size_t *size)
 
 
 /// how many steps must pass until the next hit can happen
-const int SQUISH_TOLERANCE = 10;
+const int SQUISH_TOLERANCE = 11;
 
 
 IGameLogic::IGameLogic():	mLastError(NO_PLAYER), 
@@ -179,7 +185,7 @@ void IGameLogic::onBallHitsGround(PlayerSide side)
 bool IGameLogic::isCollisionValid(PlayerSide side) const
 {
 	// check whether the ball is squished
-	return mSquish[side2index(side)] < 0;
+	return mSquish[side2index(side)] <= 0;
 }
 
 void IGameLogic::onBallHitsPlayer(PlayerSide side)
@@ -280,11 +286,7 @@ LuaGameLogic::LuaGameLogic( const std::string& filename ) : mState( lua_open() )
 	
 	
 	// now load script file
-	ReaderInfo info;
-	// this opens the file
-	info.file.open(filename);
-
-	int error = lua_load(mState, chunkReader, &info, filename.c_str());
+	int error = FileRead::readLuaScript(filename, mState);
 	
 	if (error == 0)
 		error = lua_pcall(mState, 0, 6, 0);

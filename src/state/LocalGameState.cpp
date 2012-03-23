@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
-Copyright (C) 2008 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,7 +18,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
+/* header include */
 #include "LocalGameState.h"
+
+/* includes */
+#include <ctime>
 
 #include <boost/lexical_cast.hpp>
 
@@ -34,6 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "BlobbyThread.h"
 #include <ctime>
 
+/* implementation */
 LocalGameState::~LocalGameState()
 {
 	delete mRecorder;
@@ -86,6 +92,7 @@ LocalGameState::LocalGameState()
 
 	mRecorder = new ReplayRecorder();
 	mRecorder->setPlayerNames(mLeftPlayer.getName(), mRightPlayer.getName());
+	mRecorder->setPlayerColors( mLeftPlayer.getColor(), mRightPlayer.getColor() );
 	mRecorder->setGameSpeed((float)IUserConfigReader::createUserConfigReader("config.xml")->getInteger("gamefps"));
 	
 	mMatch.reset(new DuelMatchThread(mLeftPlayer.getInputSource(), mRightPlayer.getInputSource(), 
@@ -106,19 +113,31 @@ void LocalGameState::step()
 	if (mSaveReplay)
 	{
 		imgui.doOverlay(GEN_ID, Vector2(150, 200), Vector2(650, 400));
-		imgui.doText(GEN_ID, Vector2(190, 220), TextManager::getSingleton()->getString(TextManager::RP_SAVE_NAME));
+		imgui.doText(GEN_ID, Vector2(190, 220), TextManager::RP_SAVE_NAME);
 		static unsigned cpos;
 		imgui.doEditbox(GEN_ID, Vector2(180, 270), 18, mFilename, cpos);
-		if (imgui.doButton(GEN_ID, Vector2(220, 330), TextManager::getSingleton()->getString(TextManager::LBL_OK)))
+		if (imgui.doButton(GEN_ID, Vector2(220, 330), TextManager::LBL_OK))
 		{
-			if (mFilename != "")
+			try
+				{
+				if (mFilename != "")
+				{
+					/// \todo add a check whether we overwrite a file
+					mRecorder->save(std::string("replays/") + mFilename + std::string(".bvr"));
+				}
+				mSaveReplay = false;
+				imgui.resetSelection();
+			} 
+			 catch( std::exception& ex) 
 			{
-				mRecorder->save(std::string("replays/") + mFilename + std::string(".bvr"));
+				// only expected exception here is FileLoadException, which is thrown
+				// when we try to create a file with invalid name.
+				// don't reset selection when saving was not possible
+				/// \todo add notification of user
+				imgui.resetSelection();
 			}
-			mSaveReplay = false;
-			imgui.resetSelection();
 		}
-		if (imgui.doButton(GEN_ID, Vector2(440, 330), TextManager::getSingleton()->getString(TextManager::LBL_CANCEL)))
+		if (imgui.doButton(GEN_ID, Vector2(440, 330), TextManager::LBL_CANCEL))
 		{
 			mSaveReplay = false;
 			imgui.resetSelection();
@@ -128,16 +147,16 @@ void LocalGameState::step()
 	else if (mMatch->isPaused())
 	{
 		imgui.doOverlay(GEN_ID, Vector2(180, 200), Vector2(670, 400));
-		imgui.doText(GEN_ID, Vector2(281, 260), TextManager::getSingleton()->getString(TextManager::LBL_CONF_QUIT));
-		if (imgui.doButton(GEN_ID, Vector2(530, 300), TextManager::getSingleton()->getString(TextManager::LBL_NO))){
+		imgui.doText(GEN_ID, Vector2(281, 260), TextManager::LBL_CONF_QUIT);
+		if (imgui.doButton(GEN_ID, Vector2(530, 300), TextManager::LBL_NO)){
 			mMatch->unpause();
 		}
-		if (imgui.doButton(GEN_ID, Vector2(260, 300), TextManager::getSingleton()->getString(TextManager::LBL_YES)))
+		if (imgui.doButton(GEN_ID, Vector2(260, 300), TextManager::LBL_YES))
 		{
 			deleteCurrentState();
 			setCurrentState(new MainMenuState);
 		}
-		if (imgui.doButton(GEN_ID, Vector2(293, 340), TextManager::getSingleton()->getString(TextManager::RP_SAVE)))
+		if (imgui.doButton(GEN_ID, Vector2(293, 340), TextManager::RP_SAVE))
 		{
 			mSaveReplay = true;
 			imgui.resetSelection();
@@ -154,18 +173,18 @@ void LocalGameState::step()
 		imgui.doOverlay(GEN_ID, Vector2(200, 150), Vector2(700, 450));
 		imgui.doImage(GEN_ID, Vector2(200, 250), "gfx/pokal.bmp");
 		imgui.doText(GEN_ID, Vector2(274, 250), tmp);
-		imgui.doText(GEN_ID, Vector2(274, 300), TextManager::getSingleton()->getString(TextManager::GAME_WIN));
-		if (imgui.doButton(GEN_ID, Vector2(290, 350), TextManager::getSingleton()->getString(TextManager::LBL_OK)))
+		imgui.doText(GEN_ID, Vector2(274, 300), TextManager::GAME_WIN);
+		if (imgui.doButton(GEN_ID, Vector2(290, 350), TextManager::LBL_OK))
 		{
 			deleteCurrentState();
 			setCurrentState(new MainMenuState());
 		}
-		if (imgui.doButton(GEN_ID, Vector2(400, 350), TextManager::getSingleton()->getString(TextManager::GAME_TRY_AGAIN)))
+		if (imgui.doButton(GEN_ID, Vector2(400, 350), TextManager::GAME_TRY_AGAIN))
 		{
 			deleteCurrentState();
 			setCurrentState(new LocalGameState());
 		}
-		if (imgui.doButton(GEN_ID, Vector2(320, 390), TextManager::getSingleton()->getString(TextManager::RP_SAVE)))
+		if (imgui.doButton(GEN_ID, Vector2(320, 390), TextManager::RP_SAVE))
 		{
 			mSaveReplay = true;
 			imgui.resetSelection();

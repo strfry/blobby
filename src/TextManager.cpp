@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,17 +18,19 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
-
+/* header include */
 #include "TextManager.h"
+
+/* includes */
+#include <iostream>
+#include <algorithm>
+
+#include "tinyxml/tinyxml.h"
 
 #include "Global.h"
 #include "FileRead.h"
 
-#include "tinyxml/tinyxml.h"
-
-#include <iostream>
-#include <algorithm>
-
+/* implementation */
 TextManager* TextManager::mSingleton = 0;
 
 
@@ -78,28 +81,16 @@ std::string TextManager::getLang() const{
 
 /// \todo why no const std::string& ?
 bool TextManager::loadFromXML(std::string filename){
-	// create and load file
-	FileRead file(filename);
-
-	int fileLength = file.length();
-	boost::shared_array<char> fileBuffer(new char[fileLength + 1]);
-	file.readRawBytes( fileBuffer.get(), fileLength );
-	// null-terminate
-	fileBuffer[fileLength] = 0;
+	// read and parse file
+	boost::shared_ptr<TiXmlDocument> language_data = FileRead::readXMLDocument(filename);
 	
-	// parse file
-	TiXmlDocument language_data;
-	language_data.Parse(fileBuffer.get());
-	fileBuffer.reset(0);
-	file.close();
-
-	if (language_data.Error())
+	if (language_data->Error())
 	{
 		std::cerr << "Warning: Parse error in " << filename;
 		std::cerr << "!" << std::endl;
 	}
 
-	TiXmlElement* language = language_data.FirstChildElement("language");
+	TiXmlElement* language = language_data->FirstChildElement("language");
 	if (!language)
 		return false;
 	
@@ -262,6 +253,7 @@ struct lang_init{
 		TextManager::language_names["de"] = "deutsch";
 		TextManager::language_names["en"] = "english";
 		TextManager::language_names["fr"] = "francais";
+		TextManager::language_names["it"] = "italiano";
 	}
 };
 static lang_init init;

@@ -28,6 +28,9 @@ class ThreadEventManager;
 class BlobbyThread;
 class DuelMatchThread;
 
+/*! \class LocalGameState
+	\brief state for singleplayer game
+*/
 class LocalGameState : public State
 {
 private:

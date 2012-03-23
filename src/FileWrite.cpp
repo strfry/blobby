@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,21 +18,29 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
+/* header include */
 #include "FileWrite.h"
 
-#include <physfs.h>
-#include "Global.h"
-
+/* includes */
 #include <cassert>
 
-FileWrite::FileWrite() {
+#include <physfs.h>
+
+#include "Global.h"
+
+
+/* implementation */
+
+FileWrite::FileWrite()
+{
 }
 
 FileWrite::FileWrite(const std::string& filename) : File(filename, File::OPEN_WRITE)
 {
 }
 
-FileWrite::~FileWrite() {
+FileWrite::~FileWrite()
+{
 	// no more actions than what ~File already does
 }
 

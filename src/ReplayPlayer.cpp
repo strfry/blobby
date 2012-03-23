@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,15 +18,17 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
+/* header include */
 #include "ReplayPlayer.h"
 
+/* includes */
 #include <cassert>
 #include <iostream> // debugging
 
 #include "IReplayLoader.h"
 #include "DuelMatch.h"
 
-
+/* implementation */
 ReplayPlayer::ReplayPlayer()
 {
 }
@@ -43,7 +46,6 @@ void ReplayPlayer::load(const std::string& filename)
 {
 	loader.reset(IReplayLoader::createReplayLoader(filename));
 	
-	mServingPlayer = loader->getServingPlayer();
 	mPlayerNames[LEFT_PLAYER] = loader->getPlayerName(LEFT_PLAYER);
 	mPlayerNames[RIGHT_PLAYER] = loader->getPlayerName(RIGHT_PLAYER);
 	
@@ -62,14 +64,24 @@ std::string ReplayPlayer::getPlayerName(const PlayerSide side) const
 	return mPlayerNames[side];
 }
 
-PlayerSide ReplayPlayer::getServingPlayer() const
+Color ReplayPlayer::getBlobColor(const PlayerSide side) const
 {
-	return mServingPlayer;
+	return loader->getBlobColor(side);
+}
+
+int ReplayPlayer::getGameSpeed() const 
+{
+	return loader->getSpeed();
 }
 
 float ReplayPlayer::getPlayProgress() const
 {
 	return (float)mPosition / mLength;
+}
+
+int ReplayPlayer::getReplayPosition() const
+{
+	return mPosition;
 }
 
 int ReplayPlayer::getReplayLength() const

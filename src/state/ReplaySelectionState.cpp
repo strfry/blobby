@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,14 +18,17 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
+/* header include */
 #include "ReplaySelectionState.h"
+
+/* includes */
 #include "ReplayState.h"
 #include "IMGUI.h"
 #include "TextManager.h"
 #include "SpeedController.h"
+#include "FileSystem.h"
 
-#include <physfs.h>
-
+/* implementation */
 ReplaySelectionState::ReplaySelectionState()
 {
 	IMGUI::getSingleton().resetSelection();
@@ -32,15 +36,7 @@ ReplaySelectionState::ReplaySelectionState()
 	mVersionError = false;
 
 	mSelectedReplay = 0;
-	char** filenames = PHYSFS_enumerateFiles("replays");
-	for (int i = 0; filenames[i] != 0; ++i)
-	{
-		std::string tmp(filenames[i]);
-		if (tmp.find(".bvr") != std::string::npos)
-		{
-			mReplayFiles.push_back(std::string(tmp.begin(), tmp.end()-4));
-		}
-	}
+	mReplayFiles = FileSystem::getSingleton().enumerateFiles("replays", ".bvr");
 	if (mReplayFiles.size() == 0)
 		mSelectedReplay = -1;
 	std::sort(mReplayFiles.rbegin(), mReplayFiles.rend());
@@ -57,7 +53,7 @@ void ReplaySelectionState::step()
 	imgui.doImage(GEN_ID, Vector2(400.0, 300.0), "background");
 	imgui.doOverlay(GEN_ID, Vector2(0.0, 0.0), Vector2(800.0, 600.0));
 
-	if (imgui.doButton(GEN_ID, Vector2(224.0, 10.0), TextManager::getSingleton()->getString(TextManager::RP_PLAY)) &&
+	if (imgui.doButton(GEN_ID, Vector2(224.0, 10.0), TextManager::RP_PLAY) &&
 				mSelectedReplay != -1)
 	{
 		std::string loadrep = mReplayFiles[mSelectedReplay];
@@ -71,17 +67,17 @@ void ReplaySelectionState::step()
 		setCurrentState(rs);
 		imgui.resetSelection();
 	}
-	else if (imgui.doButton(GEN_ID, Vector2(424.0, 10.0), TextManager::getSingleton()->getString(TextManager::LBL_CANCEL)))
+	else if (imgui.doButton(GEN_ID, Vector2(424.0, 10.0), TextManager::LBL_CANCEL))
 	{
 		deleteCurrentState();
 		setCurrentState(new MainMenuState());
 	}
 	else
 		imgui.doSelectbox(GEN_ID, Vector2(34.0, 50.0), Vector2(634.0, 550.0), mReplayFiles, mSelectedReplay);
-	if (imgui.doButton(GEN_ID, Vector2(644.0, 60.0), TextManager::getSingleton()->getString(TextManager::RP_DELETE)))
+	if (imgui.doButton(GEN_ID, Vector2(644.0, 60.0), TextManager::RP_DELETE))
 	{
 		if (!mReplayFiles.empty())
-		if (PHYSFS_delete(std::string("replays/" + mReplayFiles[mSelectedReplay] + ".bvr").c_str()))
+		if (FileSystem::getSingleton().deleteFile("replays/" + mReplayFiles[mSelectedReplay] + ".bvr"))
 		{
 			mReplayFiles.erase(mReplayFiles.begin()+mSelectedReplay);
 			if (mSelectedReplay >= mReplayFiles.size())
@@ -93,10 +89,10 @@ void ReplaySelectionState::step()
 	{
 		imgui.doInactiveMode(false);
 		imgui.doOverlay(GEN_ID, Vector2(210, 180), Vector2(650, 370));
-		imgui.doText(GEN_ID, Vector2(250, 200), TextManager::getSingleton()->getString(TextManager::RP_CHECKSUM));
-		imgui.doText(GEN_ID, Vector2(250, 250), TextManager::getSingleton()->getString(TextManager::RP_FILE_CORRUPT));
+		imgui.doText(GEN_ID, Vector2(250, 200), TextManager::RP_CHECKSUM);
+		imgui.doText(GEN_ID, Vector2(250, 250), TextManager::RP_FILE_CORRUPT);
 
-		if (imgui.doButton(GEN_ID, Vector2(400, 330), TextManager::getSingleton()->getString(TextManager::LBL_OK)))
+		if (imgui.doButton(GEN_ID, Vector2(400, 330), TextManager::LBL_OK))
 		{
 			mChecksumError = false;
 		}
@@ -110,10 +106,10 @@ void ReplaySelectionState::step()
 	{
 		imgui.doInactiveMode(false);
 		imgui.doOverlay(GEN_ID, Vector2(210, 180), Vector2(650, 370));
-		imgui.doText(GEN_ID, Vector2(250, 200), TextManager::getSingleton()->getString(TextManager::RP_VERSION));
-		imgui.doText(GEN_ID, Vector2(250, 250), TextManager::getSingleton()->getString(TextManager::RP_FILE_OUTDATED));
+		imgui.doText(GEN_ID, Vector2(250, 200), TextManager::RP_VERSION);
+		imgui.doText(GEN_ID, Vector2(250, 250), TextManager::RP_FILE_OUTDATED);
 
-		if (imgui.doButton(GEN_ID, Vector2(400, 330), TextManager::getSingleton()->getString(TextManager::LBL_OK)))
+		if (imgui.doButton(GEN_ID, Vector2(400, 330), TextManager::LBL_OK))
 		{
 			mVersionError = false;
 		}
