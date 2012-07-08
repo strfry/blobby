@@ -393,6 +393,8 @@ int main(int argc, char** argv)
 			f << " ingame packets processed: " << SWLS_IngamePacketsProcessed << "\n";
 			f << " ingame event counter: " << SWLS_IngameEventCounter << "\n";
 			f << " physics broadcasts: " << SWLS_PhysicStateBroadcasts << "\n";
+			f << " active games: " << gamelist.size() << "\n";
+			f << " active players: " << playermap.size() << "\n";
 			report(f);
 		}
 		
