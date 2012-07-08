@@ -155,7 +155,7 @@ struct PlayerID
 //	unsigned int priority;
 //};
 
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 /**
 * @brief Network Packet 

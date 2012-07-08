@@ -32,7 +32,7 @@
 #ifndef  __BITSTREAM_H
 #define __BITSTREAM_H
 
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 #ifdef _MSC_VER
 #if defined (_INTEGRAL_MAX_BITS) &&  _INTEGRAL_MAX_BITS >= 64
