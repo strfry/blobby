@@ -24,18 +24,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "InputSource.h"
 #include "InputDevice.h"
 #include "Vector.h"
+#include "BlobbyDebug.h"
 
 /*! \class InputKeyMap
 	\brief mapping of keynames to SDLKey s
 */
-struct InputKeyMap
+struct InputKeyMap/* : public ObjectCounter<InputKeyMap>*/
 {
         const char *keyname;
         SDLKey key;
 };
 
 /// \brief class for managing input
-class InputManager
+class InputManager : public ObjectCounter<InputManager>
 {
 private:
 	static InputManager* mSingleton;

@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "PhysicWorld.h"
 #include "GameLogic.h"
 #include "Vector.h"
+#include "BlobbyDebug.h"
 
 class InputSource;
 
@@ -34,7 +35,7 @@ class InputSource;
 	similar to a singleton, but it can be instantiated
 	multiple times on a server or be completely unavailable
 */
-class DuelMatch
+class DuelMatch : public ObjectCounter<DuelMatch>
 {
 public:
 	// This constructor takes the input sources used to get player input

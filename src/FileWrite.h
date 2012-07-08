@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #pragma once
 
 #include "File.h"
+#include "BlobbyDebug.h"
 
 /**
 	\class FileWrite
@@ -29,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			it did not exist beforehand, the file is created.
 	\sa FileRead
 */
-class FileWrite : public File
+class FileWrite : public File, public ObjectCounter<FileWrite>
 {
 	public:
 	

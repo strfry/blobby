@@ -21,10 +21,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <exception>
 
+#include "BlobbyDebug.h"
+
 /*! \class FileSystemException
 	\brief common base class of all file system related errors
 */
-class FileSystemException : public std::exception
+class FileSystemException : public std::exception, public ObjectCounter<FileSystemException>
 {
 	public:
 		FileSystemException() {};

@@ -23,13 +23,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <vector>
 #include <string>
 #include <map>
+#include "BlobbyDebug.h"
 
 /// \brief class for managing the text
 /// \details multilanguage support
 /// the string can be loaded from a xml file
 /// <string english="english" translation="translation />
 
-class TextManager{
+class TextManager : public ObjectCounter<TextManager>
+{
 	public:
 		/// enumeration for strings
 		enum STRING{

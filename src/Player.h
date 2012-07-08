@@ -24,10 +24,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <boost/scoped_ptr.hpp>
 
 #include "Global.h"
+#include "BlobbyDebug.h"
 
 class InputSource;
 
-class Player
+class Player : public ObjectCounter<Player>
 {
 public:
 	Player(PlayerSide side);

@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Global.h"
 #include "ReplayDefs.h"
 #include "InputSource.h"
+#include "BlobbyDebug.h"
 
 class DuelMatch;
 class IReplayLoader;
@@ -37,7 +38,7 @@ class IReplayLoader;
 /// \todo maybe we should rename this class. It might be confused with Player (a blob) and NetworkPlayer 
 ///			(a network connection on server).
 /// \todo For now, this is only a copy of the playing related functions of ReplayRecorder.
-class ReplayPlayer
+class ReplayPlayer : public ObjectCounter<ReplayPlayer>
 {
 	public:
 		ReplayPlayer();

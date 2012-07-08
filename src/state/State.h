@@ -60,6 +60,10 @@ public:
 	
 	virtual const char* getStateName() const = 0;
 	static const char* getCurrenStateName();
+	static const void switchToNewState(State* newState)
+	{
+		mCurrentState = newState;
+	}
 };
 
 /*! \class MainMenuState

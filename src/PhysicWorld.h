@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Global.h"
 #include "Vector.h"
 #include "InputSource.h"
+#include "BlobbyDebug.h"
 
 
 const float BLOBBY_SPEED = 4.5; // BLOBBY_SPEED is necessary to determine the size of the input buffer
@@ -36,7 +37,7 @@ namespace RakNet
 			the ball and collisions between them and the environment, it calculates object movements etc.
 	\todo remove all game logic related stuff!
 */
-class PhysicWorld
+class PhysicWorld : public ObjectCounter<PhysicWorld>
 {
 public:
 	PhysicWorld();

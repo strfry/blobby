@@ -21,10 +21,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <cassert>
 #include <cmath>
+#include "BlobbyDebug.h"
 
 /// \brief class for repesenting 2d vectors
 /// \details e.g. positions, velocities.
-class Vector2
+class Vector2: public ObjectCounter<Vector2>
 {
 	public:
 		union

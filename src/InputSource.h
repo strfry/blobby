@@ -20,11 +20,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #pragma once
 
 #include <string>
+#include "BlobbyDebug.h"
 
 /*! \class PlayerInput
 	\brief struct for easy exchange of a single player input frame
 */
-struct PlayerInput
+struct PlayerInput : public ObjectCounter<PlayerInput>
 {
 	PlayerInput()
 	{
@@ -79,7 +80,7 @@ struct PlayerInput
 		It should be only called once per frame because some implementations
 		may use this to activate a refresh routine on their actual source
 */
-class InputSource
+class InputSource : public ObjectCounter<InputSource>
 {
 public:
 	virtual PlayerInput getInput() = 0;

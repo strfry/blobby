@@ -32,6 +32,8 @@
 #ifndef  __BITSTREAM_H
 #define __BITSTREAM_H
 
+#include "BlobbyDebug.h"
+
 #ifdef _MSC_VER
 #if defined (_INTEGRAL_MAX_BITS) &&  _INTEGRAL_MAX_BITS >= 64
 typedef signed __int64 int64_t;
@@ -76,7 +78,7 @@ namespace RakNet
 	 * 
 	 */
 	
-	class BitStream
+	class BitStream : public ObjectCounter<BitStream>
 	{
 	
 	public:

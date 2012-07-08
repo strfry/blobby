@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "raknet/GetTime.h"
 
 #include <SDL/SDL_timer.h>
+#include <boost/lexical_cast.hpp>
 
 #include "InputSource.h"
 #include "PhysicWorld.h"
@@ -45,6 +46,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "RakNetPacket.h"
 #include "NetworkPlayer.h"
 #include "FileSystem.h"
+#include "BlobbyDebug.h"
 
 // platform specific
 #ifndef WIN32
@@ -92,10 +94,13 @@ int SWLS_RunningTime = 0;
 // functions for processing certain network packets
 void createNewGame();
 
+#include <fstream>
+
 int main(int argc, char** argv)
 {
+	try
+	{
 	process_arguments(argc, argv);
-	
 	FileSystem fileSys(argv[0]);
 	
 	if (!g_run_in_foreground)
@@ -375,13 +380,15 @@ int main(int argc, char** argv)
 		
 		SWLS_RunningTime++;
 		
-		if(SWLS_RunningTime % (75 * 60 * 60 /*1h*/) == 0 )
+		if(SWLS_RunningTime % (75 * 6 /** 60 /*1h*/) == 0 )
 		{
-			std::cout << "Blobby Server Status Report " << (SWLS_RunningTime / 75 / 60 / 60) << "h running \n";
-			std::cout << " packet count: " << SWLS_PacketCount << "\n";
-			std::cout << " accepted connections: " << SWLS_Connections << "\n";
-			std::cout << " started games: " << SWLS_Games << "\n";
-			std::cout << " game steps: " << SWLS_GameSteps << "\n";
+			std::fstream f((std::string("logs/server") + boost::lexical_cast<std::string>(SWLS_RunningTime/75) + ".txt").c_str(), std::fstream::out );
+			f << "Blobby Server Status Report " << (SWLS_RunningTime / 75 / 60 / 60) << "h running \n";
+			f << " packet count: " << SWLS_PacketCount << "\n";
+			f << " accepted connections: " << SWLS_Connections << "\n";
+			f << " started games: " << SWLS_Games << "\n";
+			f << " game steps: " << SWLS_GameSteps << "\n";
+			report(f);
 		}
 		
 		for (GameList::iterator iter = gamelist.begin(); gamelist.end() != iter; ++iter)
@@ -416,6 +423,12 @@ int main(int argc, char** argv)
 	#ifndef WIN32
 	closelog();
 	#endif
+	}catch(...)
+	{
+		std::cout << "AN UNKNOWN EXCEPTION OCCURED\n";
+	}
+	
+	
 }
 
 // -----------------------------------------------------------------------------------------

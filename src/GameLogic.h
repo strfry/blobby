@@ -25,13 +25,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Global.h"
 #include "Clock.h"
+#include "BlobbyDebug.h"
 
 /// \class IGameLogic
 /// \brief Interface for managing game rules, score counting etc.
 /// \details this class is told what happens in the game and it applies the rules to count 
 /// the points. it is designed as a abstract base class to provide different 
 /// implementations (ie old/new volleyball rules)
-class IGameLogic
+class IGameLogic: public ObjectCounter<IGameLogic>
 {
 	public:
 		// constuctor and destructor

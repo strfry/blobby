@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #pragma once
 
 #include "Vector.h"
+#include "BlobbyDebug.h"
 #include <list>
 #include <boost/noncopyable.hpp>
 
@@ -28,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 /*!	\class Blood
 	\brief Container to hold the data of a single drop of blood
 */
-class Blood
+class Blood : public ObjectCounter<Blood>
 {
 	public:
 		/// \brief constructor, takes position, direction and player
@@ -56,7 +57,7 @@ class Blood
 	\details this class is responsible for managing blood effects, creating and deleting the particles, 
 			updating their positions etc. It is designed as a singleton, so it is noncopyable.
 */
-class BloodManager : private boost::noncopyable
+class BloodManager : private boost::noncopyable, public ObjectCounter<BloodManager>
 {
 	public:
 		/// update function, to be called each step.

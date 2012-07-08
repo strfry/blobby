@@ -21,12 +21,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <string>
 
+#include "BlobbyDebug.h"
+
 /*! \class Clock
 	\brief Game Timing Management
 	\details This class represents a clock. It can be started, paused, resetted,
 			and it is possible to get the time in a string for in-game representation
 */
-class Clock
+class Clock : public ObjectCounter<Clock>
 {
 	public:
 		/// default c'tor

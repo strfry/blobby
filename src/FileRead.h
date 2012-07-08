@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #pragma once
 
 #include "File.h"
+#include "BlobbyDebug.h"
 #include <boost/shared_ptr.hpp>
  
 // forward declarations for convenience functions
@@ -35,7 +36,7 @@ class TiXmlDocument;
 			and tinyXML.
 	\sa FileWrite
 */
-class FileRead : public File
+class FileRead : public File, public ObjectCounter<FileRead>
 {
 	public:
 	

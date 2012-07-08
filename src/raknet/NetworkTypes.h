@@ -155,6 +155,8 @@ struct PlayerID
 //	unsigned int priority;
 //};
 
+#include "BlobbyDebug.h"
+
 /**
 * @brief Network Packet 
 * 
@@ -162,7 +164,7 @@ struct PlayerID
 * a packet going throught the network 
 */
 
-struct Packet
+struct Packet : public ObjectCounter<Packet>
 {
 	/**
 	* Server only - this is the index into the player array that this playerId maps to
