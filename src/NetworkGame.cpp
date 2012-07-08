@@ -137,12 +137,17 @@ void NetworkGame::broadcastBitstream(RakNet::BitStream* stream)
                         mRightPlayer, false);
 }
 
+extern int SWLS_IngamePacketsProcessed;
+extern int SWLS_IngameEventCounter;
+extern int SWLS_PhysicStateBroadcasts;
+
 bool NetworkGame::step()
 {
 	bool active = true;
 	
 	while (!mPacketQueue.empty())
 	{
+		SWLS_IngamePacketsProcessed++;
 		packet_ptr packet = mPacketQueue.front();
 		mPacketQueue.pop_front();
 
@@ -262,6 +267,8 @@ bool NetworkGame::step()
 		switchStream.Write(mMatch->getWorld().lastHitIntensity());
 		switchStream.Write(RIGHT_PLAYER);
 		
+		SWLS_IngameEventCounter++;
+		
 		broadcastBitstream(&stream, &switchStream);
 	}
 	
@@ -277,6 +284,8 @@ bool NetworkGame::step()
 		switchStream.Write(mMatch->getWorld().lastHitIntensity());
 		switchStream.Write(LEFT_PLAYER);
 		
+		SWLS_IngameEventCounter++;
+		
 		broadcastBitstream(&stream, &switchStream);
 	}
 	
@@ -288,6 +297,9 @@ bool NetworkGame::step()
 		RakNet::BitStream switchStream;
 		switchStream.Write((unsigned char)ID_BALL_GROUND_COLLISION);
 		switchStream.Write(RIGHT_PLAYER);
+		
+		SWLS_IngameEventCounter++;
+		
 		broadcastBitstream(&stream, &switchStream);
 	}
 	
@@ -303,11 +315,14 @@ bool NetworkGame::step()
 		switchStream.Write((unsigned char)ID_BALL_GROUND_COLLISION);
 		switchStream.Write(LEFT_PLAYER);
 
+		SWLS_IngameEventCounter++;
+
 		broadcastBitstream(&stream, &switchStream);
 	}
 	
 	if(!mPausing)
-		switch(mMatch->winningPlayer()){
+		switch(mMatch->winningPlayer())
+		{
 			case LEFT_PLAYER:
 			{
 				RakNet::BitStream stream;
@@ -317,6 +332,7 @@ bool NetworkGame::step()
 				RakNet::BitStream switchStream;
 				switchStream.Write((unsigned char)ID_WIN_NOTIFICATION);
 				switchStream.Write(RIGHT_PLAYER);
+		
 		
 				broadcastBitstream(&stream, &switchStream);
 				
@@ -363,6 +379,8 @@ bool NetworkGame::step()
 		switchStream.Write(mMatch->getScore(LEFT_PLAYER));
 		switchStream.Write(mMatch->getClock().getTime());
 
+		SWLS_IngameEventCounter++;
+		
 		broadcastBitstream(&stream, &switchStream);
 	}
 

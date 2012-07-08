@@ -90,6 +90,9 @@ int SWLS_Connections = 0;
 int SWLS_Games		 = 0;
 int SWLS_GameSteps	 = 0;
 int SWLS_RunningTime = 0;
+int SWLS_IngamePacketsProcessed = 0;
+int SWLS_IngameEventCounter = 0;
+int SWLS_PhysicStateBroadcasts = 0;
 
 // functions for processing certain network packets
 void createNewGame();
@@ -387,7 +390,9 @@ int main(int argc, char** argv)
 			f << " packet count: " << SWLS_PacketCount << "\n";
 			f << " accepted connections: " << SWLS_Connections << "\n";
 			f << " started games: " << SWLS_Games << "\n";
-			f << " game steps: " << SWLS_GameSteps << "\n";
+			f << " ingame packets processed: " << SWLS_IngamePacketsProcessed << "\n";
+			f << " ingame event counter: " << SWLS_IngameEventCounter << "\n";
+			f << " physics broadcasts: " << SWLS_PhysicStateBroadcasts << "\n";
 			report(f);
 		}
 		
