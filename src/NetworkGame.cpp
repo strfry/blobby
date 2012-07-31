@@ -386,6 +386,7 @@ bool NetworkGame::step()
 
 	if (!mPausing)
 	{
+		SWLS_PhysicStateBroadcasts++;
 		broadcastPhysicState();
 	}
 

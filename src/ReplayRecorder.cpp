@@ -278,6 +278,8 @@ void ReplayRecorder::record(const PlayerInput* input)
 	packet += (input[RIGHT_PLAYER].left & 1); packet <<= 1;
 	packet += (input[RIGHT_PLAYER].right & 1); packet <<= 1;
 	packet += (input[RIGHT_PLAYER].up & 1);
+	
+	
 	mSaveData.push_back(packet);
 }
 

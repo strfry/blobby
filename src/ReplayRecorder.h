@@ -85,13 +85,21 @@ public:
 	void setGameSpeed(int fps);
 private:
 
+	struct r_tag
+	{
+		static std::string tag()
+		{
+			return "replay";
+		};
+	};
+
 	void writeFileHeader(FileWrite&, uint32_t checksum) const;
 	void writeReplayHeader(FileWrite&) const;
 	void writeAttributesSection(FileWrite&) const;
 	void writeJumpTable(FileWrite&) const;
 	void writeDataSection(FileWrite&) const;
 
-	std::vector<uint8_t> mSaveData;
+	std::vector<uint8_t, CountingAllocator<uint8_t, r_tag> > mSaveData;
 
 	// general replay attributes
 	std::string mPlayerNames[MAX_PLAYERS];
