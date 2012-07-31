@@ -28,6 +28,7 @@ std::map<std::string, CountingReport>& GetCounterMap()
 	static std::map<std::string, CountingReport> CounterMap;
 	return CounterMap;
 }
+
 int count(const std::type_info& type)
 {
 	std::string test = type.name();
@@ -43,6 +44,24 @@ int uncount(const std::type_info& type)
 {
 	GetCounterMap()[type.name()].alive--;
 }
+
+int count(const std::type_info& type, std::string tag, int n)
+{
+	std::string name = std::string(type.name()) + " - " + tag;
+	if(GetCounterMap().find(name) == GetCounterMap().end() )
+	{
+		GetCounterMap()[name] = CountingReport();
+	}
+	GetCounterMap()[name].created += n;
+	GetCounterMap()[name].alive += n;
+}
+
+int uncount(const std::type_info& type, std::string tag, int n)
+{
+	GetCounterMap()[std::string(type.name()) + " - " + tag].alive -= n;
+}
+
+
 
 std::fstream total_plot("logs/total.txt", std::fstream::out);
 

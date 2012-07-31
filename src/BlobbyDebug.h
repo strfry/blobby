@@ -21,9 +21,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <typeinfo>
 #include <iosfwd>
+#include <utility>
+#include <cstddef>
+#include <memory>
 
 int count(const std::type_info& type);
 int uncount(const std::type_info& type);
+int count(const std::type_info& type, std::string tag, int num);
+int uncount(const std::type_info& type, std::string tag, int num);
 
 /*! \class ObjectCounter
 	\brief Logging number of creations and living objects
@@ -68,3 +73,44 @@ struct CountingReport
 	int alive;
 	int created;
 };
+
+// counting allocator
+template<class T, typename tag_type>
+struct CountingAllocator : private std::allocator<T>
+{
+	typedef std::allocator<T> Base;
+	typedef T value_type;
+	typedef T* pointer;
+	typedef T& reference;
+	typedef const T* const_pointer;
+	typedef const T& const_reference;
+	typedef size_t size_type;
+	typedef ptrdiff_t difference_type ;
+	
+	template<typename _Tp1>
+	struct rebind
+	{ 
+		typedef CountingAllocator<_Tp1, tag_type> other; 
+	};
+	
+	
+	
+	pointer allocate (size_type n, std::allocator<void>::const_pointer hint = 0)
+	{
+		count(typeid(T), tag_type::tag(), n);
+		return Base::allocate(n, hint);
+	}
+	
+	void deallocate (pointer p, size_type n)
+	{
+		uncount(typeid(T), tag_type::tag(), n);
+		Base::deallocate(p, n);
+	}
+	
+	using Base::address;
+	using Base::max_size;
+	using Base::construct;
+	using Base::destroy;
+};
+
+
