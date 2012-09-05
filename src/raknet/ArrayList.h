@@ -201,16 +201,11 @@ namespace BasicDataStructures
 		 */
 		unsigned int list_size;
 		
-		/**
-		 * Size of @em array 
-		 */
-		unsigned int allocation_size;
 	};
 	
 	template <class list_type>
 	List<list_type>::List()
 	{
-		allocation_size = 16;
 		array.resize(16);
 		list_size = 0;
 	}
@@ -229,7 +224,6 @@ namespace BasicDataStructures
 		if ( original_copy.list_size == 0 )
 		{
 			list_size = 0;
-			allocation_size = 0;
 		}
 		
 		else
@@ -239,7 +233,7 @@ namespace BasicDataStructures
 			for ( unsigned int counter = 0; counter < original_copy.list_size; ++counter )
 				array[ counter ] = original_copy.array[ counter ];
 				
-			list_size = allocation_size = original_copy.list_size;
+			list_size = original_copy.list_size;
 		}
 	}
 	
@@ -255,7 +249,6 @@ namespace BasicDataStructures
 			if ( original_copy.list_size == 0 )
 			{
 				list_size = 0;
-				allocation_size = 0;
 			}
 			
 			else
@@ -265,7 +258,7 @@ namespace BasicDataStructures
 				for ( unsigned int counter = 0; counter < original_copy.list_size; ++counter )
 					array[ counter ] = original_copy.array[ counter ];
 					
-				list_size = allocation_size = original_copy.list_size;
+				list_size = original_copy.list_size;
 			}
 		}
 		
@@ -289,23 +282,19 @@ namespace BasicDataStructures
 		
 		// Reallocate list if necessary
 		
-		if ( list_size == allocation_size )
+		if ( list_size == array.size() )
 		{
 			// allocate twice the currently allocated memory
 			container_type new_array;
 			
-			if ( allocation_size == 0 )
-				allocation_size = 16;
+			if ( array.size() == 0 )
+				new_array.resize (16);
 			else
-				allocation_size *= 2;
-				
-			new_array.resize( allocation_size );
+				new_array.resize( array.size() * 2 );
 			
 			// copy old array over
 			for ( unsigned int counter = 0; counter < list_size; ++counter )
 				new_array[ counter ] = array[ counter ];
-				
-			// set old array to point to the newly allocated and twice as large array
 			
 			array = new_array;
 		}
@@ -327,23 +316,19 @@ namespace BasicDataStructures
 	{
 		// Reallocate list if necessary
 		
-		if ( list_size == allocation_size )
+		if ( list_size == array.size() )
 		{
 			// allocate twice the currently allocated memory
 			container_type new_array;
 			
-			if ( allocation_size == 0 )
-				allocation_size = 16;
+			if ( array.size() == 0 )
+				new_array.resize( 16 );
 			else
-				allocation_size *= 2;
-				
-			new_array.resize(allocation_size);
+				new_array.resize( array.size() * 2 );
 			
 			// copy old array over
 			for ( unsigned int counter = 0; counter < list_size; ++counter )
 				new_array[ counter ] = array[ counter ];
-				
-			// set old array to point to the newly allocated and twice as large array
 			
 			array = new_array;
 		}
@@ -364,20 +349,18 @@ namespace BasicDataStructures
 		}
 		else
 		{
-			if ( position >= allocation_size )
+			if ( position >= array.size() )
 			{
 				// Reallocate the list to size position and fill in blanks with filler
 				container_type new_array;
-				allocation_size = position + 1;
 				
-				new_array.resize( allocation_size );
+				new_array.resize( array.size() + 1 );
 				
 				// copy old array over
 				
 				for ( unsigned int counter = 0; counter < list_size; ++counter )
 					new_array[ counter ] = array[ counter ];
-					
-				// set old array to point to the newly allocated array
+				
 				array = new_array;
 			}
 			
@@ -451,13 +434,12 @@ namespace BasicDataStructures
 	template <class list_type>
 	void List<list_type>::clear( void )
 	{
-		if ( allocation_size == 0 )
+		if ( array.size() == 0 )
 			return;
 		
-		if (allocation_size>32)
+		if (array.size() > 32)
 		{
 			array.clear();
-			allocation_size = 0;
 		}
 		list_size = 0;
 	}
@@ -467,10 +449,10 @@ namespace BasicDataStructures
 	{
 		container_type new_array;
 		
-		if ( allocation_size == 0 )
+		if ( array.size() == 0 )
 			return ;
 			
-		new_array.resize(allocation_size);
+		new_array.resize( array.size() );
 		
 		// copy old array over
 		for ( unsigned int counter = 0; counter < list_size; ++counter )
