@@ -175,6 +175,8 @@ int main(int argc, char* argv[])
 			rmanager = RenderManager::createRenderManagerGP2X();
 		else if (gameConfig.getString("device") == "OpenGL")
 			rmanager = RenderManager::createRenderManagerGL2D();
+		else if (gameConfig.getString("device") == "Null")
+			rmanager = RenderManager::createRenderManagerNull();
 		else
 		{
 			std::cerr << "Warning: Unknown renderer selected!";
