@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <iosfwd>
 #include <utility>
 #include <cstddef>
+#include <cstdlib>
 #include <memory>
 
 int count(const std::type_info& type);
@@ -114,3 +115,35 @@ struct CountingAllocator : private std::allocator<T>
 };
 
 
+
+int count(const std::type_info& type, std::string tag, void* address, int num);
+int uncount(const std::type_info& type, std::string tag, void* address);
+
+template<class T, typename tag_type>
+struct CountingMalloc
+{	
+	typedef T* pointer;
+	typedef T& reference;
+	typedef size_t size_type;
+	
+	static pointer malloc (size_type n)
+	{
+		pointer nm = static_cast<pointer> ( ::malloc(n) );
+		count(typeid(T), tag_type::tag(), nm, n);
+		return nm;
+	}
+	
+	static void free (pointer& p)
+	{
+		uncount(typeid(T), tag_type::tag(), p);
+		::free(p);
+		p = 0;
+	}
+	
+	static pointer realloc ( pointer ptr, size_t size )
+	{
+		uncount(typeid(T), tag_type::tag(), ptr);
+		pointer nm = static_cast<pointer>(::realloc(ptr, size));
+		count(typeid(T), tag_type::tag(), nm, size);
+	}
+};

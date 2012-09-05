@@ -29,6 +29,12 @@ std::map<std::string, CountingReport>& GetCounterMap()
 	return CounterMap;
 }
 
+std::map<void*, int>& GetAddressMap()
+{
+	static std::map<void*, int> AddressMap;
+	return AddressMap;
+}
+
 int count(const std::type_info& type)
 {
 	std::string test = type.name();
@@ -61,7 +67,19 @@ int uncount(const std::type_info& type, std::string tag, int n)
 	GetCounterMap()[std::string(type.name()) + " - " + tag].alive -= n;
 }
 
+int count(const std::type_info& type, std::string tag, void* address, int num)
+{
+	std::cout << "MALLOC " << num << "\n";
+	count(type, tag, num);
+	GetAddressMap()[address] = num;
+}
 
+int uncount(const std::type_info& type, std::string tag, void* address)
+{
+	int num = GetAddressMap()[address];
+	std::cout << "FREE " << num << "\n";
+	uncount(type, tag, num);
+}
 
 std::fstream total_plot("logs/total.txt", std::fstream::out);
 

@@ -97,6 +97,19 @@
 #define B64_0 0
 #endif
 
+#include "BlobbyDebug.h"
+#include <string>
+
+struct BitstreamTag
+{
+	static std::string tag()
+	{
+		return "BitStream";
+	}
+};
+
+typedef CountingMalloc<unsigned char, BitstreamTag> BSA;
+
 using namespace RakNet;
 
 BitStream::BitStream()
@@ -126,7 +139,7 @@ BitStream::BitStream( int initialBytesToAllocate )
 	}
 	else
 	{
-		data = ( unsigned char* ) malloc( initialBytesToAllocate );
+		data = BSA::malloc( initialBytesToAllocate );
 		numberOfBitsAllocated = initialBytesToAllocate << 3;
 	}
 #ifdef _DEBUG
@@ -154,7 +167,7 @@ BitStream::BitStream( char* _data, unsigned int lengthInBytes, bool _copyData )
 			}
 			else
 			{
-				data = ( unsigned char* ) malloc( lengthInBytes );
+				data = BSA::malloc( lengthInBytes );
 			}
 #ifdef _DEBUG
 			assert( data );
@@ -180,7 +193,7 @@ void BitStream::SetNumberOfBitsAllocated( const unsigned int lengthInBits )
 BitStream::~BitStream()
 {
 	if ( copyData && numberOfBitsAllocated > BITSTREAM_STACK_ALLOCATION_SIZE << 3)
-		free( data );  // Use realloc and free so we are more efficient than delete and new for resizing
+		BSA::free( data );  // Use realloc and free so we are more efficient than delete and new for resizing
 }
 
 void BitStream::Reset( void )
@@ -1636,7 +1649,7 @@ void BitStream::AddBitsAndReallocate( const int numberOfBitsToWrite )
 		{
 			 if (amountToAllocate > BITSTREAM_STACK_ALLOCATION_SIZE)
 			 {
-				 data = ( unsigned char* ) malloc( amountToAllocate );
+				 data = BSA::malloc( amountToAllocate );
 
 				 // need to copy the stack data over to our new memory area too
 				 memcpy ((void *)data, (void *)stackData, BITS_TO_BYTES( numberOfBitsAllocated )); 
@@ -1644,7 +1657,7 @@ void BitStream::AddBitsAndReallocate( const int numberOfBitsToWrite )
 		}
 		else
 		{
-			data = ( unsigned char* ) realloc( data, amountToAllocate );
+			data = BSA::realloc( data, amountToAllocate );
 		}
 
 #ifdef _DEBUG
@@ -1765,7 +1778,7 @@ void BitStream::AssertCopyData( void )
 		
 		if ( numberOfBitsAllocated > 0 )
 		{
-			unsigned char * newdata = ( unsigned char* ) malloc( BITS_TO_BYTES( numberOfBitsAllocated ) );
+			unsigned char * newdata = BSA::malloc( BITS_TO_BYTES( numberOfBitsAllocated ) );
 #ifdef _DEBUG
 			
 			assert( data );
