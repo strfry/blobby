@@ -36,6 +36,9 @@
 
 #ifndef __LINKED_LIST_H
 #define __LINKED_LIST_H 
+
+#include "BlobbyDebug.h"
+
 /**
 * @brief Basic Data Structures (containers) 
 * 
@@ -167,12 +170,12 @@ namespace BasicDataStructures
 	*/
 	template <class CircularLinkedListType>
 
-	class CircularLinkedList
+	class CircularLinkedList: public ObjectCounter<CircularLinkedList<CircularLinkedListType> >
 	{
 
 	public:
 
-		struct node
+		struct node: public ObjectCounter<node>
 		{
 			CircularLinkedListType item;
 

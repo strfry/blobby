@@ -39,6 +39,7 @@
 #define __BINARY_SEARCH_TREE_H
 
 #include "QueueLinkedList.h"
+#include "BlobbyDebug.h"
 
 namespace BasicDataStructures
 {
@@ -105,7 +106,7 @@ namespace BasicDataStructures
 	
 	template <class BinarySearchTreeType>
 	
-	class BinarySearchTree
+	class BinarySearchTree : public ObjectCounter<BinarySearchTree<BinarySearchTreeType> >
 	{
 	
 	public:
@@ -113,7 +114,7 @@ namespace BasicDataStructures
 		 * Describe a Binary Search Tree Node 
 		 */
 		
-		struct node
+		struct node : public ObjectCounter<node>
 		{
 			/**
 			 * The element stored in this node 

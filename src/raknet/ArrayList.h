@@ -98,7 +98,7 @@ namespace BasicDataStructures
 	 */
 	
 	template <class list_type>
-	class List
+	class List : public ObjectCounter<List<list_type> >
 	{	
 	public:
 		/**

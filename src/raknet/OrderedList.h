@@ -29,13 +29,14 @@
 #define __ORDERED_LIST_H
 
 #include "ArrayList.h"
+#include "BlobbyDebug.h"
 
 namespace BasicDataStructures
 {
 	// comparisonFunction must take a key_type and a data_type and return <0, ==0, or >0
 	// If the data type has comparison operators already defined then you can just use defaultComparison
 	template <class data_type, class key_type>
-	class OrderedList
+	class OrderedList : public ObjectCounter<OrderedList<data_type, key_type> >
 	{
 	public:
 		static int defaultComparison(data_type a, key_type b) {if (b<a) return -1; if (a==b) return 0; return 1;}

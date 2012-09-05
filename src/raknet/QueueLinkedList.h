@@ -59,6 +59,7 @@
 #ifndef __QUEUE_LINKED_LIST_H
 #define __QUEUE_LINKED_LIST_H
 
+#include "BlobbyDebug.h"
 
 #include "LinkedList.h" 
 ////#include "MemoryManager.h"
@@ -67,7 +68,7 @@ namespace BasicDataStructures
 {
 	template <class QueueType>
 	
-	class QueueLinkedList
+	class QueueLinkedList : public ObjectCounter<QueueLinkedList<QueueType> >
 	{
 	
 	public:
