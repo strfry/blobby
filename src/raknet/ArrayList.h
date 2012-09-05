@@ -32,12 +32,27 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <assert.h>
-
-////#include "MemoryManager.h"
 
 #ifndef __LIST_H
 #define __LIST_H 
+
+#include <cassert>
+#include <string>
+#include <vector>
+#include "BlobbyDebug.h"
+////#include "MemoryManager.h"
+
+struct ArrayListTag
+{
+	static std::string tag()
+	{
+		return "ArrayList";
+	}
+};
+
+
+
+
 /**
  * Define the max unsigned int value available 
  * @todo Take this value from @em limits.h. 
@@ -178,7 +193,8 @@ namespace BasicDataStructures
 		/**
 		 * Store all values 
 		 */
-		list_type* array;
+		 typedef std::vector<list_type, CountingAllocator<list_type, ArrayListTag> > container_type;
+		 container_type array;
 		
 		/**
 		 * Number of element in the list 
@@ -195,15 +211,13 @@ namespace BasicDataStructures
 	List<list_type>::List()
 	{
 		allocation_size = 16;
-		array = new list_type[ allocation_size ];
+		array.resize(16);
 		list_size = 0;
 	}
 	
 	template <class list_type>
 	List<list_type>::~List()
 	{
-		if (allocation_size>0)
-			delete [] array;
 	}
 	
 	
@@ -220,7 +234,7 @@ namespace BasicDataStructures
 		
 		else
 		{
-			array = new list_type [ original_copy.list_size ];
+			array.resize( original_copy.list_size );
 			
 			for ( unsigned int counter = 0; counter < original_copy.list_size; ++counter )
 				array[ counter ] = original_copy.array[ counter ];
@@ -246,7 +260,7 @@ namespace BasicDataStructures
 			
 			else
 			{
-				array = new list_type [ original_copy.list_size ];
+				array.resize( original_copy.list_size );
 				
 				for ( unsigned int counter = 0; counter < original_copy.list_size; ++counter )
 					array[ counter ] = original_copy.array[ counter ];
@@ -278,21 +292,20 @@ namespace BasicDataStructures
 		if ( list_size == allocation_size )
 		{
 			// allocate twice the currently allocated memory
-			list_type * new_array;
+			container_type new_array;
 			
 			if ( allocation_size == 0 )
 				allocation_size = 16;
 			else
 				allocation_size *= 2;
 				
-			new_array = new list_type [ allocation_size ];
+			new_array.resize( allocation_size );
 			
 			// copy old array over
 			for ( unsigned int counter = 0; counter < list_size; ++counter )
 				new_array[ counter ] = array[ counter ];
 				
 			// set old array to point to the newly allocated and twice as large array
-			delete[] array;
 			
 			array = new_array;
 		}
@@ -317,21 +330,20 @@ namespace BasicDataStructures
 		if ( list_size == allocation_size )
 		{
 			// allocate twice the currently allocated memory
-			list_type * new_array;
+			container_type new_array;
 			
 			if ( allocation_size == 0 )
 				allocation_size = 16;
 			else
 				allocation_size *= 2;
 				
-			new_array = new list_type [ allocation_size ];
+			new_array.resize(allocation_size);
 			
 			// copy old array over
 			for ( unsigned int counter = 0; counter < list_size; ++counter )
 				new_array[ counter ] = array[ counter ];
 				
 			// set old array to point to the newly allocated and twice as large array
-			delete[] array;
 			
 			array = new_array;
 		}
@@ -355,10 +367,10 @@ namespace BasicDataStructures
 			if ( position >= allocation_size )
 			{
 				// Reallocate the list to size position and fill in blanks with filler
-				list_type * new_array;
+				container_type new_array;
 				allocation_size = position + 1;
 				
-				new_array = new list_type [ allocation_size ];
+				new_array.resize( allocation_size );
 				
 				// copy old array over
 				
@@ -366,8 +378,6 @@ namespace BasicDataStructures
 					new_array[ counter ] = array[ counter ];
 					
 				// set old array to point to the newly allocated array
-				delete[] array;
-				
 				array = new_array;
 			}
 			
@@ -446,9 +456,8 @@ namespace BasicDataStructures
 		
 		if (allocation_size>32)
 		{
-			delete [] array;
+			array.clear();
 			allocation_size = 0;
-			array = 0;
 		}
 		list_size = 0;
 	}
@@ -456,19 +465,16 @@ namespace BasicDataStructures
 	template <class list_type>
 	void List<list_type>::compress( void )
 	{
-		list_type * new_array;
+		container_type new_array;
 		
 		if ( allocation_size == 0 )
 			return ;
 			
-		new_array = new list_type [ allocation_size ];
+		new_array.resize(allocation_size);
 		
 		// copy old array over
 		for ( unsigned int counter = 0; counter < list_size; ++counter )
 			new_array[ counter ] = array[ counter ];
-			
-		// set old array to point to the newly allocated array
-		delete[] array;
 		
 		array = new_array;
 	}
