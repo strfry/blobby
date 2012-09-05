@@ -196,18 +196,12 @@ namespace BasicDataStructures
 		 typedef std::vector<list_type, CountingAllocator<list_type, ArrayListTag> > container_type;
 		 container_type array;
 		
-		/**
-		 * Number of element in the list 
-		 */
-		unsigned int list_size;
-		
 	};
 	
 	template <class list_type>
 	List<list_type>::List()
 	{
-		array.resize(16);
-		list_size = 0;
+		array.reserve(16);
 	}
 	
 	template <class list_type>
@@ -219,48 +213,13 @@ namespace BasicDataStructures
 	template <class list_type>
 	List<list_type>::List( const List& original_copy )
 	{
-		// Allocate memory for copy
-		
-		if ( original_copy.list_size == 0 )
-		{
-			list_size = 0;
-		}
-		
-		else
-		{
-			array.resize( original_copy.list_size );
-			
-			for ( unsigned int counter = 0; counter < original_copy.list_size; ++counter )
-				array[ counter ] = original_copy.array[ counter ];
-				
-			list_size = original_copy.list_size;
-		}
+		array = original_copy.array;
 	}
 	
 	template <class list_type>
 	List<list_type>& List<list_type>::operator= ( const List& original_copy )
 	{
-		if ( ( &original_copy ) != this )
-		{
-			clear();
-			
-			// Allocate memory for copy
-			
-			if ( original_copy.list_size == 0 )
-			{
-				list_size = 0;
-			}
-			
-			else
-			{
-				array.resize( original_copy.list_size );
-				
-				for ( unsigned int counter = 0; counter < original_copy.list_size; ++counter )
-					array[ counter ] = original_copy.array[ counter ];
-					
-				list_size = original_copy.list_size;
-			}
-		}
+		array = original_copy.array;
 		
 		return *this;
 	}
@@ -269,8 +228,7 @@ namespace BasicDataStructures
 	template <class list_type>
 	inline list_type& List<list_type>::operator[] ( unsigned int position )
 	{
-		assert ( position < list_size );
-		return array[ position ];
+		return array.at(position);
 	}
 	
 	template <class list_type>
@@ -280,111 +238,36 @@ namespace BasicDataStructures
 		assert( position <= list_size );
 #endif
 		
-		// Reallocate list if necessary
+		array.insert(array.begin() + position, input);
 		
-		if ( list_size == array.size() )
-		{
-			// allocate twice the currently allocated memory
-			container_type new_array;
-			
-			if ( array.size() == 0 )
-				new_array.resize (16);
-			else
-				new_array.resize( array.size() * 2 );
-			
-			// copy old array over
-			for ( unsigned int counter = 0; counter < list_size; ++counter )
-				new_array[ counter ] = array[ counter ];
-			
-			array = new_array;
-		}
-		
-		// Move the elements in the list to make room
-		for ( unsigned int counter = list_size; counter != position; counter-- )
-			array[ counter ] = array[ counter - 1 ];
-			
 		// Insert the new item at the correct spot
-		array[ position ] = input;
-		
-		++list_size;
-		
+		assert( array[ position ] == input );
 	}
 	
 	
 	template <class list_type>
 	void List<list_type>::insert( list_type input )
 	{
-		// Reallocate list if necessary
-		
-		if ( list_size == array.size() )
-		{
-			// allocate twice the currently allocated memory
-			container_type new_array;
-			
-			if ( array.size() == 0 )
-				new_array.resize( 16 );
-			else
-				new_array.resize( array.size() * 2 );
-			
-			// copy old array over
-			for ( unsigned int counter = 0; counter < list_size; ++counter )
-				new_array[ counter ] = array[ counter ];
-			
-			array = new_array;
-		}
-		
-		// Insert the new item at the correct spot
-		array[ list_size ] = input;
-		
-		++list_size;
+		array.push_back(input);
 	}
 	
 	template <class list_type>
 	inline void List<list_type>::replace( list_type input, list_type filler, unsigned int position )
 	{
-		if ( ( list_size > 0 ) && ( position < list_size ) )
+		if( position >= array.size() )
 		{
-			// Direct replacement
-			array[ position ] = input;
+			// reserve new memory
+			array.resize( position + 1, filler );
 		}
-		else
-		{
-			if ( position >= array.size() )
-			{
-				// Reallocate the list to size position and fill in blanks with filler
-				container_type new_array;
-				
-				new_array.resize( array.size() + 1 );
-				
-				// copy old array over
-				
-				for ( unsigned int counter = 0; counter < list_size; ++counter )
-					new_array[ counter ] = array[ counter ];
-				
-				array = new_array;
-			}
-			
-			// Fill in holes with filler
-			while ( list_size < position )
-				array[ list_size++ ] = filler;
-				
-			// Fill in the last element with the new item
-			array[ list_size++ ] = input;
-			
-#ifdef _DEBUG
-			
-			assert( list_size == position + 1 );
-			
-#endif
-			
-		}
+		
+		array[ position ] = input;
 	}
 	
 	template <class list_type>
 	inline void List<list_type>::replace( list_type input )
 	{
-		if ( list_size > 0 )
-			array[ list_size - 1 ] = input;
+		if ( !array.empty() )
+			array.back() = input;
 	}
 	
 	template <class list_type>
@@ -394,15 +277,7 @@ namespace BasicDataStructures
 		assert( position < list_size );
 #endif
 		
-		if ( position < list_size )
-		{
-			// Compress the array
-			
-			for ( unsigned int counter = position; counter < list_size - 1 ; ++counter )
-				array[ counter ] = array[ counter + 1 ];
-				
-			del();
-		}
+		array.erase( array.begin() + position );
 	}
 	
 	template <class list_type>
@@ -412,13 +287,13 @@ namespace BasicDataStructures
 #ifdef _DEBUG
 		assert(list_size>0);
 #endif
-		list_size--;
+		array.pop_back();
 	}
 	
 	template <class list_type>
 	unsigned int List<list_type>::getIndexOf( list_type input )
 	{
-		for ( unsigned int i = 0; i < list_size; ++i )
+		for ( unsigned int i = 0; i < array.size(); ++i )
 			if ( array[ i ] == input )
 				return i;
 				
@@ -428,37 +303,21 @@ namespace BasicDataStructures
 	template <class list_type>
 	inline const unsigned int List<list_type>::size( void ) const
 	{
-		return list_size;
+		return array.size();
 	}
 	
 	template <class list_type>
 	void List<list_type>::clear( void )
 	{
-		if ( array.size() == 0 )
-			return;
-		
-		if (array.size() > 32)
-		{
-			array.clear();
-		}
-		list_size = 0;
+		array.clear();
 	}
 	
 	template <class list_type>
 	void List<list_type>::compress( void )
 	{
-		container_type new_array;
+		container_type tmp = array;
 		
-		if ( array.size() == 0 )
-			return ;
-			
-		new_array.resize( array.size() );
-		
-		// copy old array over
-		for ( unsigned int counter = 0; counter < list_size; ++counter )
-			new_array[ counter ] = array[ counter ];
-		
-		array = new_array;
+		tmp.swap(array);
 	}
 	
 } // End namespace
