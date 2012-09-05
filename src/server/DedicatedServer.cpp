@@ -46,6 +46,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "RakNetPacket.h"
 #include "NetworkPlayer.h"
 #include "FileSystem.h"
+#include "PacketLogger.h"
 #include "BlobbyDebug.h"
 
 // platform specific
@@ -163,7 +164,25 @@ int main(int argc, char** argv)
 	syslog(LOG_NOTICE, "Blobby Volley 2 dedicated server version %i.%i started", BLOBBY_VERSION_MAJOR, BLOBBY_VERSION_MINOR);
 
 	packet_ptr packet;
+	PacketLogger plogger;
+	
+	plogger.setHumanReadableType(ID_NEW_INCOMING_CONNECTION, "ID_NEW_INCOMING_CONNECTION");
+	plogger.setHumanReadableType(ID_CONNECTION_LOST, 		 "ID_CONNECTION_LOST");
+	plogger.setHumanReadableType(ID_DISCONNECTION_NOTIFICATION, "ID_DISCONNECTION_NOTIFICATION");
+	plogger.setHumanReadableType(ID_INPUT_UPDATE, 			"ID_INPUT_UPDATE");
+	plogger.setHumanReadableType(ID_PAUSE, 					"ID_PAUSE");
+	plogger.setHumanReadableType(ID_UNPAUSE, 				"ID_UNPAUSE");
+	plogger.setHumanReadableType(ID_CHAT_MESSAGE, 			"ID_CHAT_MESSAGE");
+	plogger.setHumanReadableType(ID_REPLAY, 				"ID_REPLAY");
+	plogger.setHumanReadableType(ID_ENTER_GAME, 			"ID_ENTER_GAME");
+	plogger.setHumanReadableType(ID_PONG, 					"ID_PONG");
+	plogger.setHumanReadableType(ID_BLOBBY_SERVER_PRESENT, 	"ID_BLOBBY_SERVER_PRESENT");
+	plogger.setHumanReadableType(ID_RECEIVED_STATIC_DATA, 	"ID_RECEIVED_STATIC_DATA");
+	//plogger.setHumanReadableType("ID_PONG", ID_PONG);
+	//plogger.setHumanReadableType("ID_PONG", ID_PONG);
 
+//	std::fstream packet_log("logs/packets.txt", std::fstream::out);
+//	packet_log << "#time\torigen\tid\tcontent\n";
 	while (1)
 	{
 		
@@ -174,6 +193,9 @@ int main(int argc, char** argv)
 		while ((packet = receivePacket(&server)))
 		{
 			
+			// alle packete mitloggen
+			//packet_log << SWLS_RunningTime << "\t" << packet->playerId.binaryAddress << ":" << packet->playerId.port << "\t" << (int)packet->data[0] << "\t" << packet->data << "\n";
+			plogger << packet.get();
 			SWLS_PacketCount++;
 			
 			switch(packet->data[0])
@@ -245,7 +267,7 @@ int main(int argc, char** argv)
 									<< "\n";
 						// only quit in debug mode as this is not a problem endangering the stability
 						// of the running server, but a situation that should never occur.
-						return 3;
+						//return 3;
 						#endif
 					}
 						
@@ -435,13 +457,6 @@ int main(int argc, char** argv)
 		std::cout << "AN UNKNOWN EXCEPTION OCCURED\n";
 	}
 	
-	
-}
-
-// -----------------------------------------------------------------------------------------
-
-void createNewGame()
-{
 	
 }
 
