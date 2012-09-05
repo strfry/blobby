@@ -32,13 +32,14 @@
 #define __SINGLE_PRODUCER_CONSUMER_H
 
 #include <assert.h>
+#include "BlobbyDebug.h"
 
 static const int MINIMUM_LIST_SIZE=8;
 
 namespace BasicDataStructures
 {
 	template <class SingleProducerConsumerType>
-	class SingleProducerConsumer
+	class SingleProducerConsumer : public ObjectCounter<SingleProducerConsumer<SingleProducerConsumerType> >
 	{
 	public:
 		SingleProducerConsumer();

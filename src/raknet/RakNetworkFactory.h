@@ -32,6 +32,8 @@
 #ifndef __RAK_NETWORK_FACTORY_H
 #define __RAK_NETWORK_FACTORY_H
 
+#include "BlobbyDebug.h"
+
 class RakClientInterface;
 
 class RakServerInterface;
@@ -60,7 +62,8 @@ class RAK_DLL_EXPORT RakNetworkFactory
 */
 
 class RakNetworkFactory
-#endif
+#endif 
+: public ObjectCounter<RakNetworkFactory>
 {
 
 public:

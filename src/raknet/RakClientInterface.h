@@ -37,6 +37,8 @@
 #include "RakPeerInterface.h"
 #include "BitStream.h"
 #include "RakNetStatistics.h" 
+#include "BlobbyDebug.h"
+
 /**
 * @brief Define user point of vue of a RakClient communication end point.
 * 
@@ -46,7 +48,7 @@
 * RakClientInterface.
 */
 
-class RakClientInterface
+class RakClientInterface : public ObjectCounter<RakClientInterface>
 {
 
 public:

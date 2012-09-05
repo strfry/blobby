@@ -36,6 +36,7 @@
 #include "RakPeerInterface.h"
 #include "BitStream.h"
 #include "RakNetStatistics.h" 
+#include "BlobbyDebug.h"
 /**
  * @brief Visible Interface of RakServer
  * 
@@ -43,7 +44,7 @@
  * to use server interface.
  */
 
-class RakServerInterface
+class RakServerInterface : public ObjectCounter<RakServerInterface>
 {
 
 public:

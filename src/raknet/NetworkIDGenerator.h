@@ -36,13 +36,14 @@
 
 #include "BinarySearchTree.h"
 #include "NetworkTypes.h"
+#include "BlobbyDebug.h"
 
 class NetworkIDGenerator;
 /**
  * @brief  Define a node of an Object Tree. 
  * Used internally to contain objects in the tree.  Ignore this
  */
-struct ObjectIDNode
+struct ObjectIDNode : public ObjectCounter<ObjectIDNode>
 {
 	/**
 	 * id 
@@ -91,7 +92,7 @@ struct ObjectIDNode
  * subclassing this class.
  */
 
-class NetworkIDGenerator
+class NetworkIDGenerator: public ObjectCounter<NetworkIDGenerator>
 {
 public:
 	/**

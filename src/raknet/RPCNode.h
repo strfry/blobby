@@ -35,6 +35,8 @@
 #ifndef __RPC_NODE
 #define __RPC_NODE
 
+#include "BlobbyDebug.h"
+
 class RakPeerInterface;
 
 /**
@@ -56,7 +58,7 @@ class RakPeerInterface;
  * An RPC Node corresponds to one register function. 
  */
 
-struct RPCNode
+struct RPCNode : public ObjectCounter<RPCNode>
 {
 	/**
 	 * A unique identifier 

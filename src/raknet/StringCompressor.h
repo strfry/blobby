@@ -33,6 +33,7 @@
 #define __STRING_COMPRESSOR_H
 
 #include "BitStream.h"
+#include "BlobbyDebug.h"
 
 class HuffmanEncodingTree;
 
@@ -43,7 +44,7 @@ class HuffmanEncodingTree;
  * for english language. You should generate your first frequencies
  * table for the language in use in your application. 
  */
-class StringCompressor
+class StringCompressor : public ObjectCounter<StringCompressor>
 {
 
 public:

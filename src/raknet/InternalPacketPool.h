@@ -34,6 +34,7 @@
 //#include "SimpleMutex.h"
 #include "RakNetQueue.h"
 #include "InternalPacket.h"
+#include "BlobbyDebug.h"
 
 /**
  * @brief Manage Internal Packet using pools. 
@@ -44,7 +45,7 @@
  * @note Implement Singleton Pattern 
  * 
  */
-class InternalPacketPool
+class InternalPacketPool : public ObjectCounter<InternalPacketPool>
 {
 public:
 	/**

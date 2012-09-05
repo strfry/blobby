@@ -33,13 +33,14 @@
 #define __RAK_NET_STATISTICS_H
 
 #include "PacketPriority.h" 
+#include "BlobbyDebug.h"
 /**
  * @brief Network Statisics Usage 
  * 
  * Store Statistics information related to network usage 
  */
 
-struct RakNetStatisticsStruct
+struct RakNetStatisticsStruct : public ObjectCounter<RakNetStatisticsStruct>
 {
 	//!  Number of Messages in the send Buffer (high, medium, low priority)
 	unsigned messageSendBuffer[ NUMBER_OF_PRIORITIES ];

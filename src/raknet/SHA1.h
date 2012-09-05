@@ -26,6 +26,8 @@
 #include <memory.h> // Needed for memset and memcpy
 #include <string.h> // Needed for strcat and strcpy
 #include "Types.h" 
+#include "BlobbyDebug.h"
+
 /**
 * Size of the read buffer when computing SHA-1 sum on a file 
 */
@@ -39,7 +41,7 @@
 * Computes SHA-1 hashing class 
 */
 
-class CSHA1
+class CSHA1 : public ObjectCounter<CSHA1>
 {
 
 public:

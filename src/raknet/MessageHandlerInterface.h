@@ -35,11 +35,12 @@
 class RakPeerInterface;
 struct Packet;
 #include "NetworkTypes.h"
+#include "BlobbyDebug.h"
 
 // MessageHandlers should derive from MessageHandlerInterface and be attached to RakPeer using the function AttachMessageHandler
 // On a user call to Receive, OnReceive is called for every MessageHandlerInterface, which can then take action based on the packet
 // passed to it.  This is used to transparently add game-independent functional modules, similar to browser plugins
-class MessageHandlerInterface
+class MessageHandlerInterface : public ObjectCounter<MessageHandlerInterface>
 {
 public:
 	/**

@@ -34,6 +34,7 @@
 #include "SimpleMutex.h"
 #include "RakNetQueue.h"
 #include "NetworkTypes.h"
+#include "BlobbyDebug.h"
 
 /**
 * @brief Manage memory for packet. 
@@ -46,7 +47,7 @@
 * 
 */
 
-class PacketPool
+class PacketPool : public ObjectCounter<PacketPool>
 {
 
 public:

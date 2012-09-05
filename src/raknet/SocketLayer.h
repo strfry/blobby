@@ -45,6 +45,8 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h> 
+#include "BlobbyDebug.h"
+
 /**
 * typename for communication endpoint
 */
@@ -66,7 +68,7 @@ class RakPeer;
  * the SocketLayer provide platform independent Socket implementation
  */
 
-class SocketLayer
+class SocketLayer : public ObjectCounter<SocketLayer>
 {
 
 public:

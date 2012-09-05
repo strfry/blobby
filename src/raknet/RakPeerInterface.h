@@ -36,6 +36,7 @@
 #include "NetworkTypes.h"
 #include "BitStream.h"
 #include "RakNetStatistics.h"
+#include "BlobbyDebug.h"
 
 /**
  * @brief Define the user view of a RakPeer instance.
@@ -46,7 +47,7 @@
 
 class MessageHandlerInterface;
 
-class RakPeerInterface
+class RakPeerInterface  : public ObjectCounter<RakPeerInterface>
 {
 
 public:

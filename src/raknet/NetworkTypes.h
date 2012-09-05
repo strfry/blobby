@@ -34,6 +34,7 @@
 
 // Needed for Serialize/Deserialize functions
 #include "BitStream.h"
+#include "BlobbyDebug.h"
 
 /**
 * Typename for Network Object Identifier 
@@ -155,8 +156,6 @@ struct PlayerID
 //	unsigned int priority;
 //};
 
-#include "../BlobbyDebug.h"
-
 /**
 * @brief Network Packet 
 * 
@@ -196,7 +195,7 @@ struct Packet : public ObjectCounter<Packet>
 class RakPeerInterface;
 
 // Sorry for changing the RPC parameters to a struct but this way I can change it in the future without making people change their code anymore.
-struct RPCParameters
+struct RPCParameters : public ObjectCounter<PlayerID>
 {
 	char *input;
 	unsigned int numberOfBitsOfData;

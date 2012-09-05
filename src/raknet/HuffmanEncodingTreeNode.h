@@ -31,13 +31,15 @@
 #ifndef __HUFFMAN_ENCODING_TREE_NODE
 #define __HUFFMAN_ENCODING_TREE_NODE
 
+#include "BlobbyDebug.h"
+
 /**
  * @todo BasicDataStructure namespace maybe 
  * This structure define a node eof an Huffman Tree 
  * 
  */
 
-struct HuffmanEncodingTreeNode
+struct HuffmanEncodingTreeNode : public ObjectCounter<HuffmanEncodingTreeNode>
 {
 	/**
 	 * Node value 

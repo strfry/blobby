@@ -73,6 +73,8 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+#include "BlobbyDebug.h"
+
 /**
 * @brief Compatibility and Fundamental Tools and Types.  This
 * namespace contains compatibility tools and types and also
@@ -433,7 +435,7 @@ namespace cat
 
 	template <class T>
 
-	class rect
+	class rect : public ObjectCounter<rect<T> >
 	{
 
 	public:
@@ -448,7 +450,7 @@ namespace cat
 
 	template <class T>
 
-	class AutoArray
+	class AutoArray : public ObjectCounter<AutoArray<T> >
 	{
 		T *ptr;
 
@@ -471,7 +473,7 @@ namespace cat
 
 	template <class T>
 
-	class Automatic
+	class Automatic : public ObjectCounter<Automatic<T> >
 	{
 		T *ptr;
 
@@ -494,7 +496,7 @@ namespace cat
 
 	// Derive from NoCopies to disallow copies of derived class
 
-	class NoCopies
+	class NoCopies : public ObjectCounter<NoCopies>
 	{
 
 	protected:

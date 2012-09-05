@@ -33,6 +33,8 @@
 #ifndef __MULTIPLAYER_H
 #define __MULTIPLAYER_H
 
+#include "BlobbyDebug.h"
+
 struct Packet;
 #define _DO_PRINTF
 /**
@@ -44,7 +46,7 @@ struct Packet;
  */
 
 template <class InterfaceType>
-class Multiplayer
+class Multiplayer : public ObjectCounter<Multiplayer<InterfaceType> >
 {
 public:
 	/**

@@ -33,12 +33,14 @@
 #ifndef __CHECKSUM_H
 #define __CHECKSUM_H
 
+#include "BlobbyDebug.h"
+
 /**
  * This class provide checksuming service. 
  * 
  */
 
-class CheckSum
+class CheckSum : public ObjectCounter<CheckSum>
 {
 
 public:

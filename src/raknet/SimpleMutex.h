@@ -31,6 +31,8 @@
 #ifndef __SIMPLE_MUTEX_H
 #define __SIMPLE_MUTEX_H
 
+#include "BlobbyDebug.h"
+
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -38,7 +40,7 @@
 #include <sys/types.h>
 #endif
 
-class SimpleMutex
+class SimpleMutex : public ObjectCounter<SimpleMutex>
 {
 public:
 	SimpleMutex();

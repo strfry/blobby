@@ -33,13 +33,14 @@
 #include "SimpleMutex.h"
 #include "ClientContextStruct.h"
 #include "RakNetQueue.h"
+#include "BlobbyDebug.h"
 
 /**
  * @internal 
  * @todo Document this class  
  */
 
-class ExtendedOverlappedPool
+class ExtendedOverlappedPool : public ObjectCounter<ExtendedOverlappedPool>
 {
 
 public:

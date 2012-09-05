@@ -39,16 +39,18 @@
 #include "NetworkTypes.h"
 #include "MTUSize.h"
 
+#include "BlobbyDebug.h"
+
 class RakPeer;
 
 #ifdef __USE_IO_COMPLETION_PORTS
 
-struct ClientContextStruct
+struct ClientContextStruct : public ObjectCounter<ClientContextStruct>
 {
 	HANDLE handle; // The socket, also used as a file handle
 };
 
-struct ExtendedOverlappedStruct
+struct ExtendedOverlappedStruct : public ObjectCounter<ExtendedOverlappedStruct>
 {
 	OVERLAPPED overlapped;
 	char data[ MAXIMUM_MTU_SIZE ]; // Used to hold data to send

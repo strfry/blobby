@@ -33,13 +33,14 @@
 #define __DATA_BLOCK_ENCRYPTOR_H
 
 #include "rijndael.h"
+#include "BlobbyDebug.h"
 
 /**
  * Encrypt and Decrypt block of data 
  * 
  */
 
-class DataBlockEncryptor
+class DataBlockEncryptor : public ObjectCounter<DataBlockEncryptor>
 {
 
 public:

@@ -36,6 +36,7 @@
 #include "ArrayList.h"
 #include "NetworkTypes.h"
 #include "EncodeClassName.h"
+#include "BlobbyDebug.h"
 
 
 class DistributedNetworkObject;
@@ -56,7 +57,7 @@ class RakClientInterface;
  * on peer remote ditributed object.
  */
 
-class DistributedNetworkObjectManager
+class DistributedNetworkObjectManager : public ObjectCounter<DistributedNetworkObjectManager>
 {
 
 public:

@@ -63,11 +63,12 @@
 
 // Template classes have to have all the code in the header file
 #include <assert.h>
+#include "BlobbyDebug.h"
 
 namespace BasicDataStructures
 {
 	template <class queue_type>
-	class Queue
+	class Queue: public ObjectCounter<Queue<queue_type> >
 	{
 
 	public:

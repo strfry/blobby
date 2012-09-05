@@ -32,6 +32,7 @@
 #define __INTERNAL_PACKET_H
 
 #include "PacketPriority.h"
+#include "BlobbyDebug.h"
 #ifdef _DEBUG
 #include "NetworkTypes.h"
 #endif
@@ -54,7 +55,7 @@ typedef unsigned char OrderingIndexType;
 * management only.
 */
 
-struct InternalPacket
+struct InternalPacket : public ObjectCounter<InternalPacket>
 {
 	/**
 	* True if this is an acknowledgment packet

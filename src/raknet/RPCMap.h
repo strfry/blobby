@@ -35,6 +35,7 @@
 #include "RPCNode.h"
 #include "ArrayList.h"
 #include "NetworkTypes.h"
+#include "BlobbyDebug.h"
 
 /**
  * @ingroup RAKNET_RPC 
@@ -45,7 +46,7 @@
  * 
  * An RPC Node corresponds to one register function. 
  */
-struct  RPCMap
+struct  RPCMap : public ObjectCounter<RPCMap>
 {
 public:
 	RPCMap();

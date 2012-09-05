@@ -37,9 +37,10 @@ class RakPeerInterface;
 #include "ArrayList.h"
 #include "MessageHandlerInterface.h"
 #include "BitStream.h"
+#include "BlobbyDebug.h"
 
 // Stores data for each peer in the mesh
-struct FCM_RemotePeer
+struct FCM_RemotePeer : public ObjectCounter<FCM_RemotePeer>
 {
 	PlayerID playerId;
 	enum FCM_RemotePeerState

@@ -33,6 +33,7 @@
 #ifndef __DISTRIBUTED_CLASS_STUB_H
 #define __DISTRIBUTED_CLASS_STUB_H
 #include "EncodeClassName.h"
+#include "BlobbyDebug.h"
 
 class DistributedNetworkObject;
 
@@ -44,7 +45,7 @@ class DistributedNetworkObject;
  * 
  */
 
-class DistributedNetworkObjectBaseStub
+class DistributedNetworkObjectBaseStub : public ObjectCounter<DistributedNetworkObjectBaseStub>
 {
 
 public:

@@ -31,13 +31,15 @@
 #ifndef __HUFFMAN_ENCODING_TREE_FACTORY
 #define __HUFFMAN_ENCODING_TREE_FACTORY
 
+#include "BlobbyDebug.h"
+
 class HuffmanEncodingTree;
 
 /**
  * This generates a special case of the huffman encoding tree with 8 bit keys
  */
 
-class HuffmanEncodingTreeFactory
+class HuffmanEncodingTreeFactory : public ObjectCounter<HuffmanEncodingTreeFactory>
 {
 
 public:

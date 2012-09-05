@@ -38,6 +38,7 @@
 #define __LINKED_LIST_H 
 
 #include "BlobbyDebug.h"
+#include <list>
 
 /**
 * @brief Basic Data Structures (containers) 

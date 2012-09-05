@@ -39,6 +39,7 @@
 #include "SingleProducerConsumer.h"
 #include "RPCMap.h"
 #include "PacketPool.h"
+#include "BlobbyDebug.h"
 
 class HuffmanEncodingTree;
 class MessageHandlerInterface;
@@ -727,7 +728,7 @@ public:
 	* This structure agregate the ping time and the clock differential. 
 	* both are used to synchronized time between peers 
 	*/
-	struct PingAndClockDifferential
+	struct PingAndClockDifferential : public ObjectCounter<PingAndClockDifferential>
 	{
 		/**
 		* ping time 
@@ -745,7 +746,7 @@ public:
 	* RakPeer need to maintain a set of information concerning all remote peer 
 	* This is the goal of this structure. 
 	*/
-	struct RemoteSystemStruct
+	struct RemoteSystemStruct : public ObjectCounter<RemoteSystemStruct>
 	{
 		PlayerID playerId;  /**< The remote system associated with this reliability layer*/
 		PlayerID myExternalPlayerId;  /**< Your own IP, as reported by the remote system*/
@@ -918,7 +919,7 @@ protected:
 	* The unique primary identifier is the index into the automaticVariableSynchronizationList
 	* The unique secondary identifier (UNASSIGNED_OBJECT_ID for none) is in an unsorted list of memory blocks
 	*/
-	struct MemoryBlock
+	struct MemoryBlock : public ObjectCounter<MemoryBlock>
 	{
 		char *original, *copy;
 		unsigned short size;
@@ -927,13 +928,13 @@ protected:
 		bool ( *synchronizationRules ) ( char*, char* );
 	};
 
-	struct BanStruct
+	struct BanStruct : public ObjectCounter<BanStruct>
 	{
 		char *IP;
 		unsigned int timeout; // 0 for none
 	};
 
-	struct RequestedConnectionStruct
+	struct RequestedConnectionStruct : public ObjectCounter<BanStruct>
 	{
 		PlayerID playerId;
 		unsigned int nextRequestTime;
@@ -962,7 +963,7 @@ protected:
 	bool RunUpdateCycle( void );
 	// void RunMutexedUpdateCycle(void);
 
-	struct BufferedCommandStruct
+	struct BufferedCommandStruct : public ObjectCounter<BufferedCommandStruct>
 	{
 		char *data;
 		int numberOfBitsToSend;

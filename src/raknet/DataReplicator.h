@@ -40,6 +40,7 @@
 #include "NetworkIDGenerator.h"
 #include "BitStream.h"
 #include "ArrayList.h"
+#include "BlobbyDebug.h"
 
 class RakPeerInterface;
 class SynchronizedMemory;
@@ -54,7 +55,7 @@ typedef unsigned char strToIndexMapType;
 // The memory synchronizer takes a string identifier for a block of memory and a pointer to that memory.
 // The memory can either be an unknown type, in which case memcmp and memcpy is used, or it can be a pointer to a class that
 // implements SynchronizedMemory, in which case the implementation does comparisons in ShouldSendUpdate and copying in Serialize, Deserialize, and CopyTo
-class DataReplicator : public MessageHandlerInterface
+class DataReplicator : public MessageHandlerInterface, public ObjectCounter<DataReplicator>
 {
 public:
 	DataReplicator();
@@ -119,7 +120,7 @@ public:
 
 
 	// Used as a container for all the shared synchronized data - both memory and objects
-	struct BaseData
+	struct BaseData : public ObjectCounter<BaseData>
 	{
 		// Store all the parameters from the synchronize call
 		PacketPriority priority;
@@ -169,7 +170,7 @@ public:
 
 	// Base class for per-remote system data.  Used to track what we last sent to each system so we can have system contextual sends
 	// rather than always broadcasting.
-	struct ExtendedData
+	struct ExtendedData : public ObjectCounter<ExtendedData>
 	{
 		// Extended data only holds the specific per-system data, and not the base object we are sending.
 		// baseData points to the base object so we can do lookups.
@@ -197,7 +198,7 @@ public:
 		bool objectInScope;
 	};
 
-	struct ParticipantStruct
+	struct ParticipantStruct : public ObjectCounter<ParticipantStruct>
 	{
 		ParticipantStruct();
 		~ParticipantStruct();
@@ -314,7 +315,7 @@ enum SynchronizedMemoryType
 // Data that need to be synchronized more efficiently can derive from and implement SynchronizedMemory
 // I suggest you group a set of data elements into a class that implements SynchronizedMemory and selectively write those elements
 // using a bitstream since every individual synch incurs a two byte overhead.
-class SynchronizedMemory
+class SynchronizedMemory : public ObjectCounter<SynchronizedMemory>
 {
 public:
 	// Serialize this memory into a bitstream.  lastSendValue and lastSendTime are provided in case you need it.
@@ -388,7 +389,7 @@ enum ObjectReplicationPushResult
 
 #include <string.h>
 
-class ObjectReplicationHandler
+class ObjectReplicationHandler : public ObjectCounter<ObjectReplicationHandler>
 {
 public:
 	// Call RegisterHandler(this); in your derived constructor
