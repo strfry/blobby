@@ -27,16 +27,17 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include "../blobnet/Logger.hpp"
+
 #include "SocketLayer.h"
-#include <assert.h>
+#include <cassert>
 #include "MTUSize.h"
 
 #ifdef _WIN32
 #include <process.h>
 typedef int socklen_t;
 #else
-#include <string.h> // memcpy
-#include <unistd.h>
+#include <cstring> // memcpy
 #include <fcntl.h>
 #endif
 
@@ -46,9 +47,7 @@ typedef int socklen_t;
 #endif
 
 bool SocketLayer::socketLayerStarted = false;
-#ifdef _WIN32
-WSADATA SocketLayer::winsockInfo;
-#endif
+
 SocketLayer SocketLayer::I;
 
 #ifdef _WIN32
@@ -64,50 +63,63 @@ extern void ProcessPortUnreachable( unsigned int binaryAddress, unsigned short p
 #endif
 
 #ifdef _DEBUG
-#include <stdio.h>
+#include <cstdio>
 #endif
+
+/*
+#ifdef _DEBUG
+void Error(const char* message)
+{
+#ifdef WIN32
+	DWORD dwIOError = GetLastError();
+	LPVOID messageBuffer;
+	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL, dwIOError, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT),  // Default language
+		( LPTSTR ) &messageBuffer, 0, NULL);
+	printf("%s:Error code - %d\n%s", message, dwIOError, messageBuffer);
+	LocalFree(messageBuffer);
+#else
+	printf("%s", message);
+#endif
+}
+#endif
+*/
 
 SocketLayer::SocketLayer()
 {
-	if ( socketLayerStarted == false )
+	// Check if the socketlayer is already started
+	if (socketLayerStarted == false)
 	{
 #ifdef _WIN32
+		WSADATA winsockInfo;
 
-		if ( WSAStartup( MAKEWORD( 2, 2 ), &winsockInfo ) != 0 )
+		// Initiate use of the Winsock DLL (Up to Verion 2.2) 
+		if (WSAStartup(MAKEWORD(2, 2), &winsockInfo ) != 0)
 		{
-#if defined(_WIN32) && defined(_DEBUG)
-			DWORD dwIOError = GetLastError();
-			LPVOID messageBuffer;
-			FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-				NULL, dwIOError, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
-				( LPTSTR ) & messageBuffer, 0, NULL );
-			// something has gone wrong here...
-			printf( "WSAStartup failed:Error code - %d\n%s", dwIOError, messageBuffer );
-			//Free the buffer.
-			LocalFree( messageBuffer );
-#endif
+			LOG("SocketLayer", "WSAStartup failed")
 		}
-
 #endif
+		// The socketlayer started
 		socketLayerStarted = true;
 	}
 }
 
 SocketLayer::~SocketLayer()
 {
-	if ( socketLayerStarted == true )
+	if (socketLayerStarted == true)
 	{
 #ifdef _WIN32
+		// Terminate use of the Winsock DLL
 		WSACleanup();
 #endif
-
+		// The socketlayer stopped
 		socketLayerStarted = false;
 	}
 }
 
-SOCKET SocketLayer::Connect( SOCKET writeSocket, unsigned int binaryAddress, unsigned short port )
+SOCKET SocketLayer::Connect(SOCKET writeSocket, unsigned int binaryAddress, unsigned short port)
 {
-	assert( writeSocket != INVALID_SOCKET );
+	assert(writeSocket != INVALID_SOCKET);
 	sockaddr_in connectSocketAddress;
 
 	connectSocketAddress.sin_family = AF_INET;
@@ -116,17 +128,7 @@ SOCKET SocketLayer::Connect( SOCKET writeSocket, unsigned int binaryAddress, uns
 
 	if ( connect( writeSocket, ( struct sockaddr * ) & connectSocketAddress, sizeof( struct sockaddr ) ) != 0 )
 	{
-#if defined(_WIN32) && defined(_DEBUG)
-		DWORD dwIOError = GetLastError();
-		LPVOID messageBuffer;
-		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL, dwIOError, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
-			( LPTSTR ) &messageBuffer, 0, NULL );
-		// something has gone wrong here...
-		printf( "WSAConnect failed:Error code - %d\n%s", dwIOError, messageBuffer );
-		//Free the buffer.
-		LocalFree( messageBuffer );
-#endif
+		LOG("SocketLayer", "WSAConnect failed")
 	}
 
 	return writeSocket;
@@ -150,17 +152,7 @@ SOCKET SocketLayer::CreateBoundSocket( unsigned short port, bool blockingSocket,
 
 	if ( listenSocket == INVALID_SOCKET )
 	{
-#if defined(_WIN32) && defined(_DEBUG)
-		DWORD dwIOError = GetLastError();
-		LPVOID messageBuffer;
-		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL, dwIOError, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
-			( LPTSTR ) & messageBuffer, 0, NULL );
-		// something has gone wrong here...
-		printf( "socket(...) failed:Error code - %d\n%s", dwIOError, messageBuffer );
-		//Free the buffer.
-		LocalFree( messageBuffer );
-#endif
+		LOG("SocketLayer", "socket(...) failed")
 
 		return INVALID_SOCKET;
 	}
@@ -169,18 +161,7 @@ SOCKET SocketLayer::CreateBoundSocket( unsigned short port, bool blockingSocket,
 
 	if ( setsockopt( listenSocket, SOL_SOCKET, SO_REUSEADDR, ( char * ) & sock_opt, sizeof ( sock_opt ) ) == -1 )
 	{
-#if defined(_WIN32) && defined(_DEBUG)
-		DWORD dwIOError = GetLastError();
-		LPVOID messageBuffer;
-		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL, dwIOError, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
-			( LPTSTR ) & messageBuffer, 0, NULL );
-		// something has gone wrong here...
-		printf( "setsockopt(SO_REUSEADDR) failed:Error code - %d\n%s", dwIOError, messageBuffer );
-		//Free the buffer.
-		LocalFree( messageBuffer );
-#endif
-
+		LOG("SocketLayer", "setsockopt(SO_REUSEADDR) failed")
 	}
 
 	//Set non-blocking
@@ -205,17 +186,7 @@ SOCKET SocketLayer::CreateBoundSocket( unsigned short port, bool blockingSocket,
 	// Set broadcast capable
 	if ( setsockopt( listenSocket, SOL_SOCKET, SO_BROADCAST, ( char * ) & sock_opt, sizeof( sock_opt ) ) == -1 )
 	{
-#if defined(_WIN32) && defined(_DEBUG)
-		DWORD dwIOError = GetLastError();
-		LPVOID messageBuffer;
-		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL, dwIOError, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
-			( LPTSTR ) & messageBuffer, 0, NULL );
-		// something has gone wrong here...
-		printf( "setsockopt(SO_BROADCAST) failed:Error code - %d\n%s", dwIOError, messageBuffer );
-		//Free the buffer.
-		LocalFree( messageBuffer );
-#endif
+		LOG("SocketLayer", "setsockopt(SO_BROADCAST) failed")
 
 	}
 
@@ -239,17 +210,7 @@ SOCKET SocketLayer::CreateBoundSocket( unsigned short port, bool blockingSocket,
 
 	if ( ret == SOCKET_ERROR )
 	{
-#if defined(_WIN32) && defined(_DEBUG)
-		DWORD dwIOError = GetLastError();
-		LPVOID messageBuffer;
-		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL, dwIOError, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
-			( LPTSTR ) & messageBuffer, 0, NULL );
-		// something has gone wrong here...
-		printf( "bind(...) failed:Error code - %d\n%s", dwIOError, messageBuffer );
-		//Free the buffer.
-		LocalFree( messageBuffer );
-#endif
+		LOG("SocketLayer", "bind(...) failed")
 
 		return INVALID_SOCKET;
 	}
@@ -362,8 +323,8 @@ int SocketLayer::RecvFrom( SOCKET s, RakPeer *rakPeer, int *errorCode )
 
 	if ( len == 0 )
 	{
+		LOG("SocketLayer", "Recvfrom returned 0 on a connectionless blocking call\non port %i. This is a bug with Zone Alarm. Please turn off Zone Alarm.\n" << ntohs( sa.sin_port ) )
 #ifdef _DEBUG
-		printf( "Error: recvfrom returned 0 on a connectionless blocking call\non port %i.  This is a bug with Zone Alarm.  Please turn off Zone Alarm.\n", ntohs( sa.sin_port ) );
 		assert( 0 );
 #endif
 
@@ -395,30 +356,16 @@ int SocketLayer::RecvFrom( SOCKET s, RakPeer *rakPeer, int *errorCode )
 		}
 		if ( dwIOError == WSAECONNRESET )
 		{
-#if defined(_DEBUG)
-//			printf( "A previous send operation resulted in an ICMP Port Unreachable message.\n" );
-#endif
-
 			ProcessPortUnreachable(sa.sin_addr.s_addr, portnum, rakPeer);
 			// *errorCode = dwIOError;
 			return SOCKET_ERROR;
 		}
 		else
 		{
-#if defined(_DEBUG)
 			if ( dwIOError != WSAEINTR )
 			{
-				LPVOID messageBuffer;
-				FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-					NULL, dwIOError, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
-					( LPTSTR ) & messageBuffer, 0, NULL );
-				// something has gone wrong here...
-				printf( "recvfrom failed:Error code - %d\n%s", dwIOError, messageBuffer );
-
-				//Free the buffer.
-				LocalFree( messageBuffer );
+				LOG("SocketLayer", "recvfrom failed")
 			}
-#endif
 		}
 #endif
 	}
@@ -457,33 +404,18 @@ int SocketLayer::SendTo( SOCKET s, const char *data, int length, unsigned int bi
 
 	if ( dwIOError == WSAECONNRESET )
 	{
-#if defined(_DEBUG)
-		printf( "A previous send operation resulted in an ICMP Port Unreachable message.\n" );
-#endif
-
+//		LOG("A previous send operation resulted in an ICMP Port Unreachable message.\n" )
 	}
-
 	else
 	{
-#if defined(_DEBUG)
-		LPVOID messageBuffer;
-		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL, dwIOError, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
-			( LPTSTR ) & messageBuffer, 0, NULL );
-		// something has gone wrong here...
-		printf( "recvfrom failed:Error code - %d\n%s", dwIOError, messageBuffer );
-
-		//Free the buffer.
-		LocalFree( messageBuffer );
-#endif
+		LOG("SocketLayer", "recvfrom failed")
 
 	}
 
 	return dwIOError;
+#else
+	return 1;
 #endif
-
-	#pragma warning( disable : 4702 ) // warning C4702: unreachable code
-	return 1; // error
 }
 
 int SocketLayer::SendTo( SOCKET s, const char *data, int length, char ip[ 16 ], unsigned short port )
@@ -495,43 +427,24 @@ int SocketLayer::SendTo( SOCKET s, const char *data, int length, char ip[ 16 ], 
 
 void SocketLayer::GetMyIP( char ipList[ 10 ][ 16 ] )
 {
-	char ac[ 80 ];
+	// Longest possible Hostname
+	char hostname[80];
 
-	if ( gethostname( ac, sizeof( ac ) ) == SOCKET_ERROR )
+	// Get the hostname of the local maschine
+	if (gethostname(hostname, sizeof(hostname)) == SOCKET_ERROR)
 	{
-#if defined(_WIN32) && defined(_DEBUG)
-		DWORD dwIOError = GetLastError();
-		LPVOID messageBuffer;
-		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL, dwIOError, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
-			( LPTSTR ) & messageBuffer, 0, NULL );
-		// something has gone wrong here...
-		printf( "gethostname failed:Error code - %d\n%s", dwIOError, messageBuffer );
-		//Free the buffer.
-		LocalFree( messageBuffer );
-#endif
+		LOG("SocketLayer", "gethostname failed")
 
 		return ;
 	}
 
-	//cout << "Host name is " << ac << "." << endl;
+	LOG("SocketLayer", "Host name is " << hostname )
 
-	struct hostent *phe = gethostbyname( ac );
+	struct hostent *phe = gethostbyname( hostname );
 
 	if ( phe == 0 )
 	{
-#if defined(_WIN32) && defined(_DEBUG)
-		DWORD dwIOError = GetLastError();
-		LPVOID messageBuffer;
-		FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL, dwIOError, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),  // Default language
-			( LPTSTR ) & messageBuffer, 0, NULL );
-		// something has gone wrong here...
-		printf( "gethostbyname failed:Error code - %d\n%s", dwIOError, messageBuffer );
-
-		//Free the buffer.
-		LocalFree( messageBuffer );
-#endif
+		LOG("SocketLayer", "gethostbyname failed")
 
 		return ;
 	}
@@ -544,6 +457,7 @@ void SocketLayer::GetMyIP( char ipList[ 10 ][ 16 ] )
 		memcpy( &addr, phe->h_addr_list[ i ], sizeof( struct in_addr ) );
 		//cout << "Address " << i << ": " << inet_ntoa(addr) << endl;
 		strcpy( ipList[ i ], inet_ntoa( addr ) );
+		LOG("SocketLayer", "My IP addresses "<< ipList[ i ])
 	}
 }
 

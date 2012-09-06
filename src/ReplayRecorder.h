@@ -71,45 +71,46 @@ struct VersionMismatchException : public std::exception, public ObjectCounter<Ve
 ///			which might be ineffective for huge replays (1h ~ 270kb) 
 class ReplayRecorder : public ObjectCounter<ReplayRecorder>
 {
-public:
-	ReplayRecorder();
-	~ReplayRecorder();
+	public:
+		ReplayRecorder();
+		~ReplayRecorder();
 
-	void save(const std::string& filename) const;
-	void save(RakNet::BitStream& stream) const;
-	void receive(RakNet::BitStream& stream);
-	void record(const PlayerInput* input);
-	
-	void setPlayerNames(const std::string& left, const std::string& right);
-	void setPlayerColors(Color left, Color right);
-	void setGameSpeed(int fps);
-private:
+		void save(const std::string& filename) const;
+		void save(RakNet::BitStream& stream) const;
+		void receive(RakNet::BitStream& stream);
+		void record(const PlayerInput* input);
+		
+		void setPlayerNames(const std::string& left, const std::string& right);
+		void setPlayerColors(Color left, Color right);
+		void setGameSpeed(int fps);
+		
+	private:
 
-	struct r_tag
-	{
-		static std::string tag()
+		struct r_tag
 		{
-			return "replay";
+			static std::string tag()
+			{
+				return "replay";
+			};
 		};
-	};
 
-	void writeFileHeader(FileWrite&, uint32_t checksum) const;
-	void writeReplayHeader(FileWrite&) const;
-	void writeAttributesSection(FileWrite&) const;
-	void writeJumpTable(FileWrite&) const;
-	void writeDataSection(FileWrite&) const;
+		void writeFileHeader(FileWrite&, uint32_t checksum) const;
+		void writeReplayHeader(FileWrite&) const;
+		void writeAttributesSection(FileWrite&) const;
+		void writeJumpTable(FileWrite&) const;
+		void writeDataSection(FileWrite&) const;
 
-	std::vector<uint8_t, CountingAllocator<uint8_t, r_tag> > mSaveData;
+		std::vector<uint8_t, CountingAllocator<uint8_t, r_tag> > mSaveData;
 
-	// general replay attributes
-	std::string mPlayerNames[MAX_PLAYERS];
-	Color mPlayerColors[MAX_PLAYERS];
-	int mGameSpeed;
-	
-	
-	// here we save the information needed to create the header
-	//  pointers  to replay sections
-	mutable uint32_t attr_ptr;
-	mutable uint32_t jptb_ptr;
-	mutable uint32_t data_ptr;
+		// general replay attributes
+		std::string mPlayerNames[MAX_PLAYERS];
+		Color mPlayerColors[MAX_PLAYERS];
+		int mGameSpeed;
+		
+		
+		// here we save the information needed to create the header
+		//  pointers  to replay sections
+		mutable uint32_t attr_ptr;
+		mutable uint32_t jptb_ptr;
+		mutable uint32_t data_ptr;
 };

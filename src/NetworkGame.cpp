@@ -93,6 +93,7 @@ NetworkGame::~NetworkGame()
 {
 	delete mMatch;
 }
+
 void NetworkGame::injectPacket(const packet_ptr& packet)
 {
 	mPacketQueue.push_back(packet);
@@ -164,6 +165,7 @@ bool NetworkGame::step()
 				active = false;
 				break;
 			}
+			
 			case ID_INPUT_UPDATE:
 			{
 				PlayerInput newInput;
@@ -193,6 +195,7 @@ bool NetworkGame::step()
 				}
 				break;
 			}
+			
 			case ID_PAUSE:
 			{
 				RakNet::BitStream stream;
@@ -202,6 +205,7 @@ bool NetworkGame::step()
 				mMatch->pause();
 				break;
 			}
+			
 			case ID_UNPAUSE:
 			{
 				RakNet::BitStream stream;
@@ -211,6 +215,7 @@ bool NetworkGame::step()
 				mMatch->unpause();
 				break;
 			}
+			
 			case ID_CHAT_MESSAGE:
 			{	RakNet::BitStream stream((char*)packet->data,
 						packet->length, false);
@@ -230,8 +235,9 @@ bool NetworkGame::step()
 					mServer.Send(&stream2, LOW_PRIORITY, RELIABLE_ORDERED, 0, mRightPlayer, false);
 				else
 					mServer.Send(&stream2, LOW_PRIORITY, RELIABLE_ORDERED, 0, mLeftPlayer, false);
-			break;
+				break;
 			}
+			
 			case ID_REPLAY:
 			{
 				RakNet::BitStream stream;
@@ -241,10 +247,11 @@ bool NetworkGame::step()
 				
 				break;
 			}
+			
 			default:
 				printf("unknown packet %d received\n",
 					int(packet->data[0]));
-			break;
+				break;
 		}
 	}
 	
@@ -321,6 +328,7 @@ bool NetworkGame::step()
 	}
 	
 	if(!mPausing)
+	{
 		switch(mMatch->winningPlayer())
 		{
 			case LEFT_PLAYER:
@@ -342,6 +350,7 @@ bool NetworkGame::step()
 				return active;
 			}
 			break;
+			
 			case RIGHT_PLAYER:
 			{
 				RakNet::BitStream stream;
@@ -361,6 +370,7 @@ bool NetworkGame::step()
 			}
 			break;
 		}
+	}
 
 	if (events & DuelMatch::EVENT_RESET)
 	{
@@ -400,10 +410,12 @@ void NetworkGame::broadcastPhysicState()
 	stream.Write((unsigned char)ID_PHYSIC_UPDATE);
 	stream.Write((unsigned char)ID_TIMESTAMP);
 	stream.Write(RakNet::GetTime());
+	
 	if (mSwitchedSide == LEFT_PLAYER)
 		world.getSwappedState(&stream);
 	else
 		world.getState(&stream);
+	
 	mServer.Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0,
 		mLeftPlayer, false);
 
@@ -411,10 +423,12 @@ void NetworkGame::broadcastPhysicState()
 	stream.Write((unsigned char)ID_PHYSIC_UPDATE);
 	stream.Write((unsigned char)ID_TIMESTAMP);
 	stream.Write(RakNet::GetTime());
+	
 	if (mSwitchedSide == RIGHT_PLAYER)
 		world.getSwappedState(&stream);
 	else
 		world.getState(&stream);
+	
 	mServer.Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0,
 		mRightPlayer, false);
 }

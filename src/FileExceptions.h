@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 class FileSystemException : public std::exception, public ObjectCounter<FileSystemException>
 {
 	public:
-		FileSystemException() {};
+		FileSystemException() { };
 		~FileSystemException() throw() { };
 		
 		virtual const char* what() const throw()
@@ -42,7 +42,7 @@ class FileSystemException : public std::exception, public ObjectCounter<FileSyst
 	\brief signales errors reported by physfs
 	\details base class for all exceptions that report physfs errors;
 */
-class PhysfsException : public FileSystemException
+class PhysfsException : public virtual FileSystemException
 {
 	public:
 		// implementation in FileSystem.cpp
@@ -100,7 +100,7 @@ class PhysfsInitException : public PhysfsException
 	\details does not owerride what(), so there is
 				no default error message for FileException s
 */
-class FileException: public FileSystemException {
+class FileException: public virtual FileSystemException {
 	public:
 		FileException(const std::string& f) : filename(f) 
 		{
@@ -113,6 +113,7 @@ class FileException: public FileSystemException {
 		{
 			return filename;
 		} 
+		
 	private:
 		std::string filename;	///!< name of the file which caused the exception
 };
@@ -122,14 +123,14 @@ class FileException: public FileSystemException {
 	\todo use a better name as FileLoadException does only fit for 
 			the open for reading case.
 */
-class FileLoadException : public FileException
+class FileLoadException : public FileException, public PhysfsException
 {
 	public:
 		FileLoadException(std::string name) : FileException(name)
 		{
 			/// \todo do we really need to do this? std::exception already
 			/// provides the functionality for setting exception messages, i think.
-			error = "Couldn't load " + name;
+			error = "Couldn't load " + name + ": " + getPhysfsMessage();
 		}
 		
 		virtual ~FileLoadException() throw() {}
@@ -153,7 +154,7 @@ class FileAlreadyExistsException : public FileException
 		{
 		}
 		
-		virtual ~FileAlreadyExistsException() throw() {}
+		virtual ~FileAlreadyExistsException() throw() { }
 
 		virtual const char* what() const throw()
 		{

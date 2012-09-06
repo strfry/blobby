@@ -29,18 +29,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 class JoystickPool : public ObjectCounter<JoystickPool>
 {
-public:
-	static JoystickPool& getSingleton();
-	
-	SDL_Joystick* getJoystick(int id);
-	
-	int probeJoysticks();
-	void closeJoysticks();
-	
-private:
-	typedef std::map<int, SDL_Joystick*> JoyMap;
-	JoyMap mJoyMap;
-	static JoystickPool* mSingleton;
+	public:
+		static JoystickPool& getSingleton();
+		
+		SDL_Joystick* getJoystick(int id);
+		
+		int probeJoysticks();
+		void closeJoysticks();
+		
+	private:
+		typedef std::map<int, SDL_Joystick*> JoyMap;
+		JoyMap mJoyMap;
+		static JoystickPool* mSingleton;
 };
 
 struct JoystickAction : public ObjectCounter<JoystickAction>
@@ -78,11 +78,11 @@ struct JoystickAction : public ObjectCounter<JoystickAction>
 */
 class InputDevice : public ObjectCounter<InputDevice>
 {
-public:
-	InputDevice() {}
-	virtual ~InputDevice() {}
+	public:
+		InputDevice() {}
+		virtual ~InputDevice() {}
 
-	virtual void transferInput(PlayerInput& mInput) = 0;
+		virtual void transferInput(PlayerInput& mInput) = 0;
 };
 
 /*! \class MouseInputDevice
@@ -90,17 +90,17 @@ public:
 */
 class MouseInputDevice : public InputDevice
 {
-private:
-	PlayerSide mPlayer;
-	int mJumpButton;
-	int mMarkerX;
-	bool mDelay; // The pressed button of the mainmenu must be ignored
-	boost::circular_buffer<PlayerInput> mInputs;
-	LagDetector mLag;
-public:
-	virtual ~MouseInputDevice(){};
-	MouseInputDevice(PlayerSide player, int jumpbutton);
-	void transferInput(PlayerInput& input);
+	private:
+		PlayerSide mPlayer;
+		int mJumpButton;
+		int mMarkerX;
+		bool mDelay; // The pressed button of the mainmenu must be ignored
+		boost::circular_buffer<PlayerInput> mInputs;
+		LagDetector mLag;
+	public:
+		virtual ~MouseInputDevice(){};
+		MouseInputDevice(PlayerSide player, int jumpbutton);
+		void transferInput(PlayerInput& input);
 };
 
 /*! \class KeyboardInputDevice
@@ -108,14 +108,14 @@ public:
 */
 class KeyboardInputDevice : public InputDevice
 {
-private:
-	SDLKey mLeftKey;
-	SDLKey mRightKey;
-	SDLKey mJumpKey;
-public:
-	virtual ~KeyboardInputDevice(){};
-	KeyboardInputDevice(SDLKey leftKey, SDLKey rightKey, SDLKey jumpKey);
-	void transferInput(PlayerInput& input);
+	private:
+		SDLKey mLeftKey;
+		SDLKey mRightKey;
+		SDLKey mJumpKey;
+	public:
+		virtual ~KeyboardInputDevice(){};
+		KeyboardInputDevice(SDLKey leftKey, SDLKey rightKey, SDLKey jumpKey);
+		void transferInput(PlayerInput& input);
 };
 
 /*! \class JoystickInputDevice
@@ -123,17 +123,17 @@ public:
 */
 class JoystickInputDevice : public InputDevice
 {
-private:
-	bool getAction(const JoystickAction& action);
+	private:
+		bool getAction(const JoystickAction& action);
 
-	JoystickAction mLeftAction;
-	JoystickAction mRightAction;
-	JoystickAction mJumpAction;
-public:
-	~JoystickInputDevice() {};
-	JoystickInputDevice(JoystickAction laction, JoystickAction raction,
-			JoystickAction jaction);
+		JoystickAction mLeftAction;
+		JoystickAction mRightAction;
+		JoystickAction mJumpAction;
+	public:
+		~JoystickInputDevice() {};
+		JoystickInputDevice(JoystickAction laction, JoystickAction raction,
+				JoystickAction jaction);
 
-	void transferInput(PlayerInput& input);
+		void transferInput(PlayerInput& input);
 };
 

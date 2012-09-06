@@ -339,15 +339,6 @@ namespace RakNet
 		 * with some missing bits. 
 		 */
 		bool Read( int &output );
-#if  defined ( __APPLE__ ) || defined ( __APPLE_CC__ ) || defined ( _WIN32 )
-		// These are only provided for MS Windows and
-		// Mac OSX (G4 processor) convenience and are
-		// equivalent to the (int) versions.
-		// The use of 'long' for any network data is
-		// a fault since it will not be portable to 64-bit CPUs.
-		bool Read( unsigned long &output );
-		bool Read( long &output );
-#endif
 		
 #ifdef HAS_INT64
 		/**
@@ -428,16 +419,6 @@ namespace RakNet
 		 * @return true on success, false on not enough data to read
 		 */
 		bool ReadCompressed( int &output );
-
-#if  defined ( __APPLE__ ) || defined ( __APPLE_CC__ )|| defined ( _WIN32 )
-		// These are only provided for MS Windows and
-		// Mac OSX (G4 processor) convenience and are
-		// equivalent to the (int) versions.
-		// The use of 'long' for any network data is
-		// a fault since it will not be portable to 64-bit CPUs.
-		bool ReadCompressed( unsigned long &output );
-		bool ReadCompressed( long &output );
-#endif
 
 #ifdef HAS_INT64
 		/**

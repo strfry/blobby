@@ -58,8 +58,7 @@ void RakServer::DisableSecurity( void )
 	RakPeer::DisableSecurity();
 }
 
-#pragma warning( disable : 4100 ) // warning C4100: 'depreciated' : unreferenced formal parameter
-bool RakServer::Start( unsigned short AllowedPlayers, unsigned int depreciated, int threadSleepTimer, unsigned short port, const char *forceHostAddress )
+bool RakServer::Start( unsigned short AllowedPlayers, int threadSleepTimer, unsigned short port, const char *forceHostAddress )
 {
 	bool init;
 
@@ -112,7 +111,7 @@ bool RakServer::Send( const char *data, const long length, PacketPriority priori
 	return RakPeer::Send( data, length, priority, reliability, orderingChannel, playerId, broadcast );
 }
 
-bool RakServer::Send( RakNet::BitStream *bitStream, PacketPriority priority, PacketReliability reliability, char orderingChannel, PlayerID playerId, bool broadcast )
+bool RakServer::Send( const RakNet::BitStream *bitStream, PacketPriority priority, PacketReliability reliability, char orderingChannel, PlayerID playerId, bool broadcast )
 {
 	return RakPeer::Send( bitStream, priority, reliability, orderingChannel, playerId, broadcast );
 }
@@ -398,37 +397,6 @@ bool RakServer::DeleteCompressionLayer( bool inputLayer )
 {
 	return RakPeer::DeleteCompressionLayer( inputLayer );
 }
-
-void RakServer::RegisterAsRemoteProcedureCall( char* uniqueID, void ( *functionPointer ) ( RPCParameters *rpcParms ) )
-{
-	RakPeer::RegisterAsRemoteProcedureCall( uniqueID, functionPointer );
-}
-
-void RakServer::RegisterClassMemberRPC( char* uniqueID, void *functionPointer )
-{
-	RakPeer::RegisterClassMemberRPC( uniqueID, functionPointer );
-}
-
-void RakServer::UnregisterAsRemoteProcedureCall( char* uniqueID )
-{
-	RakPeer::UnregisterAsRemoteProcedureCall( uniqueID );
-}
-
-bool RakServer::RPC( char* uniqueID, const char *data, unsigned int bitLength, PacketPriority priority, PacketReliability reliability, char orderingChannel, PlayerID playerId, bool broadcast, bool shiftTimestamp, ObjectID objectID )
-{
-	return RakPeer::RPC( uniqueID, data, bitLength, priority, reliability, orderingChannel, playerId, broadcast, shiftTimestamp, objectID );
-}
-
-bool RakServer::RPC( char* uniqueID, RakNet::BitStream *parameters, PacketPriority priority, PacketReliability reliability, char orderingChannel, PlayerID playerId, bool broadcast, bool shiftTimestamp, ObjectID objectID )
-{
-	return RakPeer::RPC( uniqueID, parameters, priority, reliability, orderingChannel, playerId, broadcast, shiftTimestamp, objectID );
-}
-
-/*
-bool RakServer::HandleRPCPacket(Packet* packet)
-{
-return RakPeer::HandleRPCPacket(packet->data, packet->length, packet->playerId);
-}*/
 
 void RakServer::SetTrackFrequencyTable( bool b )
 {

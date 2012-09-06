@@ -79,9 +79,9 @@ void NetworkSearchState::step()
 			{
 				case ID_CONNECTION_REQUEST_ACCEPTED:
 				{
-					printf("connection accepted from %s\n",
+					printf("connection accepted from %s:%d\n",
 						mPingClient->PlayerIDToDottedIP(
-							packet->playerId));
+							packet->playerId), packet->playerId.port);
 
 					RakNet::BitStream stream;
 					stream.Write((unsigned char)ID_BLOBBY_SERVER_PRESENT);
@@ -167,7 +167,7 @@ void NetworkSearchState::step()
 			case ID_PONG:
 			{
 				std::string hostname = mPingClient->PlayerIDToDottedIP(packet->playerId);
-				printf("got ping response by \"%s\", trying to connect\n", hostname.c_str());
+				printf("got ping response by \"%s:%d\", trying to connect\n", hostname.c_str(), packet->playerId.port);
 				RakClient* newClient = new RakClient;
 				newClient->Connect(
 					hostname.c_str(), packet->playerId.port, 0, 0, RAKNET_THREAD_SLEEP_TIME);
@@ -270,7 +270,7 @@ void NetworkSearchState::step()
 		imgui.doText(GEN_ID, Vector2(50, 130), mScannedServers[mSelectedServer].hostname);
 
 		std::stringstream activegames;
-		activegames << TextManager::NET_ACTIVE_GAMES 
+		activegames << TextManager::getSingleton()->getString(TextManager::NET_ACTIVE_GAMES)
 					<< mScannedServers[mSelectedServer].activegames;
 		imgui.doText(GEN_ID, Vector2(50, 160), activegames.str());
 		std::stringstream waitingplayer;
@@ -344,13 +344,28 @@ void OnlineSearchState::searchServers()
 	mPingClient->PingServer("blobby.blub-game.com", BLOBBY_PORT, 0, true);
 	/// \todo thats a hack to make us use our speed server. add a better 
 	///			method to connect to servers with arbitrary Ports
-	mPingClient->PingServer("blobby.blub-game.com", BLOBBY_PORT, 0, true);
-	mPingClient->PingServer("pgb.game-host.org", BLOBBY_PORT+1, 0, true);
+	mPingClient->PingServer("pgb.game-host.org", BLOBBY_PORT + 1, 0, true);
 	
 	/// \todo check if we already try to connect to this one!
-	mPingClient->PingServer(
-		IUserConfigReader::createUserConfigReader("config.xml")->getString("network_last_server").c_str(),
-		BLOBBY_PORT, 0, true);
+	std::string address = IUserConfigReader::createUserConfigReader("config.xml")->getString("network_last_server");
+	std::string server = address;
+	int port = BLOBBY_PORT;
+	std::size_t found = address.find(':');
+	if (found != std::string::npos) {
+		server = address.substr(0, found);
+		
+		try
+		{
+			port = boost::lexical_cast<int>(address.substr(found+1));
+		}
+		 catch (boost::bad_lexical_cast)
+		{
+			/// \todo inform the user that default port was selected
+		}
+		if ((port <= 0) || (port > 65535))
+			port = BLOBBY_PORT;
+	}
+	mPingClient->PingServer(server.c_str(), port, 0, true);
 	
 }
 

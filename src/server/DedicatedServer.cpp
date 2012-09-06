@@ -152,7 +152,7 @@ int main(int argc, char** argv)
 	
 	float speed = myinfo.gamespeed;
 
-	if (!server.Start(150, 0, 1, port))
+	if (!server.Start(150, 1, port))
 	{
 		syslog(LOG_ERR, "Couldn´t bind to port %i, exiting", port);
 		return 2;

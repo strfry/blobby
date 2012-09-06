@@ -46,6 +46,7 @@ class ObjectCounter
 		{
 			count(typeid(Base));
 		};
+		
 		~ObjectCounter() 
 		{
 			uncount(typeid(Base));
@@ -71,6 +72,7 @@ struct CountingReport
 	{
 		
 	}
+	
 	int alive;
 	int created;
 };

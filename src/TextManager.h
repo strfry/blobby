@@ -34,7 +34,8 @@ class TextManager : public ObjectCounter<TextManager>
 {
 	public:
 		/// enumeration for strings
-		enum STRING{
+		enum STRING
+		{
 			// common labels
 			LBL_OK,
 			LBL_CANCEL,

@@ -110,7 +110,10 @@ void FileSystem::removeFromSearchPath(const std::string& dirname)
 
 void FileSystem::setWriteDir(const std::string& dirname)
 {
-	PHYSFS_setWriteDir(dirname.c_str());
+	if( !PHYSFS_setWriteDir(dirname.c_str()) )
+	{
+		throw( PhysfsException() );
+	};
 	addToSearchPath(dirname, false);
 }
 
@@ -118,6 +121,7 @@ std::string FileSystem::getDirSeparator()
 {
 	return PHYSFS_getDirSeparator();
 }
+
 std::string FileSystem::getUserDir()
 {
 	return PHYSFS_getUserDir();
@@ -132,12 +136,13 @@ void FileSystem::probeDir(const std::string& dirname)
 			/// \todo simple delete such files without a warning???
 			deleteFile(dirname);
 		}
+		
 		if (mkdir(dirname))
 		{
 			std::cout << PHYSFS_getWriteDir() <<
 				dirname << " created" << std::endl;
 		}
-		else
+		 else
 		{
 			std::cout << "Warning: Creation of" << 
 				PHYSFS_getWriteDir() << dirname <<
@@ -149,8 +154,14 @@ void FileSystem::probeDir(const std::string& dirname)
 
 // exception implementations
 
+std::string makeSafePhysfsErrorString()
+{
+	const char* physfserror = PHYSFS_getLastError();
+	return physfserror != 0 ? physfserror : "no physfs error message available.";
+}
 
-PhysfsException::PhysfsException() : mPhysfsErrorMsg( PHYSFS_getLastError() )
+
+PhysfsException::PhysfsException() : mPhysfsErrorMsg( makeSafePhysfsErrorString() )
 {
 }
 

@@ -8,14 +8,17 @@
 #include <cstring>
 #include <physfs.h>
 
+#define TEST_EXECUTION_PATH "C:\\Dokumente und Einstellungen\\Erik\\Eigene Dateien\\Blobby Volley 2\\test"
+
 // helper
 void init_Physfs() 
 {
 	static bool initialised = false;
 	if(!initialised) 
 	{
-		FileSystem fs("C:\\Dokumente und Einstellungen\\Erik\\Eigene Dateien\\Blobby Volley 2\\test\\bin\\debug\\");
-		PHYSFS_setWriteDir(".");
+		std::cout << "initialising physfs to " << TEST_EXECUTION_PATH << "\n";
+		static FileSystem fs( TEST_EXECUTION_PATH );
+		fs.setWriteDir(".");
 		PHYSFS_addToSearchPath(".", 1);
 		initialised = true;
 	}
@@ -27,7 +30,10 @@ void init_Physfs()
 											BOOST_ERROR(#expr " does not cause " #excp " to be thrown");\
 											} \
 											catch(excp& e) {\
-												std::cout << "what: " << e.what() << std::endl; \
+												 \
+											} catch (std::exception& exp) 	\
+											{								\
+												BOOST_ERROR(std::string("unexpected exception ") + exp.what() + "instead of " #excp " caught from  "#expr);						\
 											};
 
 
@@ -43,7 +49,7 @@ BOOST_AUTO_TEST_CASE( default_constructor )
 	
 	/// \todo how to make this a sensible path on all platforms?
 	{
-		FileSystem fs("C:\\Dokumente und Einstellungen\\Erik\\Eigene Dateien\\Blobby Volley 2\\test\\bin\\debug\\");
+		FileSystem fs( TEST_EXECUTION_PATH );
 	
 		BOOST_CHECK_EQUAL( &fs, &FileSystem::getSingleton());
 	
@@ -69,7 +75,7 @@ BOOST_AUTO_TEST_CASE( enumerate_files )
 	
 	/// \todo how to make this a sensible path on all platforms?
 	{
-		FileSystem fs("C:\\Dokumente und Einstellungen\\Erik\\Eigene Dateien\\Blobby Volley 2\\test\\bin\\debug\\");
+		FileSystem fs( TEST_EXECUTION_PATH );
 	
 		BOOST_CHECK_EQUAL( &fs, &FileSystem::getSingleton());
 	
@@ -126,11 +132,14 @@ BOOST_AUTO_TEST_CASE( open_read_constructor )
 	init_Physfs();
 	
 	// create a temp file for the next check
-	try {
+	try 
+	{
+		
 		FileWrite write_file("test_open_read_constructor.tmp");
 		write_file.write("test");
 		write_file.close();
 	} catch (std::exception& s) {
+		std::cout << "Error: " << s.what() << "\n";
 		BOOST_ERROR("this should never happen!");
 	}
 	
@@ -235,7 +244,9 @@ BOOST_AUTO_TEST_CASE( exception_test )
 	
 	// read more than there is
 	CHECK_EXCEPTION_SAFETY(test_file.readRawBytes(buffer, 3), EOFException);
-	CHECK_EXCEPTION_SAFETY(test_file.readUInt32(), PhysfsException);		// FAIL
+	CHECK_EXCEPTION_SAFETY(test_file.readUInt32(), EOFException);
+	CHECK_EXCEPTION_SAFETY(test_file.readRawBytes(5), EOFException);
+	CHECK_EXCEPTION_SAFETY(test_file.readString(), EOFException);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -355,7 +366,8 @@ BOOST_AUTO_TEST_CASE( string_test )
 	init_Physfs();
 	
 	std::string teststr = "hello world!";
-			
+	
+	BOOST_CHECKPOINT( "string_test: writing test file" );
 	FileWrite writer("cycle.tmp");
 	BOOST_REQUIRE( writer.is_open() == true );
 
@@ -364,8 +376,9 @@ BOOST_AUTO_TEST_CASE( string_test )
 	writer.write( teststr );
 	writer.close();
 	
+	BOOST_CHECKPOINT( "string_test: reading test file" );
 	FileRead reader("cycle.tmp");
-	/// \todo convenience function for to reading null terminated strings
+	
 	boost::shared_array<char> data = reader.readRawBytes(teststr.size());
 	BOOST_CHECK_EQUAL (reader.tell(), teststr.size() );
 	std::string str2 = reader.readString();
@@ -375,8 +388,43 @@ BOOST_AUTO_TEST_CASE( string_test )
 	BOOST_CHECK_EQUAL( teststr, str2 );
 	
 	// now, try to read as null terminated when it isn't
-	/// \todo we need a sensible check here
-	std::string str3 = reader.readString();
+	CHECK_EXCEPTION_SAFETY( reader.readString(), EOFException);
+	
+	PHYSFS_delete("cycle.tmp");
+}
+
+
+BOOST_AUTO_TEST_CASE( int_test )
+{
+	init_Physfs();
+	
+	
+	BOOST_CHECKPOINT( "int_test: writing test file" );
+	FileWrite writer("cycle.tmp");
+	BOOST_REQUIRE( writer.is_open() == true );
+
+	const int TEST_INT_1 = 12;
+	const int TEST_INT_2 = -8;
+	const int TEST_INT_3 = 1275343;
+
+	writer.writeUInt32( TEST_INT_1 );
+	writer.writeUInt32( TEST_INT_2 );
+	writer.writeUInt32( TEST_INT_3 );
+	writer.writeByte( 5 );
+	writer.close();
+	
+	BOOST_CHECKPOINT( "int_test: reading test file" );
+	FileRead reader("cycle.tmp");
+	
+	int res = reader.readUInt32( );
+	BOOST_CHECK_EQUAL (res, TEST_INT_1 );
+	res = reader.readUInt32( );
+	BOOST_CHECK_EQUAL (res, TEST_INT_2 );
+	res = reader.readUInt32( );
+	BOOST_CHECK_EQUAL (res, TEST_INT_3 );
+	
+	// try to read more
+	CHECK_EXCEPTION_SAFETY( reader.readUInt32(), EOFException);
 	
 	PHYSFS_delete("cycle.tmp");
 }
