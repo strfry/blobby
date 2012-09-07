@@ -64,6 +64,7 @@ class TextManager : public ObjectCounter<TextManager>
 			RP_DELETE,
 			RP_INFO,
 			RP_DURATION,
+			RP_RESULT,
 			RP_CHECKSUM,
 			RP_VERSION,
 			RP_FILE_OUTDATED,

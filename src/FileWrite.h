@@ -75,6 +75,11 @@ class FileWrite : public File, public ObjectCounter<FileWrite>
 		/// \throw NoFileOpenedException when called while no file is opened.
 		void writeUInt32(uint32_t v);
 		
+		/// \brief writes a single precision float
+		/// \throw PhysfsException when Physfs reports an error.
+		/// \throw NoFileOpenedException when called while no file is opened.
+		void writeFloat(float fl);
+		
 		/// \brief writes a std::string
 		/// \details writes the content of the string to the file.
 		/// 		does not write a null-termination character

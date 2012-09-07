@@ -94,8 +94,6 @@ class ReplayPlayer : public ObjectCounter<ReplayPlayer>
 		
 	private:
 	
-		PacketType getPacketType() const;
-		
 		int mPosition;
 		int mLength;
 		boost::scoped_ptr<IReplayLoader> loader;

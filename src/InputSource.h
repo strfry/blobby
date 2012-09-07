@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #pragma once
 
 #include <string>
+#include <iosfwd>
 #include "BlobbyDebug.h"
 
 /*! \class PlayerInput
@@ -50,6 +51,13 @@ struct PlayerInput : public ObjectCounter<PlayerInput>
 		up = u;
 	}
 	
+	void set( unsigned char all )
+	{
+		left = all & 4;
+		right = all & 2;
+		up =  all & 1;
+	}
+	
 	void swap()
 	{
 		bool tmp = left;
@@ -65,6 +73,13 @@ struct PlayerInput : public ObjectCounter<PlayerInput>
 	bool operator!=(const PlayerInput& other) const
 	{
 		return !(*this == other);
+	}
+	
+	unsigned char getAll() const
+	{
+		unsigned char c = 0;
+		c = (left ? 4 : 0) + (right ? 2 : 0) + (up ? 1 : 0);
+		return c;
 	}
 
 	bool left;
@@ -117,4 +132,4 @@ class DummyInputSource : public InputSource
 // This operator converts a PlayerInput structure in a packed string
 // suitable for saving
 
-std::string& operator<< (std::string& out, const PlayerInput& input);
+std::ostream& operator<< (std::ostream& out, const PlayerInput& input);
