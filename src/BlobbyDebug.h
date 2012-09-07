@@ -160,3 +160,7 @@ struct string_tag
 };
 
 typedef std::basic_string< char, std::char_traits<char>, CountingAllocator<char, string_tag> > TrackedString;
+
+void debug_count_execution_fkt(std::string file, int line);
+
+#define DEBUG_COUNT_EXECUTION debug_count_execution_fkt(__FILE__, __LINE__);

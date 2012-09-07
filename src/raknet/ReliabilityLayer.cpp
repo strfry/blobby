@@ -922,6 +922,7 @@ bool ReliabilityLayer::Send( char *data, int numberOfBitsToSend, PacketPriority 
 	if ( makeDataCopy )
 	{
 		/// \todo UNTRACKED MEMORY ALLOCATION
+		DEBUG_COUNT_EXECUTION
 		internalPacket->data = new char [ numberOfBytesToSend ];
 		memcpy( internalPacket->data, data, numberOfBytesToSend );
 //		printf("Allocated %i\n", internalPacket->data);
@@ -2057,6 +2058,7 @@ InternalPacket* ReliabilityLayer::CreateInternalPacketFromBitStream( RakNet::Bit
 	
 	// Allocate memory to hold our data
 	/// \todo UNTRACKED MEMORY ALLOCATION
+	DEBUG_COUNT_EXECUTION
 	internalPacket->data = new char [ BITS_TO_BYTES( internalPacket->dataBitLength ) ];
 	//printf("Allocating %i\n",  internalPacket->data);
 	
@@ -2259,6 +2261,7 @@ void ReliabilityLayer::SplitPacket( InternalPacket *internalPacket, int MTUSize 
 			
 		// Copy over our chunk of data
 		/// \todo UNTRACKED MEMORY ALLOCATION
+		DEBUG_COUNT_EXECUTION
 		internalPacketArray[ splitPacketIndex ]->data = new char[ bytesToSend ];
 		
 		memcpy( internalPacketArray[ splitPacketIndex ]->data, internalPacket->data + byteOffset, bytesToSend );
@@ -2403,6 +2406,7 @@ InternalPacket * ReliabilityLayer::BuildPacketFromSplitPacketList( unsigned int 
 				InternalPacket * internalPacket = CreateInternalPacketCopy( splitPacketList[ i ], 0, 0, time );
 				allocatedLength=BITS_TO_BYTES( bitlength );
 				/// \todo UNTRACKED MEMORY ALLOCATION
+				DEBUG_COUNT_EXECUTION
 				internalPacket->data = new char[ allocatedLength ];
 #ifdef _DEBUG
 				internalPacket->splitPacketCount = splitPacketList[ i ]->splitPacketCount;
@@ -2572,6 +2576,7 @@ InternalPacket * ReliabilityLayer::CreateInternalPacketCopy( InternalPacket *ori
 	if ( dataByteLength > 0 )
 	{
 		/// \todo UNTRACKED MEMORY ALLOCATION
+		DEBUG_COUNT_EXECUTION
 		copy->data = new char[ dataByteLength ];
 		memcpy( copy->data, original->data + dataByteOffset, dataByteLength );
 	}

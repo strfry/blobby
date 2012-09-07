@@ -999,6 +999,7 @@ void RakPeer::AddToBanList( const char *IP, unsigned int milliseconds )
 	banListMutex.Unlock();
 	/// \todo UNTRACKED MEMORY ALLOCATION
 	BanStruct *banStruct = new BanStruct;
+	DEBUG_COUNT_EXECUTION;
 	banStruct->IP = new char [ 16 ];
 	if (milliseconds==0)
 		banStruct->timeout=0; // Infinite
@@ -1610,6 +1611,7 @@ void RakPeer::AdvertiseSystem( char *host, unsigned short remotePort, const char
 	if (data && dataLength>0)
 	{
 		/// \todo UNTRACKED MEMORY ALLOCATION
+		DEBUG_COUNT_EXECUTION
 		rcs->data=new char [dataLength];
 		rcs->dataLength=dataLength;
 		memcpy(rcs->data, data, dataLength);
@@ -2546,6 +2548,7 @@ void RakPeer::SendBuffered( const RakNet::BitStream * bitStream, PacketPriority 
 	*/
 
 	/// \todo UNTRACKED MEMORY ALLOCATION
+	DEBUG_COUNT_EXECUTION
 	bcs->data = new char[bitStream->GetNumberOfBytesUsed()]; // Making a copy doesn't lose efficiency because I tell the reliability layer to use this allocation for its own copy
 	memcpy(bcs->data, bitStream->GetData(), bitStream->GetNumberOfBytesUsed());
     bcs->numberOfBitsToSend=bitStream->GetNumberOfBitsUsed();
@@ -3193,6 +3196,7 @@ bool RakPeer::RunUpdateCycle( void )
 						{
 							delete [] data;
 							/// \todo UNTRACKED MEMORY ALLOCATION
+							DEBUG_COUNT_EXECUTION
 							data = new char [ byteSize ];
 						}
 						memcpy( data, dataBitStream.GetData(), byteSize );
