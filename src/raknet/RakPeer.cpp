@@ -523,6 +523,8 @@ bool RakPeer::Connect( const char* host, unsigned short remotePort, char* passwo
 			Packet * p;
 			p = packetPool.GetPointer();
 
+			/// \todo UNTRACKED MEMORY ALLOCATION
+			/// \todo MEMORY LEAK?
 			p->data = new unsigned char [ 1 ];
 			p->data[ 0 ] = (unsigned char) ID_NO_FREE_INCOMING_CONNECTIONS;
 			p->playerId = myPlayerId;
@@ -997,7 +999,7 @@ void RakPeer::AddToBanList( const char *IP, unsigned int milliseconds )
 	}
 
 	banListMutex.Unlock();
-
+	/// \todo UNTRACKED MEMORY ALLOCATION
 	BanStruct *banStruct = new BanStruct;
 	banStruct->IP = new char [ 16 ];
 	if (milliseconds==0)
@@ -1772,6 +1774,7 @@ void RakPeer::AdvertiseSystem( char *host, unsigned short remotePort, const char
 	rcs->requestsMade=0;
 	if (data && dataLength>0)
 	{
+		/// \todo UNTRACKED MEMORY ALLOCATION
 		rcs->data=new char [dataLength];
 		rcs->dataLength=dataLength;
 		memcpy(rcs->data, data, dataLength);
@@ -2503,6 +2506,8 @@ void RakPeer::SecuredConnectionConfirmation( RakPeer::RemoteSystemStruct * remot
 			memcmp( n, publicKeyN, sizeof( RSA_BIT_SIZE ) ) != 0 )
 		{
 			packet = packetPool.GetPointer();
+			/// \todo UNTRACKED MEMORY ALLOCATION
+			/// \todo MEMORY LEAK?
 			packet->data = new unsigned char[ 1 ];
 			packet->data[ 0 ] = ID_RSA_PUBLIC_KEY_MISMATCH;
 			packet->length = sizeof( char );
@@ -2586,6 +2591,8 @@ void RakPeer::PushPortRefused( PlayerID target )
 	// Tell the game we can't connect to this host
 	Packet * p;
 	p = packetPool.GetPointer();
+	/// \todo UNTRACKED MEMORY ALLOCATION
+	/// \todo MEMORY LEAK?
 	p->data = new unsigned char[ 1 ];
 	p->data[ 0 ] = ID_REMOTE_PORT_REFUSED;
 	p->length = sizeof( char );
@@ -2743,6 +2750,7 @@ void RakPeer::SendBuffered( const RakNet::BitStream * bitStream, PacketPriority 
 	}
 	*/
 
+	/// \todo UNTRACKED MEMORY ALLOCATION
 	bcs->data = new char[bitStream->GetNumberOfBytesUsed()]; // Making a copy doesn't lose efficiency because I tell the reliability layer to use this allocation for its own copy
 	memcpy(bcs->data, bitStream->GetData(), bitStream->GetNumberOfBytesUsed());
     bcs->numberOfBitsToSend=bitStream->GetNumberOfBitsUsed();
@@ -3059,6 +3067,7 @@ void ProcessNetworkPacket( unsigned int binaryAddress, unsigned short port, cons
 	else if ((unsigned char) data[ 0 ] == ID_PONG && length == sizeof(unsigned char) )
 	{
 		Packet * packet = rakPeer->packetPool.GetPointer();
+		/// \todo UNTRACKED MEMORY ALLOCATION
 		packet->data = new unsigned char[ sizeof( char )+sizeof(unsigned int) ];
 		unsigned int zero=0;
 		packet->data[ 0 ] = ID_PONG;
@@ -3095,6 +3104,8 @@ void ProcessNetworkPacket( unsigned int binaryAddress, unsigned short port, cons
 			{
 				// Cheater
 				Packet * packet = rakPeer->packetPool.GetPointer();
+				/// \todo UNTRACKED MEMORY ALLOCATION
+				/// \todo MEMORY LEAK?
 				packet->data = new unsigned char[ 1 ];
 				packet->data[ 0 ] = ID_MODIFIED_PACKET;
 				packet->length = sizeof( char );
@@ -3268,6 +3279,8 @@ bool RakPeer::RunUpdateCycle( void )
 				{
 					// Tell user of connection attempt failed
 					packet = packetPool.GetPointer();
+					/// \todo UNTRACKED MEMORY ALLOCATION
+					/// \todo MEMORY LEAK?
 					packet->data = new unsigned char [ sizeof( char ) ];
 					packet->data[ 0 ] = ID_CONNECTION_ATTEMPT_FAILED; // Attempted a connection and couldn't
 					packet->length = sizeof( char );
@@ -3353,7 +3366,9 @@ bool RakPeer::RunUpdateCycle( void )
 				{
 					// Inform the user of the connection failure.
 					packet = packetPool.GetPointer();
-
+					
+					/// \todo UNTRACKED MEMORY ALLOCATION
+					/// \todo MEMORY LEAK?
 					packet->data = new unsigned char [ sizeof( char ) + remoteSystem->staticData.GetNumberOfBytesUsed() ];
 					if (remoteSystem->connectMode==RemoteSystemStruct::REQUESTED_CONNECTION)
 						packet->data[ 0 ] = ID_CONNECTION_ATTEMPT_FAILED; // Attempted a connection and couldn't
@@ -3384,6 +3399,8 @@ bool RakPeer::RunUpdateCycle( void )
 			{
 				packet = packetPool.GetPointer();
 				packet->length = 1;
+				/// \todo UNTRACKED MEMORY ALLOCATION
+				/// \todo MEMORY LEAK
 				packet->data = new unsigned char [ 1 ];
 				packet->data[ 0 ] = (unsigned char) ID_MODIFIED_PACKET;
 				packet->playerId = playerId;
@@ -3430,6 +3447,7 @@ bool RakPeer::RunUpdateCycle( void )
 
 					if (numberOfBitsUsed>0)
 					{
+						/// \todo UNTRACKED MEMORY ALLOCATION
 						unsigned char *dataCopy = new unsigned char[ dataBitStream.GetNumberOfBytesUsed() ];
 						memcpy( dataCopy, dataBitStream.GetData(), dataBitStream.GetNumberOfBytesUsed() );
 						dataBitStream.Reset();
@@ -3442,6 +3460,7 @@ bool RakPeer::RunUpdateCycle( void )
 						if ( byteSize > BITS_TO_BYTES( bitSize ) )   // Probably the case - otherwise why decompress?
 						{
 							delete [] data;
+							/// \todo UNTRACKED MEMORY ALLOCATION
 							data = new char [ byteSize ];
 						}
 						memcpy( data, dataBitStream.GetData(), byteSize );

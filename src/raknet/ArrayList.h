@@ -234,10 +234,6 @@ namespace BasicDataStructures
 	template <class list_type>
 	void List<list_type>::insert( list_type input, unsigned int position )
 	{
-#ifdef _DEBUG
-		assert( position <= list_size );
-#endif
-		
 		array.insert(array.begin() + position, input);
 		
 		// Insert the new item at the correct spot
@@ -273,10 +269,7 @@ namespace BasicDataStructures
 	template <class list_type>
 	void List<list_type>::del( unsigned int position )
 	{
-#ifdef _DEBUG
-		assert( position < list_size );
-#endif
-		
+
 		array.erase( array.begin() + position );
 	}
 	
@@ -284,9 +277,6 @@ namespace BasicDataStructures
 	inline void List<list_type>::del()
 	{
 		// Delete the last element on the list.  No compression needed
-#ifdef _DEBUG
-		assert(list_size>0);
-#endif
 		array.pop_back();
 	}
 	

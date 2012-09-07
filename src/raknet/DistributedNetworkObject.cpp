@@ -108,6 +108,7 @@ void DistributedNetworkObject::SynchronizeMemory( unsigned char memoryBlockIndex
 		if ( memoryBlockSize > heapNodeList[ memoryBlockIndex ].allocatedBlockSize )
 		{
 			delete [] heapNodeList[ memoryBlockIndex ].lastWriteValue;
+			/// \todo UNTRACKED MEMORY ALLOCATION
 			heapNodeList[ memoryBlockIndex ].lastWriteValue = new char [ memoryBlockSize ];
 			heapNodeList[ memoryBlockIndex ].allocatedBlockSize = memoryBlockSize;
 		}
@@ -119,6 +120,7 @@ void DistributedNetworkObject::SynchronizeMemory( unsigned char memoryBlockIndex
 	{
 		// Else the existing block is empty
 		// Allocate the block.
+		/// \todo UNTRACKED MEMORY ALLOCATION
 		heapNodeList[ memoryBlockIndex ].lastWriteValue = new char [ memoryBlockSize ];
 		heapNodeList[ memoryBlockIndex ].allocatedBlockSize = memoryBlockSize;
 	}

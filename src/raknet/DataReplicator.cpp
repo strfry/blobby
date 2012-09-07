@@ -175,6 +175,7 @@ void DataReplicator::SynchronizeMemory(const char *stringId, SynchronizedMemory 
 	baseData->lastUpdateTime=0;
 
 	// Extended stuff
+	/// \todo UNTRACKED MEMORY ALLOCATION
 	baseData->localIdentifier=new char [strlen(newStringId)+1];
 	strcpy(baseData->localIdentifier, newStringId);
 	baseData->localKey=GenerateMemoryStringMappingKey();
@@ -1308,6 +1309,7 @@ void DataReplicator::OnStringMapIndex(RakPeerInterface *peer, Packet *packet)
 		return;
 	}
 
+	/// \todo UNTRACKED MEMORY ALLOCATION
 	char *allocatedStr = new char [strlen(str)+1];
 	strcpy(allocatedStr, str);
 	participantStruct->remoteObjectNameTable.replace(allocatedStr,0,index);
@@ -1347,6 +1349,7 @@ ObjectReplicationHandler* DataReplicator::DecodeClassName(char *strOut, Particip
 			// Add a string to the table and send the index
 			if (localObjectNameTable.size()+1<STR_TO_INDEX_MAP_MAX)
 			{
+				/// \todo UNTRACKED MEMORY ALLOCATION
 				char *strCpy;
 				strCpy = new char [strlen(strOut)+1];
 				strcpy(strCpy, strOut);
@@ -1683,6 +1686,7 @@ SynchronizedMemory * SynchronizedMemoryDefault::MakeSynchronizedDataCopy(void)
 {
 	SynchronizedMemoryDefault *synchronizedMemoryDefault;
 	char *dataCopy;
+	/// \todo UNTRACKED MEMORY ALLOCATION
 	dataCopy=new char[userByteLength];
 	memcpy(dataCopy, userData, userByteLength);
 	synchronizedMemoryDefault = new SynchronizedMemoryDefault(dataCopy, userByteLength);
