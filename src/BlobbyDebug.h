@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <cstddef>
 #include <cstdlib>
 #include <memory>
+#include <string>
 
 int count(const std::type_info& type);
 int uncount(const std::type_info& type);
@@ -149,3 +150,13 @@ struct CountingMalloc
 		count(typeid(T), tag_type::tag(), nm, size);
 	}
 };
+
+struct string_tag
+{
+	static std::string tag()
+	{
+		return "basic_string<char>";
+	}
+};
+
+typedef std::basic_string< char, std::char_traits<char>, CountingAllocator<char, string_tag> > TrackedString;
