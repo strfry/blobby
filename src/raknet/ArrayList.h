@@ -180,15 +180,6 @@ namespace BasicDataStructures
 		 */
 		void clear( void );
 		
-		/**
-		 * Compress the list, to meet the current state of the list.  
-		 * @attention 
-		 * Do not use too often this operation if you are doing a lot of
-		 * insert/del operation because it implies memory realocation and copy of 
-		 * the element of the list. 
-		 */
-		void compress( void );
-		
 	private:
 		/**
 		 * Store all values 
@@ -300,14 +291,6 @@ namespace BasicDataStructures
 	void List<list_type>::clear( void )
 	{
 		array.clear();
-	}
-	
-	template <class list_type>
-	void List<list_type>::compress( void )
-	{
-		container_type tmp = array;
-		
-		tmp.swap(array);
 	}
 	
 } // End namespace
