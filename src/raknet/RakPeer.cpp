@@ -999,8 +999,7 @@ void RakPeer::AddToBanList( const char *IP, unsigned int milliseconds )
 	banListMutex.Unlock();
 	/// \todo UNTRACKED MEMORY ALLOCATION
 	BanStruct *banStruct = new BanStruct;
-	DEBUG_COUNT_EXECUTION;
-	banStruct->IP = new char [ 16 ];
+	
 	if (milliseconds==0)
 		banStruct->timeout=0; // Infinite
 	else
@@ -1047,7 +1046,6 @@ void RakPeer::RemoveFromBanList( const char *IP )
 
 	if (temp)
 	{
-		delete [] temp->IP;
 		delete temp;
 	}
 	
@@ -1111,7 +1109,6 @@ bool RakPeer::IsBanned( const char *IP )
 			temp = banList[ banListIndex ];
 			banList[ banListIndex ] = banList[ banList.size() - 1 ];
 			banList.del( banList.size() - 1 );
-			delete [] temp->IP;
 			delete temp;
 		}
 		else

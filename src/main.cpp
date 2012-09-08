@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <sstream>
 #include <iostream>
 
+#include <boost/lexical_cast.hpp>
+
 #include <SDL/SDL.h>
 
 #include "config.h"
@@ -38,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Blood.h"
 #include "FileSystem.h"
 #include "state/State.h"
+#include "state/NetworkState.h"
 
 #if defined(WIN32)
 #ifndef GAMEDATADIR
@@ -212,6 +215,35 @@ int main(int argc, char* argv[])
 			rmanager->setBackground(bg);
 
 		InputManager* inputmgr = InputManager::createInputManager();
+		
+		// -----------------------------------------------------------------------------------------
+		// 								DEBUGGING
+		//					Switch to desired state
+		// -----------------------------------------------------------------------------------------
+		std::string address = gameConfig.getString("network_last_server");
+		std::string server = address;
+		int port = BLOBBY_PORT;
+		std::size_t found = address.find(':');
+		if (found != std::string::npos) {
+			server = address.substr(0, found);
+			
+			try
+			{
+				port = boost::lexical_cast<int>(address.substr(found+1));
+			}
+			 catch (boost::bad_lexical_cast)
+			{
+				/// \todo inform the user that default port was selected
+			}
+			if ((port <= 0) || (port > 65535))
+				port = BLOBBY_PORT;
+		}
+		
+		State::switchToNewState( new NetworkGameState( server, port ) );
+		
+		int timer = 0;
+		
+		
 		int running = 1;
 		while (running)
 		{
@@ -247,6 +279,23 @@ int main(int argc, char* argv[])
 				rmanager->refresh();
 			}
 			scontroller.update();
+			
+			timer++;
+			
+			if(timer == 750 )
+			{
+				STARTUPINFO siStartupInfo; 
+				PROCESS_INFORMATION piProcessInfo;
+				memset(&siStartupInfo, 0, sizeof(siStartupInfo));
+				memset(&piProcessInfo, 0, sizeof(piProcessInfo));
+				siStartupInfo.cb = sizeof(siStartupInfo);
+
+				CreateProcess("Blobby Volley 2.exe", 0, 0, 0, false,
+											NORMAL_PRIORITY_CLASS, 0, 0, &siStartupInfo, &piProcessInfo );
+				
+				exit(0);
+
+			} 
 		}
 	}
 	catch (std::exception& e)
@@ -265,3 +314,12 @@ int main(int argc, char* argv[])
 }
 
 
+// server workload statistics
+int SWLS_PacketCount = 0;
+int SWLS_Connections = 0;
+int SWLS_Games		 = 0;
+int SWLS_GameSteps	 = 0;
+int SWLS_RunningTime = 0;
+int SWLS_IngamePacketsProcessed = 0;
+int SWLS_IngameEventCounter = 0;
+int SWLS_PhysicStateBroadcasts = 0;

@@ -37,8 +37,6 @@ InternalPacketPool::InternalPacketPool()
 	packetsReleased = 0;
 #endif
 	
-	// Speed things up by not reallocating at runtime when a mutex is locked.
-	pool.clearAndForceAllocation( 64 );
 	unsigned i;
 	for (i=0; i < 64; i++)
 		pool.push(new InternalPacket);
@@ -57,15 +55,13 @@ InternalPacketPool::~InternalPacketPool()
 void InternalPacketPool::ClearPool( void )
 {
 	InternalPacket * p;
-	//poolMutex.Lock();
 	
-	while ( pool.size() )
+	while ( !pool.empty() )
 	{
-		p = pool.pop();
+		p = pool.top();
+		pool.pop();
 		delete p;
 	}
-	
-	//poolMutex.Unlock();
 }
 
 InternalPacket* InternalPacketPool::GetPointer( void )
@@ -75,10 +71,12 @@ InternalPacket* InternalPacketPool::GetPointer( void )
 #endif
 	
 	InternalPacket *p = 0;
-	//poolMutex.Lock();
-	if ( pool.size() )
-		p = pool.pop();
-	//poolMutex.Unlock();
+
+	if ( !pool.empty() )
+	{
+		p = pool.top();
+		pool.pop();
+	}
 	
 	if ( p )
 		return p;
@@ -107,8 +105,6 @@ void InternalPacketPool::ReleasePointer( InternalPacket *p )
 #ifdef _DEBUG
 	p->data=0;
 #endif
-	//poolMutex.Lock();
 	pool.push( p );
-	//poolMutex.Unlock();
 }
 

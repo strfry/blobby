@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "LocalInputSource.h"
 #include "UserConfig.h"
 #include "FileExceptions.h"
+#include "ScriptedInputSource.h"
 
 
 /* implementation */
@@ -60,7 +61,7 @@ NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port):
 	config.loadFile("config.xml");
 	mOwnSide = (PlayerSide)config.getInteger("network_side");
 	mUseRemoteColor = config.getBool("use_remote_color");
-	mLocalInput.reset(new LocalInputSource(mOwnSide));
+	mLocalInput.reset(new ScriptedInputSource("scripts/reduced.lua", mOwnSide, 0));
 	mSaveReplay = false;
 	mWaitingForReplay = false;
 	mErrorMessage = "";

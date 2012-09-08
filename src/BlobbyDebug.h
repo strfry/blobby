@@ -91,6 +91,16 @@ struct CountingAllocator : private std::allocator<T>
 	typedef size_t size_type;
 	typedef ptrdiff_t difference_type ;
 	
+	CountingAllocator()
+	{
+		
+	}
+	
+	template<class V, typename tag2>
+	CountingAllocator(const CountingAllocator<V, tag2>& other)
+	{
+	}
+	
 	template<typename _Tp1>
 	struct rebind
 	{ 

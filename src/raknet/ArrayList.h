@@ -36,11 +36,11 @@
 #ifndef __LIST_H
 #define __LIST_H 
 
-#include <cassert>
 #include <string>
+#include <cassert>
 #include <vector>
+
 #include "BlobbyDebug.h"
-////#include "MemoryManager.h"
 
 struct ArrayListTag
 {
@@ -49,8 +49,6 @@ struct ArrayListTag
 		return "ArrayList";
 	}
 };
-
-
 
 
 /**
