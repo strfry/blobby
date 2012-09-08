@@ -59,7 +59,7 @@ namespace BasicDataStructures
 		void Clear(void);
 		int Size(void) const; // An ESTIMATE of how many data elements are waiting to be read
 	private:
-		struct DataPlusPtr
+		struct DataPlusPtr : public ObjectCounter<DataPlusPtr>
 		{
 			SingleProducerConsumerType object;
 			DataPlusPtr *next;
