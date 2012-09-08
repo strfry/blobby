@@ -46,7 +46,7 @@
 #include "RakNetStatistics.h"
 #include "SingleProducerConsumer.h"
 #include "SHA1.h"
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 /**
 * Sizeof an UDP header in byte 

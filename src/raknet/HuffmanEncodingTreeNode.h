@@ -31,7 +31,7 @@
 #ifndef __HUFFMAN_ENCODING_TREE_NODE
 #define __HUFFMAN_ENCODING_TREE_NODE
 
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 /**
  * @todo BasicDataStructure namespace maybe 

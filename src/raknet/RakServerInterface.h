@@ -36,7 +36,7 @@
 #include "RakPeerInterface.h"
 #include "BitStream.h"
 #include "RakNetStatistics.h" 
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 /**
  * @brief Visible Interface of RakServer
  * 

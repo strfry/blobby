@@ -32,7 +32,7 @@
 
 #include "HuffmanEncodingTreeNode.h"
 #include "BitStream.h"
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 #include "LinkedList.h" 
 /**

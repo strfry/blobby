@@ -33,7 +33,7 @@
 #define __INTERNAL_PACKET_POOL
 #include <stack>
 #include "InternalPacket.h"
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 #include <string>
 

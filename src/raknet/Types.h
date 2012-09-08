@@ -73,7 +73,7 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 /**
 * @brief Compatibility and Fundamental Tools and Types.  This

@@ -39,7 +39,7 @@
 #define __BINARY_SEARCH_TREE_H
 
 #include "QueueLinkedList.h"
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 namespace BasicDataStructures
 {

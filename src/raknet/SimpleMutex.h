@@ -31,7 +31,7 @@
 #ifndef __SIMPLE_MUTEX_H
 #define __SIMPLE_MUTEX_H
 
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 #ifdef _WIN32
 #include <windows.h>

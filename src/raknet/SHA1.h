@@ -26,7 +26,7 @@
 #include <memory.h> // Needed for memset and memcpy
 #include <string.h> // Needed for strcat and strcpy
 #include "Types.h" 
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 /**
 * Size of the read buffer when computing SHA-1 sum on a file 

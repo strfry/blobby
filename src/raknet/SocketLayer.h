@@ -45,7 +45,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h> 
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 /**
 * typename for communication endpoint

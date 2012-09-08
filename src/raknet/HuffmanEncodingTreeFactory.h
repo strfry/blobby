@@ -31,7 +31,7 @@
 #ifndef __HUFFMAN_ENCODING_TREE_FACTORY
 #define __HUFFMAN_ENCODING_TREE_FACTORY
 
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 class HuffmanEncodingTree;
 

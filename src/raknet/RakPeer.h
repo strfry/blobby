@@ -37,7 +37,7 @@
 #include "BitStream.h"
 #include "SingleProducerConsumer.h"
 #include "PacketPool.h"
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 class HuffmanEncodingTree;
 class MessageHandlerInterface;

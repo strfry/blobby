@@ -33,7 +33,7 @@
 #include "SimpleMutex.h"
 #include "ClientContextStruct.h"
 #include "RakNetQueue.h"
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 /**
  * @internal 

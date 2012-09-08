@@ -39,7 +39,7 @@
 #include "NetworkTypes.h"
 #include "MTUSize.h"
 
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 class RakPeer;
 

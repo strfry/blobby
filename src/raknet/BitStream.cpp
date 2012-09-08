@@ -97,7 +97,7 @@
 #define B64_0 0
 #endif
 
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 #include <string>
 
 struct BitstreamTag

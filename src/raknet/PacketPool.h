@@ -34,7 +34,7 @@
 #include "SimpleMutex.h"
 #include "RakNetQueue.h"
 #include "NetworkTypes.h"
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 /**
 * @brief Manage memory for packet. 

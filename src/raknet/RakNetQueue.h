@@ -59,7 +59,7 @@
 
 #include <deque>
 #include <algorithm>
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 #ifndef __QUEUE_H
 #define __QUEUE_H

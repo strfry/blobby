@@ -32,7 +32,7 @@
 #define __INTERNAL_PACKET_H
 
 #include "PacketPriority.h"
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 #ifdef _DEBUG
 #include "NetworkTypes.h"
 #endif

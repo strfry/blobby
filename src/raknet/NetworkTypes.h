@@ -34,7 +34,7 @@
 
 // Needed for Serialize/Deserialize functions
 #include "BitStream.h"
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 /**
 * Typename for Network Object Identifier 

@@ -33,7 +33,7 @@
 #ifndef __CHECKSUM_H
 #define __CHECKSUM_H
 
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 /**
  * This class provide checksuming service. 

@@ -35,7 +35,7 @@
 class RakPeerInterface;
 struct Packet;
 #include "NetworkTypes.h"
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 // MessageHandlers should derive from MessageHandlerInterface and be attached to RakPeer using the function AttachMessageHandler
 // On a user call to Receive, OnReceive is called for every MessageHandlerInterface, which can then take action based on the packet

@@ -33,7 +33,7 @@
 #define __DATA_BLOCK_ENCRYPTOR_H
 
 #include "rijndael.h"
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 /**
  * Encrypt and Decrypt block of data 

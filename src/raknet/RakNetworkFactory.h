@@ -32,7 +32,7 @@
 #ifndef __RAK_NETWORK_FACTORY_H
 #define __RAK_NETWORK_FACTORY_H
 
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 class RakClientInterface;
 

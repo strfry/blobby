@@ -40,7 +40,7 @@
 #include <cassert>
 #include <vector>
 
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 struct ArrayListTag
 {

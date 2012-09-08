@@ -32,7 +32,7 @@
 #define __SINGLE_PRODUCER_CONSUMER_H
 
 #include <assert.h>
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 static const int MINIMUM_LIST_SIZE=8;
 
