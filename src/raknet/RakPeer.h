@@ -256,7 +256,7 @@ public:
 	* @param target Which connection to close
 	* @param sendDisconnectionNotification True to send ID_DISCONNECTION_NOTIFICATION to the recipient.  False to close it silently.
 	*/
-	void CloseConnection( PlayerID target, bool sendDisconnectionNotification, int depreciated=0 );
+	void CloseConnection( PlayerID target, bool sendDisconnectionNotification );
 
 	/**
 	* Given a playerID, returns an index from 0 to the maximum number of players allowed - 1.
@@ -795,7 +795,7 @@ protected:
 	/**
 	* The list of people we have tried to connect to recently
 	*/
-	//BasicDataStructures::Queue<RequestedConnectionStruct*> requestedConnectionsList;
+	//BlobNet::ADT::Queue<RequestedConnectionStruct*> requestedConnectionsList;
 	/**
 	* Data that both the client and the server needs
 	*/
@@ -811,7 +811,7 @@ protected:
 #endif
 		processPacketsThreadHandle, recvfromThreadHandle;
 	SimpleMutex incomingQueueMutex, banListMutex; //,synchronizedMemoryQueueMutex, automaticVariableSynchronizationMutex;
-	BasicDataStructures::Queue<Packet *> incomingPacketQueue; //, synchronizedMemoryPacketQueue;
+	BlobNet::ADT::Queue<Packet *> incomingPacketQueue; //, synchronizedMemoryPacketQueue;
 	// BitStream enumerationData;
 
 	struct BanStruct : public ObjectCounter<BanStruct>
@@ -863,17 +863,7 @@ protected:
 	};
 
 	// Single producer single consumer queue using a linked list
-	//BufferedCommandStruct* bufferedCommandReadIndex, bufferedCommandWriteIndex;
 	BasicDataStructures::SingleProducerConsumer<BufferedCommandStruct> bufferedCommands;
-
-	//BasicDataStructures::Queue<BufferedCommandStruct *> bufferedCommandQueue;
-	//BasicDataStructures::Queue<BufferedCommandStruct *> bufferedCommandPool;
-	//RakPeer::BufferedCommandStruct *LockWriteBufferedCommandStruct(bool *outParam_wasInserted); // Get the next BCS to write
-	//void UnlockWriteBufferedCommandStruct(RakPeer::BufferedCommandStruct *bcs, bool *outParam_wasInserted); // Done with the next BCS to write
-	//RakPeer::BufferedCommandStruct *LockReadBufferedCommandStruct(void); // Get the next BCS to read
-	//RakPeer::BufferedCommandStruct *UnlockReadBufferedCommandStruct(void); // Done with the next BCS to read
-	
-	//void FreeBufferedCommandStruct(RakPeer::BufferedCommandStruct *bcs);
 
 	bool AllowIncomingConnections(void) const;
 
@@ -883,7 +873,8 @@ protected:
 	void PingInternal( PlayerID target, bool performImmediate );
 	bool ValidSendTarget(PlayerID playerId, bool broadcast);
 	// This stores the user send calls to be handled by the update thread.  This way we don't have thread contention over playerIDs
-	void CloseConnectionInternal( PlayerID target, bool sendDisconnectionNotification, bool performImmediate );
+	void CloseConnectionInternalBuffered( PlayerID target, bool sendDisconnectionNotification );
+	void CloseConnectionInternalImmediate( PlayerID target );
 	void SendBuffered( const RakNet::BitStream * bitStream, PacketPriority priority, PacketReliability reliability, char orderingChannel, PlayerID playerId, bool broadcast, RemoteSystemStruct::ConnectMode connectionMode );
 	bool SendImmediate( char *data, int numberOfBitsToSend, PacketPriority priority, PacketReliability reliability, char orderingChannel, PlayerID playerId, bool broadcast, bool useCallerDataAllocation, unsigned int currentTime );
 	

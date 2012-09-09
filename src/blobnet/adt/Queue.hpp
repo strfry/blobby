@@ -1,68 +1,29 @@
-/* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
-/**
- * Copyright (c) 2003, Rakkarsoft LLC and Kevin Jenkins
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * NEW AND IMPROVED EFFICIENT Queue ADT - By Kevin Jenkins
- * Initilize with the following structure
- * Queue<TYPE, OPTIONAL INITIAL ALLOCATION SIZE>
- *
- * Has the following member functions
- * push - adds an element to the top of the queue
- * pop - returns the bottom element from the queue and removes it.  Result undefined if queue empty
- * peek - returns the bottom element from the queue.  Result undefined if queue empty
- * size - returns the size of the queue
- * compress - reallocates memory to fit the number of elements. Best used when the number of elements decreases
- * clear - empties the queue and returns storage
- * find - returns bool if the specified element is in the queue
- * The assignment and copy constructors are defined
- * 
- * EXAMPLE
- * Queue<int, 20> A;
- * A.push(5);
- * A.push(10);
- * 
- * A.peek(); // Returns 5
- * A.pop(); // Returns 5
- * A.peek(); // Returns 10
- * A.pop();  // Returns 10
- * // At this point the queue is empty
- * 
- * NOTES
- * The default initial allocation size is 1
- * This function doubles the amount of memory allocated when the queue is filled
- * This is better than the linked list version for a queue that doesn't go from one extreme to the other with size changes.
- *
- */
+/*=============================================================================
+blobNet
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+=============================================================================*/
+
+#ifndef _QUEUE_HPP_
+#define _QUEUE_HPP_
+
+/* Includes */
 #include <deque>
 #include <algorithm>
-#include "../BlobbyDebug.h"
-
-#ifndef __QUEUE_H
-#define __QUEUE_H
+#include "../../BlobbyDebug.h"
 
 #include <string>
 
@@ -75,17 +36,14 @@ struct QueueTag
 };
 
 
-namespace BasicDataStructures
-{
 
-	const unsigned int initAllocationSize = 16; 
-
-
+namespace BlobNet {
+namespace ADT {
 	/*!	\class Queue
 		\brief ADT for a Queue with some extra functionality
+		\note This class needs a cleanup. There are some dummy methods
 	*/
-	template <class QueueType>
-	class Queue: public ObjectCounter<Queue<QueueType> >
+	template <class QueueType> class Queue
 	{
 	public:
 		/// @brief constructor, creates an queue
@@ -100,8 +58,7 @@ namespace BasicDataStructures
 
 		const QueueType& operator[] (unsigned int position) const;
 		QueueType& operator[] (unsigned int position);
-
-		bool operator= ( const Queue& original_copy );
+		bool operator= (const Queue& original_copy);
 
 		/// @brief Count of elements in the queue
 		/// @return Count of elements
@@ -118,10 +75,6 @@ namespace BasicDataStructures
 		/// @brief Pops the first element of queue. Check if queue is not empty before.
 		/// @return First element of queue
 		inline const QueueType pop();
-
-		/// @brief Returns the internal size of the allocated array
-		/// @return Internal array size
-		inline const unsigned int AllocationSize() const;
 
 		/// @brief Deletes all elements of the array
 		inline void clear();
@@ -146,13 +99,8 @@ namespace BasicDataStructures
 		void clearAndForceAllocation(int size);
 
 	private:
-		unsigned int head; // First element with data
-		unsigned int tail; // First element without data
-		unsigned int allocation_size;
-
 		typedef std::deque<QueueType, CountingAllocator<QueueType, QueueTag> > ContainerType;
 		ContainerType array;
-
 	};
 
 	template <class QueueType> Queue<QueueType>::Queue()
@@ -206,11 +154,6 @@ namespace BasicDataStructures
 		return tmp;
 	}
 
-	template <class QueueType> inline const unsigned int Queue<QueueType>::AllocationSize() const
-	{
-		return this->array.max_size();
-	}
-
 	template <class QueueType> inline void Queue<QueueType>::clear()
 	{
 		this->array.clear();
@@ -242,7 +185,7 @@ namespace BasicDataStructures
 	{
 		return this->array.clear();
 	}
-} // End namespace
-
+}
+}
 #endif
 

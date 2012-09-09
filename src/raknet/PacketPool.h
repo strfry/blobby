@@ -32,10 +32,10 @@
 #ifndef __PACKET_POOL
 #define __PACKET_POOL
 #include "SimpleMutex.h"
-#include "RakNetQueue.h"
 #include "NetworkTypes.h"
 #include "../BlobbyDebug.h"
 
+#include "../blobnet/adt/Queue.hpp"
 /**
 * @brief Manage memory for packet. 
 *
@@ -87,7 +87,7 @@ private:
 	/**
 	* Store packets 
 	*/
-	BasicDataStructures::Queue<Packet*> pool;
+	BlobNet::ADT::Queue<Packet*> pool;
 	/**
 	* Exclusive access to the pool
 	*/

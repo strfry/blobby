@@ -487,8 +487,8 @@ bool ReliabilityLayer::HandleSocketReceiveFromConnectedPlayer( const char *buffe
 			statistics.messagesReceived++;
 
 			// If the allocated buffer is > DEFAULT_RECEIVED_PACKETS_SIZE and it is 3x greater than the number of elements actually being used
-			if (receivedPackets.AllocationSize() > DEFAULT_RECEIVED_PACKETS_SIZE && receivedPackets.AllocationSize() > receivedPackets.size() * 3)
-				receivedPackets.compress();
+			//if (receivedPackets.AllocationSize() > DEFAULT_RECEIVED_PACKETS_SIZE && receivedPackets.AllocationSize() > receivedPackets.size() * 3)
+			//	receivedPackets.compress();
 
 			// Keep on top of deleting old unreliable split packets so they don't clog the list.
 			if ( internalPacket->splitPacketCount > 0 )
@@ -2148,7 +2148,7 @@ void ReliabilityLayer::DeleteSequencedPacketsInList( unsigned char orderingChann
 // Search the specified list for sequenced packets with a value less than orderingIndex and delete them
 // Note - I added functionality so you can use the Queue as a list (in this case for searching) but it is less efficient to do so than a regular list
 //-------------------------------------------------------------------------------------------------------
-void ReliabilityLayer::DeleteSequencedPacketsInList( unsigned char orderingChannel, BasicDataStructures::Queue<InternalPacket*>&theList )
+void ReliabilityLayer::DeleteSequencedPacketsInList( unsigned char orderingChannel, BlobNet::ADT::Queue<InternalPacket*>&theList )
 {
 	InternalPacket * internalPacket;
 	int listSize = theList.size();

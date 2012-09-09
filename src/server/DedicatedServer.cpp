@@ -47,7 +47,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "NetworkPlayer.h"
 #include "FileSystem.h"
 #include "PacketLogger.h"
-#include "BlobbyDebug.h"
+#include "../BlobbyDebug.h"
 
 // platform specific
 #ifndef WIN32
