@@ -2474,6 +2474,7 @@ void RakPeer::CloseConnectionInternalBuffered( PlayerID target, bool sendDisconn
 	}
 	else
 	{
+		DEBUG_COUNT_EXECUTION
 		BufferedCommandStruct *bcs;
 		bcs=bufferedCommands.WriteLock();
 		bcs->command=BufferedCommandStruct::BCS_CLOSE_CONNECTION;
@@ -2523,11 +2524,11 @@ bool RakPeer::ValidSendTarget(PlayerID playerId, bool broadcast)
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void RakPeer::SendBuffered( const RakNet::BitStream * bitStream, PacketPriority priority, PacketReliability reliability, char orderingChannel, PlayerID playerId, bool broadcast, RemoteSystemStruct::ConnectMode connectionMode )
 {
+	DEBUG_COUNT_EXECUTION
 	BufferedCommandStruct *bcs;
 	bcs=bufferedCommands.WriteLock();
 
 	/// \todo UNTRACKED MEMORY ALLOCATION
-	DEBUG_COUNT_EXECUTION
 	bcs->data = new char[bitStream->GetNumberOfBytesUsed()]; // Making a copy doesn't lose efficiency because I tell the reliability layer to use this allocation for its own copy
 	memcpy(bcs->data, bitStream->GetData(), bitStream->GetNumberOfBytesUsed());
     bcs->numberOfBitsToSend=bitStream->GetNumberOfBitsUsed();
@@ -2873,6 +2874,8 @@ bool RakPeer::RunUpdateCycle( void )
 	bool callerDataAllocationUsed;
 	RakNetStatisticsStruct *rnss;
 
+	DEBUG_COUNT_EXECUTION;
+
 	do
 	{
 		// Read a packet
@@ -2923,6 +2926,7 @@ bool RakPeer::RunUpdateCycle( void )
 	
 	// Process all the deferred user thread Send and connect calls
 	
+	DEBUG_COUNT_EXECUTION;
 	while ( ( bcs = bufferedCommands.ReadLock() ) != 0 ) // Don't immediately check mutex since it's so slow to activate it
 	{
 		if (bcs->command==BufferedCommandStruct::BCS_SEND)
