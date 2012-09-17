@@ -2481,6 +2481,7 @@ void RakPeer::CloseConnectionInternalBuffered( PlayerID target, bool sendDisconn
 		bcs->playerId=target;
 		bcs->data=0;
 		bufferedCommands.WriteUnlock();
+		DEBUG_COUNT_EXECUTION;
 	}
 }
 
@@ -2907,6 +2908,7 @@ bool RakPeer::RunUpdateCycle( void )
 				}
 
 #else
+			DEBUG_COUNT_EXECUTION
 			if ( errorCode == -1 )
 			{
 				// isRecvfromThreadActive=false;
@@ -2963,6 +2965,7 @@ bool RakPeer::RunUpdateCycle( void )
 #ifdef _DEBUG
 		bcs->data=0;
 #endif
+		DEBUG_COUNT_EXECUTION;
 		bufferedCommands.ReadUnlock();
 	}
 
@@ -3662,96 +3665,19 @@ void* UpdateNetworkLoop( void* arguments )
 #endif
 {
 	RakPeer * rakPeer = ( RakPeer * ) arguments;
-	// unsigned int time;
-
+	
 #ifdef __USE_IO_COMPLETION_PORTS
 
 	AsynchronousFileIO::Instance()->IncreaseUserCount();
 #endif
 
-	// 11/15/05 - this is slower than Sleep()
-	/*
-#ifdef _WIN32
-#if (_WIN32_WINNT >= 0x0400) || (_WIN32_WINDOWS > 0x0400)
-	// Lets see if these timers give better performance than Sleep
-	HANDLE timerHandle;
-	LARGE_INTEGER dueTime;
-
-	if ( rakPeer->threadSleepTimer == 0 )
-		rakPeer->threadSleepTimer = 1;
-
-	// 2nd parameter of false means synchronization timer instead of manual-reset timer
-	timerHandle = CreateWaitableTimer( NULL, FALSE, 0 );
-
-	assert( timerHandle );
-
-	dueTime.QuadPart = -10000 * rakPeer->threadSleepTimer; // 10000 is 1 ms?
-
-	BOOL success = SetWaitableTimer( timerHandle, &dueTime, rakPeer->threadSleepTimer, NULL, NULL, FALSE );
-
-	assert( success );
-
-#endif
-#endif
-	*/
-
 	rakPeer->isMainLoopThreadActive = true;
 
 	while ( rakPeer->endThreads == false )
 	{
-		/*
-		time=RakNet::GetTime();
-
-		// Dynamic threading - how long we sleep and if we update
-		// depends on whether or not the user thread is updating
-		if (time > rakPeer->lastUserUpdateCycle && time - rakPeer->lastUserUpdateCycle > UPDATE_THREAD_UPDATE_TIME)
-		{
-		// Only one thread should call RunUpdateCycle at a time.  We don't need to delay calls so
-		// a mutex on the function is not necessary - only on the variable that indicates if the function is
-		// running
-		rakPeer->RunMutexedUpdateCycle();
-
-
-		// User is not updating the network. Sleep a short time
-		#ifdef _WIN32
-		Sleep(rakPeer->threadSleepTimer);
-		#else
-		usleep(rakPeer->threadSleepTimer * 1000);
-		#endif
-		}
-		else
-		{
-		// User is actively updating the network.  Only occasionally poll
-		#ifdef _WIN32
-		Sleep(UPDATE_THREAD_POLL_TIME);
-		#else
-		usleep(UPDATE_THREAD_POLL_TIME * 1000);
-		#endif
-		}
-		*/
 		rakPeer->RunUpdateCycle();
 #ifdef _WIN32
-		//#if (_WIN32_WINNT >= 0x0400) || (_WIN32_WINDOWS > 0x0400)
-#if (0) // 08/05/05 This doesn't seem to work well at all!
-		//#pragma message("-- RakNet:Using WaitForSingleObject --")
-
-		if ( WaitForSingleObject( timerHandle, INFINITE ) != WAIT_OBJECT_0 )
-		{
-#ifdef _DEBUG
-	
-			assert( 0 );
-	#ifdef _DO_PRINTF
-			printf( "WaitForSingleObject failed (%d)\n", GetLastError() );
-	#endif
-#endif
-		}
-
-#else
-		//#pragma message("-- RakNet:Using Sleep --")
-		//#pragma message("-- Define _WIN32_WINNT as 0x0400 or higher to use WaitForSingleObject --")
 		Sleep( rakPeer->threadSleepTimer );
-
-#endif
 #else
 		usleep( rakPeer->threadSleepTimer * 1000 );
 #endif
@@ -3764,15 +3690,6 @@ void* UpdateNetworkLoop( void* arguments )
 
 	AsynchronousFileIO::Instance()->DecreaseUserCount();
 #endif
-
-/*
-#ifdef _WIN32
-#if (_WIN32_WINNT >= 0x0400) || (_WIN32_WINDOWS > 0x0400)
-
-	CloseHandle( timerHandle );
-#endif
-#endif
-*/
 
 	return 0;
 }

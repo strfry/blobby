@@ -66,6 +66,7 @@ class ObjectCounter
 
 
 void report(std::ostream& stream);
+int getObjectCount(const std::type_info& type);
 
 struct CountingReport
 {

@@ -45,7 +45,6 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h> 
-#include "../BlobbyDebug.h"
 
 /**
 * typename for communication endpoint
@@ -60,6 +59,7 @@ typedef int SOCKET;
 */
 #define SOCKET_ERROR -1
 #endif
+#include "../BlobbyDebug.h"
 #include "ClientContextStruct.h"
 
 class RakPeer;

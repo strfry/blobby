@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <map>
 #include <fstream>
+#include <ctime>
 
 #include "RakNet/NetworkTypes.h"
 
@@ -65,6 +66,6 @@ int PacketLogger::getPacketID(const std::string& type) const
 const PacketLogger& PacketLogger::operator<<(Packet* packet) const
 {
 	int id = (int)packet->data[0];
-	p->file << packet->playerId.binaryAddress << ":" << packet->playerId.port << "\t" << getHumanReadableType(id) << " " << id << "\t" << packet->data << "\n"; 
+	p->file << std::clock() << ": from " << packet->playerId.binaryAddress << ":" << packet->playerId.port << "\t" << getHumanReadableType(id) << " " << id << "\t" << packet->data << "\n"; 
 }
 
