@@ -430,12 +430,12 @@ void NetworkGameState::step()
 				if(!mWaitingForReplay)
 					break;
 				
-				boost::shared_ptr<RakNet::BitStream> stream = boost::make_shared<RakNet::BitStream>((char*)packet->data, packet->length, false);
-				stream->IgnoreBytes(1);	// ID_REPLAY
+				RakNet::BitStream stream = RakNet::BitStream((char*)packet->data, packet->length, false);
+				stream.IgnoreBytes(1);	// ID_REPLAY
 				
 				try 
 				{
-					boost::shared_ptr<GenericIn> reader = createGenericReader(stream);
+					boost::shared_ptr<GenericIn> reader = createGenericReader( &stream );
 					ReplayRecorder dummyRec;
 					dummyRec.receive( reader );
 					

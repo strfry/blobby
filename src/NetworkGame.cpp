@@ -242,13 +242,13 @@ bool NetworkGame::step()
 
 			case ID_REPLAY:
 			{
-				boost::shared_ptr<RakNet::BitStream> stream = boost::make_shared<RakNet::BitStream>();
-				stream->Write((unsigned char)ID_REPLAY);
-				boost::shared_ptr<GenericOut> out = createGenericWriter(stream);
+				RakNet::BitStream stream = RakNet::BitStream();
+				stream.Write((unsigned char)ID_REPLAY);
+				boost::shared_ptr<GenericOut> out = createGenericWriter( &stream );
 				mRecorder->send( out );
-				assert( stream->GetData()[0] == ID_REPLAY );
+				assert( stream.GetData()[0] == ID_REPLAY );
 
-				mServer.Send(stream.get(), LOW_PRIORITY, RELIABLE_ORDERED, 0, packet->playerId, false);
+				mServer.Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0, packet->playerId, false);
 
 				break;
 			}
