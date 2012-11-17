@@ -24,8 +24,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "InputSource.h"
 #include "PhysicState.h"
 
-const float BLOBBY_SPEED = 4.5; // BLOBBY_SPEED is necessary to determine the size of the input buffer
-
 namespace RakNet
 {
 	class BitStream;
@@ -42,23 +40,18 @@ class PhysicWorld
 		PhysicWorld();
 		~PhysicWorld();
 
+		// ball information queries
+		Vector2 getBallPosition() const;
 		Vector2 getBallVelocity() const;
-		bool getBlobJump(PlayerSide player) const;
-		bool getBallActive() const;
-
-		Vector2 getBlob(PlayerSide player) const;
-		Vector2 getBlobVelocity(PlayerSide player) const;
-		Vector2 getBall() const;
-
-		float getBlobState(PlayerSide player) const;
 		float getBallRotation() const;
-
-		float getBallSpeed() const;
-
-		bool blobbyHitGround(PlayerSide player) const;
+		
+		// blobby information queries
+		Vector2 getBlobPosition(PlayerSide player) const;
+		Vector2 getBlobVelocity(PlayerSide player) const;
+		bool getBlobJump(PlayerSide player) const;
+		float getBlobState(PlayerSide player) const;
 
 		// Blobby animation methods
-		void blobbyAnimationStep(PlayerSide player);
 		void blobbyStartAnimation(PlayerSide player);
 
 		// Methods to set/get the intensity of the collision
@@ -96,6 +89,10 @@ class PhysicWorld
 		#endif
 
 	private:
+		void blobbyAnimationStep(PlayerSide player);
+	
+		bool blobbyHitGround(PlayerSide player) const;
+	
 		inline bool playerTopBallCollision(int player) const;
 		inline bool playerBottomBallCollision(int player) const;
 

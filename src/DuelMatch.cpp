@@ -270,7 +270,7 @@ bool DuelMatch::getBlobJump(PlayerSide player) const
 Vector2 DuelMatch::getBlobPosition(PlayerSide player) const
 {
 	if (player == LEFT_PLAYER || player == RIGHT_PLAYER)
-		return mPhysicWorld->getBlob(player);
+		return mPhysicWorld->getBlobPosition(player);
 	else
 		return Vector2(0.0, 0.0);
 }
@@ -285,7 +285,7 @@ Vector2 DuelMatch::getBlobVelocity(PlayerSide player) const
 
 Vector2 DuelMatch::getBallPosition() const
 {
-	return mPhysicWorld->getBall();
+	return mPhysicWorld->getBallPosition();
 }
 
 Vector2 DuelMatch::getBallVelocity() const

@@ -83,7 +83,7 @@ bool PhysicWorld::blobbyHitGround(PlayerSide player) const
 {
 	if (player == LEFT_PLAYER || player == RIGHT_PLAYER)
 	{
-		return (getBlob(player).y >= GROUND_PLANE_HEIGHT);
+		return (getBlobPosition(player).y >= GROUND_PLANE_HEIGHT);
 	}
 	else
 		return false;
@@ -124,7 +124,7 @@ inline bool PhysicWorld::playerBottomBallCollision(int player) const
 	return false;
 }
 
-Vector2 PhysicWorld::getBall() const
+Vector2 PhysicWorld::getBallPosition() const
 {
 	return mBallPosition;
 }
@@ -134,12 +134,7 @@ float PhysicWorld::getBallRotation() const
 	return mBallRotation;
 }
 
-float PhysicWorld::getBallSpeed() const
-{
-	return mBallVelocity.length();
-}
-
-Vector2 PhysicWorld::getBlob(PlayerSide player) const
+Vector2 PhysicWorld::getBlobPosition(PlayerSide player) const
 {
 	return mBlobPosition[player];
 }
@@ -382,9 +377,9 @@ int PhysicWorld::step(const PlayerInput& leftInput, const PlayerInput& rightInpu
 	if( !isGameRunning )
 		mBallRotation -= mBallAngularVelocity;
 	else if (mBallVelocity.x > 0.0)
-		mBallRotation += mBallAngularVelocity * (getBallSpeed() / 6);
+		mBallRotation += mBallAngularVelocity * (mBallVelocity.length() / 6);
 	else
-		mBallRotation -= mBallAngularVelocity * (getBallSpeed() / 6);
+		mBallRotation -= mBallAngularVelocity * (mBallVelocity.length()/ 6);
 	
 	// Overflow-Protection
 	if (mBallRotation <= 0)
