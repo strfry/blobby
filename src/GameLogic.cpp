@@ -451,7 +451,7 @@ class LuaGameLogic : public FallbackGameLogic
 			return GameLogic(new LuaGameLogic(mSourceFile, match));
 		}
 		
-protected:
+	protected:
 		
 		virtual PlayerInput handleInput(PlayerInput ip, PlayerSide player);
 		virtual PlayerSide checkWin() const;
@@ -931,11 +931,11 @@ GameLogic createGameLogic()
 }
 GameLogic createGameLogic(const std::string& file, DuelMatch* match)
 {
-	if(file == "")
+	if(file == DUMMY_RULES_NAME)
 	{
 		return GameLogic(new DummyGameLogic());
 	} 
-		else if (file == "FALLBACK")
+		else if (file == FALLBACK_RULES_NAME)
 	{
 		return GameLogic(new FallbackGameLogic());
 	}

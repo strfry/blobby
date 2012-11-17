@@ -206,7 +206,7 @@ class IGameLogic
 		// data members
 		/// this array contains the scores
 		int mScores[2];
-		/// in these arrays the number of touches are counted
+		/// in this array the touches are counted
 		int mTouches[2];
 
 		/// these are helper arrays to prevent counting hits that happen too fast twice
