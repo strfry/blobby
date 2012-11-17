@@ -350,7 +350,7 @@ void NetworkGameState::step()
 						ourChecksum = rulesFile.calcChecksum(0);
 						rulesFile.close();
 					}
-					catch(...)
+					catch( FileLoadException& ex)
 					{
 						// file doesn't exist - nothing to do here
 					}
