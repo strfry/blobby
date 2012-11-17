@@ -128,14 +128,12 @@ int main(int argc, char** argv)
 
 	int port = BLOBBY_PORT;
 	int maxClients = 100;
-	int cvlTypeId = 0;
 	std::string rulesFile = "rules.lua";
 	try
 	{
 		config.loadFile("server.xml");
 		port = config.getInteger("port");
 		maxClients = config.getInteger("maximum_clients");
-		cvlTypeId = config.getInteger("cvl_type_id");
 		rulesFile = config.getString("rules");
 
 		// bring that value into a sane range
