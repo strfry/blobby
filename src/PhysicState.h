@@ -48,10 +48,6 @@ struct PhysicState
 	void writeToStream(RakNet::BitStream* stream) const;
 	void readFromStream(RakNet::BitStream* stream);
 	
-	// generic reading/writing
-	void serialize(GenericOut* io) const;
-	void deserialize(GenericIn* io);
-	
 	// equality comparision
 	bool operator==(const PhysicState& other) const;
 	
