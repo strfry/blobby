@@ -48,9 +48,12 @@ PhysicWorld::PhysicWorld()
 	reset(LEFT_PLAYER);
 	mCurrentBlobbyAnimationSpeed[LEFT_PLAYER] = 0.0;
 	mCurrentBlobbyAnimationSpeed[RIGHT_PLAYER] = 0.0;
+	mBlobState[LEFT_PLAYER] = 0.0;
+	mBlobState[RIGHT_PLAYER] = 0.0;
 	
 	mBlobPosition[LEFT_PLAYER] = Vector2( 200, GROUND_PLANE_HEIGHT);
 	mBlobPosition[RIGHT_PLAYER] = Vector2(600, GROUND_PLANE_HEIGHT);
+	mBallRotation = 0.0;
 }
 
 PhysicWorld::~PhysicWorld()
@@ -68,10 +71,7 @@ void PhysicWorld::reset(PlayerSide player)
 
 	mBallVelocity.clear();
 
-	mBallRotation = 0.0;
 	mBallAngularVelocity = player == RIGHT_PLAYER ? -STANDARD_BALL_ANGULAR_VELOCITY : STANDARD_BALL_ANGULAR_VELOCITY;
-	mBlobState[LEFT_PLAYER] = 0.0;
-	mBlobState[RIGHT_PLAYER] = 0.0;
 
 	mLastHitIntensity = 0.0;
 }
