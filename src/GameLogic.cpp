@@ -46,6 +46,9 @@ extern "C"
 /// how many steps must pass until the next hit can happen
 const int SQUISH_TOLERANCE = 11;
 
+const std::string FALLBACK_RULES_NAME = "__FALLBACK__";
+const std::string DUMMY_RULES_NAME = "__DUMMY__";
+
 
 IGameLogic::IGameLogic():	mLastError(NO_PLAYER), 
 							mServingPlayer(NO_PLAYER), 
@@ -928,6 +931,15 @@ GameLogic createGameLogic()
 }
 GameLogic createGameLogic(const std::string& file, DuelMatch* match)
 {
+	if(file == "")
+	{
+		return GameLogic(new DummyGameLogic());
+	} 
+		else if (file == "FALLBACK")
+	{
+		return GameLogic(new FallbackGameLogic());
+	}
+	
 	try 
 	{
 		return GameLogic( new LuaGameLogic(file, match) );

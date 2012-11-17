@@ -60,7 +60,6 @@ class DuelMatch
 		// If remote is true, only physical responses will be calculated
 		// but hit events and score events are received from network
 
-		DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool remote);
 		DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool remote, std::string rules);
 
 		~DuelMatch();

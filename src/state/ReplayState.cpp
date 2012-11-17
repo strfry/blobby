@@ -33,8 +33,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "IUserConfigReader.h"
 #include "ReplaySelectionState.h"
 
-
 /* implementation */
+
+extern const std::string DUMMY_RULES_NAME;
+
 ReplayState::ReplayState() :
 	mLeftPlayer(LEFT_PLAYER),
 	mRightPlayer(RIGHT_PLAYER)
@@ -63,7 +65,7 @@ void ReplayState::loadReplay(const std::string& file)
 	//try
 	//{
 		mReplayPlayer->load(std::string("replays/" + file + ".bvr"));
-		mReplayMatch.reset(new DuelMatch(0, 0, true, false));
+		mReplayMatch.reset(new DuelMatch(0, 0, true, false, DUMMY_RULES_NAME));
 		RenderManager::getSingleton().setPlayernames(
 			mReplayPlayer->getPlayerName(LEFT_PLAYER), mReplayPlayer->getPlayerName(RIGHT_PLAYER));
 		SoundManager::getSingleton().playSound(

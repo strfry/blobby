@@ -33,26 +33,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 DuelMatch* DuelMatch::mMainGame = 0;
 
-DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool remote) : 
-		mLogic(createGameLogic()),
-		mPaused(false), 
-		events(0), 
-		external_events(0), 
-		mRemote(remote)
-{
-	mPhysicWorld.reset( new PhysicWorld() );
-	mGlobal = global;
-	if (mGlobal)
-	{
-		assert(mMainGame == 0);
-		mMainGame = this;
-	}
-
-	mLeftInput = linput ? linput : new InputSource();
-	mRightInput = rinput ? rinput : new InputSource();
-}
-
-// TODO: avoid code duplication! how to call another constructor from this one?
 DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool remote, std::string rules) :
 		// we send a pointer to an unconstructed object here!
 		mLogic(createGameLogic(rules, this)),

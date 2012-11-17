@@ -231,8 +231,10 @@ class IGameLogic
 		Clock clock;
 };
 
+extern const std::string DUMMY_RULES_NAME;
+extern const std::string FALLBACK_RULES_NAME;
+
 // functions for creating a game logic object
-GameLogic createGameLogic();
 GameLogic createGameLogic(const std::string& rulefile, DuelMatch* match);
 
 

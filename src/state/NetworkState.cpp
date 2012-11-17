@@ -385,7 +385,7 @@ void NetworkGameState::step()
 				else
 				{
 					// either old server, or we have to use fallback ruleset
-					mFakeMatch->setRules("");
+					mFakeMatch->setRules( FALLBACK_RULES_NAME );
 				}
 				
 				break;
