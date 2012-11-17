@@ -476,9 +476,6 @@ void NetworkGameState::step()
 		}
 	}
 
-	PlayerInput input = mNetworkState == PLAYING ?
-		mLocalInput->getInput() : PlayerInput();
-
 	presentGame(*mFakeMatch);
 	rmanager->setBlobColor(LEFT_PLAYER, mLeftPlayer.getColor());
 	rmanager->setBlobColor(RIGHT_PLAYER, mRightPlayer.getColor());
@@ -646,6 +643,8 @@ void NetworkGameState::step()
 		case PLAYING:
 		{
 			mFakeMatch->step();
+
+			PlayerInput input = mLocalInput->updateInput();
 
 			if (InputManager::getSingleton()->exit())
 			{
