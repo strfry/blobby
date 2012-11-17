@@ -128,12 +128,14 @@ int main(int argc, char** argv)
 
 	int port = BLOBBY_PORT;
 	int maxClients = 100;
+	int cvlTypeId = 0;
 	std::string rulesFile = "rules.lua";
 	try
 	{
 		config.loadFile("server.xml");
 		port = config.getInteger("port");
 		maxClients = config.getInteger("maximum_clients");
+		cvlTypeId = config.getInteger("cvl_type_id");
 		rulesFile = config.getString("rules");
 
 		// bring that value into a sane range
@@ -224,6 +226,7 @@ int main(int argc, char** argv)
 				case ID_UNPAUSE:
 				case ID_CHAT_MESSAGE:
 				case ID_REPLAY:
+				case ID_RULES:
 					if (playermap.find(packet->playerId) != playermap.end()){
 						playermap[packet->playerId]->injectPacket(packet);
 

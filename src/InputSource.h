@@ -124,6 +124,11 @@ class DummyInputSource : public InputSource
 			mInput = input;
 		}
 		
+		void setInput(bool l, bool r, bool u)
+		{
+			mInput.set(l, r, u);
+		}
+		
 	private:
 		PlayerInput mInput;
 };

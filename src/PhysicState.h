@@ -39,9 +39,6 @@ struct PhysicState
 	Vector2 ballVelocity;
 	float ballAngularVelocity;
 	
-	bool isGameRunning;
-	bool isBallValid;
-	
 	PlayerInput playerInput[MAX_PLAYERS];
 	
 	/// \todo remove code duplication!

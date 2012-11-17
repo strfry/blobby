@@ -56,9 +56,6 @@ USER_SERIALIZER_IMPLEMENTATION_HELPER(PhysicState)
 	
 	io.number( value.ballAngularVelocity );
 	
-	io.boolean( value.isGameRunning );
-	io.boolean( value.isBallValid );
-	
 	// the template keyword is needed here so the compiler knows generic is
 	// a template function and does not complain about <>.
 	io.template generic<PlayerInput> ( value.playerInput[LEFT_PLAYER] );
@@ -158,18 +155,6 @@ void PhysicState::readFromStream(RakNet::BitStream* stream)
 	readCompressedFromBitStream(stream, ballVelocity.x, -30, 30);
 	readCompressedFromBitStream(stream, ballVelocity.y, -30, 30);
 	
-	// if ball velocity not zero, we must assume that the game is active
-	// i'm not sure if this would be set correctly otherwise...
-	// we must use this check with 0.1f because of precision loss when velocities are transmitted
-	// wo prevent setting a false value when the ball is at the parabels top, we check also if the 
-	// y - position is the starting y position
-	/// \todo maybe we should simply send a bit which contains this information? 
-	if( std::abs(ballVelocity.x) > 0.1f || std::abs(ballVelocity.y) > 0.1f || std::abs(ballPosition.y - STANDARD_BALL_HEIGHT) > 0.1f) {
-		isGameRunning = true;
-	} else {
-		isGameRunning = false;
-	}
-
 	stream->Read(playerInput[LEFT_PLAYER].left);
 	stream->Read(playerInput[LEFT_PLAYER].right);
 	stream->Read(playerInput[LEFT_PLAYER].up);
@@ -204,8 +189,6 @@ bool PhysicState::operator==(const PhysicState& other) const
 		ballPosition == other.ballPosition &&
 		ballVelocity == other.ballVelocity &&
 		ballAngularVelocity == other.ballAngularVelocity &&
-		isGameRunning == other.isGameRunning &&
-		isBallValid == other.isBallValid &&
 		playerInput[LEFT_PLAYER] == other.playerInput[LEFT_PLAYER] && 
 		playerInput[RIGHT_PLAYER] == other.playerInput[RIGHT_PLAYER];
 }

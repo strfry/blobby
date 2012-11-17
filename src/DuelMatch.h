@@ -52,6 +52,7 @@ class DuelMatch
 		// If remote is true, only physical responses will be calculated
 		// but hit events and score events are received from network
 
+		DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool remote);
 		DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool remote, std::string rules);
 
 		~DuelMatch();
@@ -87,6 +88,8 @@ class DuelMatch
 		int getScore(PlayerSide player) const;
 		int getScoreToWin() const;
 		PlayerSide getServingPlayer() const;
+		
+		void setLastHitIntensity(float intensity);
 
 		int getHitcount(PlayerSide player) const;
 
@@ -101,7 +104,6 @@ class DuelMatch
 
 		bool getBallDown() const;
 		bool getBallActive() const;
-		bool getBallValid() const;
 		
 		void pause();
 		void unpause();
@@ -122,8 +124,9 @@ class DuelMatch
 		DuelMatchState getState() const;
 
 		//Input stuff for recording and playing replays
+		InputSource* getLeftInputSource() const { return mLeftInput; }
+		InputSource* getRightInputSource() const { return mRightInput; }
 		const PlayerInput* getPlayersInput() const;
-		void setPlayersInput(const PlayerInput& left, const PlayerInput& right);
 	
 		void setServingPlayer(PlayerSide side);
 	
@@ -140,8 +143,6 @@ class DuelMatch
 
 		GameLogic mLogic;
 
-		bool mBallDown;
-		
 		bool mPaused;
 
 		int events;

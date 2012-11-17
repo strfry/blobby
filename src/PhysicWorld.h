@@ -46,9 +46,6 @@ class PhysicWorld
 		bool getBlobJump(PlayerSide player) const;
 		bool getBallActive() const;
 
-		void setLeftInput(const PlayerInput& input);
-		void setRightInput(const PlayerInput& input);
-
 		Vector2 getBlob(PlayerSide player) const;
 		Vector2 getBlobVelocity(PlayerSide player) const;
 		Vector2 getBall() const;
@@ -58,35 +55,19 @@ class PhysicWorld
 
 		float getBallSpeed() const;
 
-		// These functions tell about ball collisions for game logic and sound
-		bool ballHitLeftPlayer() const;
-		bool ballHitRightPlayer() const;
-		bool ballHitLeftGround() const;
-		bool ballHitRightGround() const;
-		bool ballHitWall() const;
-		PlayerSide ballHitWallSide() const;
-		bool ballHitNet() const;
-		PlayerSide ballHitNetSide() const;
-
 		bool blobbyHitGround(PlayerSide player) const;
 
 		// Blobby animation methods
 		void blobbyAnimationStep(PlayerSide player);
 		void blobbyStartAnimation(PlayerSide player);
 
-		// This reports the intensity of the collision
+		// Methods to set/get the intensity of the collision
 		// which was detected and also queried last.
-		float lastHitIntensity() const;
+		void setLastHitIntensity(float intensity);
+		float getLastHitIntensity() const;
 
-		// Here the game logic can decide whether the ball is valid.
-		// If not, no ball to player collision checking is done,
-		// the input is ignored an the ball experiences a strong damping
-		void setBallValidity(bool validity);
-		
-		bool getBallValid() const;
-
-		// This returns true if the ball is not valid and the ball is steady
-		bool roundFinished() const;
+		// This returns true if reset area is clear and the ball is steady
+		bool canStartRound(PlayerSide servingPlayer) const;
 
 		// This resets everything to the starting situation and
 		// wants to know, which player begins.
@@ -96,12 +77,12 @@ class PhysicWorld
 		void resetPlayer();
 
 		// Important: This assumes a fixed framerate of 60 FPS!
-		void step();
+		int step(const PlayerInput& leftInput, const PlayerInput& rightInput, bool isBallValid, bool isGameRunning);
 
 		// For reducing ball speed after rule violation
 		void dampBall();
 
-		// gets the phyisc state
+		// gets the physic state
 		PhysicState getState() const;
 	
 		// sets a new physic state
@@ -117,19 +98,12 @@ class PhysicWorld
 	private:
 		inline bool playerTopBallCollision(int player) const;
 		inline bool playerBottomBallCollision(int player) const;
-		bool resetAreaClear()const;
 
 		// Do all blobby-related physic stuff which is independent from states
 		void handleBlob(PlayerSide player);
 
 		// Detect and handle ball to blobby collisions
-		void handleBlobbyBallCollision(PlayerSide player);
-
-		bool mBallHitByBlob[MAX_PLAYERS];
-		PlayerSide mBallHitWallSide;
-		bool mBallHitNet;
-		PlayerSide mBallHitNetSide;
-		PlayerSide mBallHitGroundSide;
+		bool handleBlobbyBallCollision(PlayerSide player);
 
 		Vector2 mBlobPosition[MAX_PLAYERS];
 		Vector2 mBallPosition;
@@ -144,12 +118,7 @@ class PhysicWorld
 
 		PlayerInput mPlayerInput[MAX_PLAYERS];
 
-		bool mIsGameRunning;
-		bool mIsBallValid;
-
 		float mLastHitIntensity;
-		///! \todo thats not relevant for physics! It's game logic!!
-		float mTimeSinceBallout;
 };
 
 
