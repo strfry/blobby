@@ -26,7 +26,21 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* implementation */
 
-/// \todo do we still need this file?
+
+PlayerInput InputSource::getInput() const
+{
+	return mInput;
+}
+
+void InputSource::updateInput()
+{
+	mInput = getNextInput();
+}
+
+void InputSource::setInput(PlayerInput ip)
+{
+	mInput = ip;
+}
 
 std::ostream& operator<< (std::ostream& out, const PlayerInput& input)
 {

@@ -96,11 +96,19 @@ struct PlayerInput
 */
 class InputSource
 {
-public:
-	virtual PlayerInput getInput() = 0;
-	virtual ~InputSource()
-	{
-	}
+	public:
+		virtual ~InputSource()
+		{
+		}
+		
+		void updateInput();
+		PlayerInput getInput() const;
+		void setInput(PlayerInput ip);
+	
+	private:
+		virtual PlayerInput getNextInput() = 0;
+	
+		PlayerInput mInput;
 };
 
 // This class serves as a dummy input source.
@@ -110,27 +118,14 @@ public:
 class DummyInputSource : public InputSource
 {
 	public:
-		virtual PlayerInput getInput()
-		{
-			return mInput;
-		}
-		
 		virtual ~DummyInputSource()
 		{
 		}
 		
-		void setInput(PlayerInput input)
+		virtual PlayerInput getNextInput() 
 		{
-			mInput = input;
+			return getInput();
 		}
-		
-		void setInput(bool l, bool r, bool u)
-		{
-			mInput.set(l, r, u);
-		}
-		
-	private:
-		PlayerInput mInput;
 };
 
 // This operator converts a PlayerInput structure in a packed string

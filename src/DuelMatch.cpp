@@ -100,10 +100,15 @@ void DuelMatch::setRules(std::string rulesFile)
 
 void DuelMatch::step()
 {
+	mLeftInput->updateInput();
+	mRightInput->updateInput();
+	
 	events = external_events;
 	
 	int leftScore = mLogic->getScore(LEFT_PLAYER);
 	int rightScore = mLogic->getScore(RIGHT_PLAYER);
+	
+
 
 	// in pause mode, step does nothing
 	if(mPaused)

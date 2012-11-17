@@ -168,7 +168,7 @@ class ReplayLoader_V1X: public IReplayLoader
 		};
 		
 		
-		virtual void getInputAt(int step, DummyInputSource* left, DummyInputSource* right)
+		virtual void getInputAt(int step, InputSource* left, InputSource* right)
 		{
 			assert( step  < mGameLength );
 			
@@ -180,8 +180,8 @@ class ReplayLoader_V1X: public IReplayLoader
 			char packet = mBuffer[mReplayOffset + step];
 			
 			// now read the packet data
-			left->setInput((bool)(packet & 32), (bool)(packet & 16), (bool)(packet & 8));
-			right->setInput((bool)(packet & 4), (bool)(packet & 2), (bool)(packet & 1));
+			left->setInput(PlayerInput((bool)(packet & 32), (bool)(packet & 16), (bool)(packet & 8)));
+			right->setInput(PlayerInput((bool)(packet & 4), (bool)(packet & 2), (bool)(packet & 1)));
 		}
 		
 		virtual bool isSavePoint(int position, int& save_position)
