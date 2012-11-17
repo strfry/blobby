@@ -184,7 +184,7 @@ class ReplayLoader_V1X: public IReplayLoader
 			right->setInput(PlayerInput((bool)(packet & 4), (bool)(packet & 2), (bool)(packet & 1)));
 		}
 		
-		virtual bool isSavePoint(int position, int& save_position)
+		virtual bool isSavePoint(int position, int& save_position) const
 		{
 			int foundPos;
 			save_position = getSavePoint(position, foundPos);
@@ -195,10 +195,10 @@ class ReplayLoader_V1X: public IReplayLoader
 		// 		so we can start from it when calling
 		// 		getSavePoint in a row (without "jumping").
 		// 		we can save this parameter in ReplayPlayer
-		virtual int getSavePoint(int targetPosition, int& savepoint)
+		virtual int getSavePoint(int targetPosition, int& savepoint) const
 		{
 			// desired index can't be lower that this value,
-			// cause additional savepoints could shift it only righter
+			// cause additional savepoints could shift it only right
 			int index = targetPosition / REPLAY_SAVEPOINT_PERIOD;
 			
 			if(index >= mSavePointsCount)
@@ -206,7 +206,7 @@ class ReplayLoader_V1X: public IReplayLoader
 			
 			savepoint = mSavePoints[index].step;
 			
-			// watch righter from initial index,
+			// watch right from initial index,
 			// cause best savepoint could be there.
 			// we have no much additional savepoints,
 			// so this cycle would be fast,
@@ -230,7 +230,7 @@ class ReplayLoader_V1X: public IReplayLoader
 			return index;
 		}
 		
-		virtual void readSavePoint(int index, ReplaySavePoint& state)
+		virtual void readSavePoint(int index, ReplaySavePoint& state) const
 		{
 			state = mSavePoints.at(index);
 		}

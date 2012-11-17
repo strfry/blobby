@@ -101,7 +101,7 @@ class IReplayLoader
 		/// \param save_position[out] if \t position is a savepoint, this int
 		///					contains the index of the savepoint
 		/// \return true, if \t position is a savepoint
-		virtual bool isSavePoint(int position, int& save_position) = 0 ;
+		virtual bool isSavePoint(int position, int& save_position) const = 0 ;
 		
 		/// \brief gets the save point at position targetPosition
 		/// \details returns the index of the last safepoint before targetPosition,
@@ -110,12 +110,12 @@ class IReplayLoader
 		/// \param targetPosition[in] which position should be reached
 		/// \param save_position[out] which position the safepoint has
 		/// \return index of the savepoint, or -1 if none found.
-		virtual int getSavePoint(int targetPosition, int& save_position) = 0;
+		virtual int getSavePoint(int targetPosition, int& save_position) const = 0;
 		
 		/// \brief reads the specified savepoint
 		/// \param index[in] index of the savepoint, as returned by getSavePoint
 		/// \param state[out] the read savepoint is written there
-		virtual void readSavePoint(int index, ReplaySavePoint& state) = 0;
+		virtual void readSavePoint(int index, ReplaySavePoint& state) const = 0;
 		
 	protected:
 		/// \brief protected constructor. 
