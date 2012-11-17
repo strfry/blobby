@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "DuelMatchState.h"
 #include "MatchEvents.h"
-
+#include "PhysicWorld.h"
 
 /* implementation */
 
@@ -39,6 +39,7 @@ DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool
 		external_events(0), 
 		mRemote(remote)
 {
+	mPhysicWorld.reset( new PhysicWorld() );
 	mGlobal = global;
 	if (mGlobal)
 	{
@@ -49,7 +50,7 @@ DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool
 	mLeftInput = linput ? linput : new DummyInputSource();
 	mRightInput = rinput ? rinput : new DummyInputSource();
 
-	mPhysicWorld.resetPlayer();
+	mPhysicWorld->resetPlayer();
 }
 
 // TODO: avoid code duplication! how to call another constructor from this one?
@@ -61,6 +62,7 @@ DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool
 		external_events(0), 
 		mRemote(remote)
 {
+	mPhysicWorld.reset( new PhysicWorld() );
 	mGlobal = global;
 	if (mGlobal)
 	{
@@ -71,15 +73,15 @@ DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool
 	mLeftInput = linput ? linput : new DummyInputSource();
 	mRightInput = rinput ? rinput : new DummyInputSource();
 
-	mPhysicWorld.resetPlayer();
+	mPhysicWorld->resetPlayer();
 }
 
 void DuelMatch::reset()
 {
-	mPhysicWorld = PhysicWorld();
+	mPhysicWorld.reset(new PhysicWorld());
 	mLogic = mLogic->clone();
 	
-	mPhysicWorld.resetPlayer();
+	mPhysicWorld->resetPlayer();
 }
 
 DuelMatch::~DuelMatch()
@@ -116,7 +118,7 @@ void DuelMatch::step()
 
 	// do steps in physic an logic
 	mLogic->step();
-	int physicEvents = mPhysicWorld.step( mLogic->transformInput( mLeftInput->getInput(), LEFT_PLAYER ),
+	int physicEvents = mPhysicWorld->step( mLogic->transformInput( mLeftInput->getInput(), LEFT_PLAYER ),
 						mLogic->transformInput( mRightInput->getInput(), RIGHT_PLAYER ),
 						mLogic->isBallValid(), mLogic->isGameRunning() );
 
@@ -161,12 +163,12 @@ void DuelMatch::step()
 			// reset EVENT_ERROR_LEFT
 			events &= ~EVENT_ERROR_LEFT;
 			events |= EVENT_ERROR_RIGHT;
-			mPhysicWorld.dampBall();
+			mPhysicWorld->dampBall();
 			break;
 		default:
 			if ((events & EVENT_BALL_HIT_GROUND) && !mLogic->isBallValid())
 			{
-				mPhysicWorld.dampBall();
+				mPhysicWorld->dampBall();
 			}
 			break;
 	}
@@ -175,9 +177,9 @@ void DuelMatch::step()
 	// reset BallDown, reset the World
 	// to let the player serve
 	// and trigger the EVENT_RESET
-	if (!mLogic->isBallValid() && mPhysicWorld.canStartRound(mLogic->getServingPlayer()))
+	if (!mLogic->isBallValid() && mPhysicWorld->canStartRound(mLogic->getServingPlayer()))
 	{
-		mPhysicWorld.reset(mLogic->getServingPlayer());
+		mPhysicWorld->reset(mLogic->getServingPlayer());
 		mLogic->onServe();
 		events |= EVENT_RESET;
 	}
@@ -200,7 +202,7 @@ void DuelMatch::setScore(int left, int right)
 
 void DuelMatch::setLastHitIntensity(float intensity)
 {
-	mPhysicWorld.setLastHitIntensity(intensity);
+	mPhysicWorld->setLastHitIntensity(intensity);
 }
 
 void DuelMatch::trigger(int event)
@@ -262,13 +264,13 @@ bool DuelMatch::getBallActive() const
 
 bool DuelMatch::getBlobJump(PlayerSide player) const
 {
-	return mPhysicWorld.getBlobJump(player);
+	return mPhysicWorld->getBlobJump(player);
 }
 
 Vector2 DuelMatch::getBlobPosition(PlayerSide player) const
 {
 	if (player == LEFT_PLAYER || player == RIGHT_PLAYER)
-		return mPhysicWorld.getBlob(player);
+		return mPhysicWorld->getBlob(player);
 	else
 		return Vector2(0.0, 0.0);
 }
@@ -276,19 +278,19 @@ Vector2 DuelMatch::getBlobPosition(PlayerSide player) const
 Vector2 DuelMatch::getBlobVelocity(PlayerSide player) const
 {
 	if (player == LEFT_PLAYER || player == RIGHT_PLAYER)
-		return mPhysicWorld.getBlobVelocity(player);
+		return mPhysicWorld->getBlobVelocity(player);
 	else
 		return Vector2(0.0, 0.0);
 }
 
 Vector2 DuelMatch::getBallPosition() const
 {
-	return mPhysicWorld.getBall();
+	return mPhysicWorld->getBall();
 }
 
 Vector2 DuelMatch::getBallVelocity() const
 {
-	return mPhysicWorld.getBallVelocity();
+	return mPhysicWorld->getBallVelocity();
 }
 
 PlayerSide DuelMatch::getServingPlayer() const
@@ -298,21 +300,21 @@ PlayerSide DuelMatch::getServingPlayer() const
 
 void DuelMatch::setState(RakNet::BitStream* stream)
 {
-	PhysicState ps = mPhysicWorld.getState();
+	PhysicState ps = mPhysicWorld->getState();
 	ps.readFromStream(stream);
-	mPhysicWorld.setState(ps);
+	mPhysicWorld->setState(ps);
 }
 
 void DuelMatch::setState(const DuelMatchState& state)
 {
-	mPhysicWorld.setState(state.worldState);
+	mPhysicWorld->setState(state.worldState);
 	mLogic->setState(state.logicState);
 }
 
 DuelMatchState DuelMatch::getState() const
 {
 	DuelMatchState state;
-	state.worldState = mPhysicWorld.getState();
+	state.worldState = mPhysicWorld->getState();
 	state.logicState = mLogic->getState();
 	
 	return state;
@@ -320,14 +322,14 @@ DuelMatchState DuelMatch::getState() const
 
 const PlayerInput* DuelMatch::getPlayersInput() const
 {
-	return mPhysicWorld.getPlayersInput();
+	return mPhysicWorld->getPlayersInput();
 }
 
 void DuelMatch::setServingPlayer(PlayerSide side)
 {
 	mLogic->setServingPlayer(side);
 	mLogic->onServe();
-	mPhysicWorld.reset(side);
+	mPhysicWorld->reset(side);
 }
 
 const Clock& DuelMatch::getClock() const

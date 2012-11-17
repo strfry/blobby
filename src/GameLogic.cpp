@@ -38,6 +38,7 @@ extern "C"
 #include "DuelMatch.h"
 #include "GameConstants.h"
 #include "IUserConfigReader.h"
+#include "InputSource.h"
 
 
 /* implementation */
