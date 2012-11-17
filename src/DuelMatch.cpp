@@ -163,12 +163,12 @@ void DuelMatch::step()
 			// reset EVENT_ERROR_LEFT
 			events &= ~EVENT_ERROR_LEFT;
 			events |= EVENT_ERROR_RIGHT;
-			mPhysicWorld->dampBall();
+			mPhysicWorld->setBallVelocity( mPhysicWorld->getBallVelocity().scale(0.6) );
 			break;
 		default:
 			if ((events & EVENT_BALL_HIT_GROUND) && !mLogic->isBallValid())
 			{
-				mPhysicWorld->dampBall();
+				mPhysicWorld->setBallVelocity( mPhysicWorld->getBallVelocity().scale(0.6) );
 			}
 			break;
 	}

@@ -124,11 +124,6 @@ inline bool PhysicWorld::playerBottomBallCollision(int player) const
 	return false;
 }
 
-Vector2 PhysicWorld::getBallPosition() const
-{
-	return mBallPosition;
-}
-
 float PhysicWorld::getBallRotation() const
 {
 	return mBallRotation;
@@ -390,14 +385,26 @@ int PhysicWorld::step(const PlayerInput& leftInput, const PlayerInput& rightInpu
 	return events;
 }
 
-void PhysicWorld::dampBall()
+Vector2 PhysicWorld::getBallPosition() const
 {
-	mBallVelocity = mBallVelocity.scale(0.6);
+	return mBallPosition;
 }
+
+void PhysicWorld::setBallPosition( Vector2 newPosition )
+{
+	/// \todo should we check here if this new position is valid, i.e. not inside walls etc.
+	mBallPosition = newPosition;
+}
+
 
 Vector2 PhysicWorld::getBallVelocity() const
 {
 	return mBallVelocity;
+}
+
+void PhysicWorld::setBallVelocity( Vector2 newVelocity )
+{
+	mBallVelocity = newVelocity;
 }
 
 bool PhysicWorld::getBlobJump(PlayerSide player) const

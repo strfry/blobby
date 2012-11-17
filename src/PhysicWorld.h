@@ -42,7 +42,9 @@ class PhysicWorld
 
 		// ball information queries
 		Vector2 getBallPosition() const;
+		void setBallPosition( Vector2 newPosition );
 		Vector2 getBallVelocity() const;
+		void setBallVelocity( Vector2 newVelocity );
 		float getBallRotation() const;
 		
 		// blobby information queries
@@ -71,10 +73,7 @@ class PhysicWorld
 
 		// Important: This assumes a fixed framerate of 60 FPS!
 		int step(const PlayerInput& leftInput, const PlayerInput& rightInput, bool isBallValid, bool isGameRunning);
-
-		// For reducing ball speed after rule violation
-		void dampBall();
-
+		
 		// gets the physic state
 		PhysicState getState() const;
 	
