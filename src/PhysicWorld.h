@@ -68,9 +68,6 @@ class PhysicWorld
 		// wants to know, which player begins.
 		void reset(PlayerSide player);
 
-		// This resets the player to their starting positions
-		void resetPlayer();
-
 		// Important: This assumes a fixed framerate of 60 FPS!
 		int step(const PlayerInput& leftInput, const PlayerInput& rightInput, bool isBallValid, bool isGameRunning);
 		
@@ -80,9 +77,6 @@ class PhysicWorld
 		// sets a new physic state
 		void setState(const PhysicState& state);
 
-		//Input stuff for recording and playing replays
-		const PlayerInput* getPlayersInput() const;
-		
 		#ifdef DEBUG
 		bool checkPhysicStateValidity() const;
 		#endif

@@ -48,6 +48,9 @@ PhysicWorld::PhysicWorld()
 	reset(LEFT_PLAYER);
 	mCurrentBlobbyAnimationSpeed[LEFT_PLAYER] = 0.0;
 	mCurrentBlobbyAnimationSpeed[RIGHT_PLAYER] = 0.0;
+	
+	mBlobPosition[LEFT_PLAYER] = Vector2( 200, GROUND_PLANE_HEIGHT);
+	mBlobPosition[RIGHT_PLAYER] = Vector2(600, GROUND_PLANE_HEIGHT);
 }
 
 PhysicWorld::~PhysicWorld()
@@ -71,12 +74,6 @@ void PhysicWorld::reset(PlayerSide player)
 	mBlobState[RIGHT_PLAYER] = 0.0;
 
 	mLastHitIntensity = 0.0;
-}
-
-void PhysicWorld::resetPlayer()
-{
-	mBlobPosition[LEFT_PLAYER] = Vector2( 200, GROUND_PLANE_HEIGHT);
-	mBlobPosition[RIGHT_PLAYER] = Vector2(600, GROUND_PLANE_HEIGHT);
 }
 
 bool PhysicWorld::blobbyHitGround(PlayerSide player) const
@@ -182,7 +179,7 @@ void PhysicWorld::handleBlob(PlayerSide player)
 		if (blobbyHitGround(player))
 		{
 			mBlobVelocity[player].y = -BLOBBY_JUMP_ACCELERATION;
-			blobbyStartAnimation(PlayerSide(player));
+			blobbyStartAnimation( player );
 		}
 
 		currentBlobbyGravity -= BLOBBY_JUMP_BUFFER;
@@ -444,10 +441,6 @@ void PhysicWorld::setState(const PhysicState& ps)
 	mPlayerInput[RIGHT_PLAYER] = ps.playerInput[RIGHT_PLAYER];
 }
 
-const PlayerInput* PhysicWorld::getPlayersInput() const
-{
-	return mPlayerInput;
-}
 
 // debugging:
 #ifdef DEBUG

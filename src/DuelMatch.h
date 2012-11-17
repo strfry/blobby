@@ -133,7 +133,6 @@ class DuelMatch
 		//Input stuff for recording and playing replays
 		InputSource* getLeftInputSource() const { return mLeftInput; }
 		InputSource* getRightInputSource() const { return mRightInput; }
-		const PlayerInput* getPlayersInput() const;
 	
 		void setServingPlayer(PlayerSide side);
 	

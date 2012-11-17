@@ -49,8 +49,6 @@ DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool
 
 	mLeftInput = linput ? linput : new DummyInputSource();
 	mRightInput = rinput ? rinput : new DummyInputSource();
-
-	mPhysicWorld->resetPlayer();
 }
 
 // TODO: avoid code duplication! how to call another constructor from this one?
@@ -72,16 +70,12 @@ DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool
 
 	mLeftInput = linput ? linput : new DummyInputSource();
 	mRightInput = rinput ? rinput : new DummyInputSource();
-
-	mPhysicWorld->resetPlayer();
 }
 
 void DuelMatch::reset()
 {
 	mPhysicWorld.reset(new PhysicWorld());
 	mLogic = mLogic->clone();
-	
-	mPhysicWorld->resetPlayer();
 }
 
 DuelMatch::~DuelMatch()
@@ -318,11 +312,6 @@ DuelMatchState DuelMatch::getState() const
 	state.logicState = mLogic->getState();
 	
 	return state;
-}
-
-const PlayerInput* DuelMatch::getPlayersInput() const
-{
-	return mPhysicWorld->getPlayersInput();
 }
 
 void DuelMatch::setServingPlayer(PlayerSide side)
