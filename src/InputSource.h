@@ -106,26 +106,9 @@ class InputSource
 		void setInput(PlayerInput ip);
 	
 	private:
-		virtual PlayerInput getNextInput() = 0;
+		virtual PlayerInput getNextInput();
 	
 		PlayerInput mInput;
-};
-
-// This class serves as a dummy input source.
-// It can optionally be set from outside if low level input access
-// is required at a higher level
-
-class DummyInputSource : public InputSource
-{
-	public:
-		virtual ~DummyInputSource()
-		{
-		}
-		
-		virtual PlayerInput getNextInput() 
-		{
-			return getInput();
-		}
 };
 
 // This operator converts a PlayerInput structure in a packed string

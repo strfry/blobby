@@ -48,8 +48,8 @@ DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool
 		mMainGame = this;
 	}
 
-	mLeftInput = linput ? linput : new DummyInputSource();
-	mRightInput = rinput ? rinput : new DummyInputSource();
+	mLeftInput = linput ? linput : new InputSource();
+	mRightInput = rinput ? rinput : new InputSource();
 }
 
 // TODO: avoid code duplication! how to call another constructor from this one?
@@ -69,8 +69,8 @@ DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool
 		mMainGame = this;
 	}
 
-	mLeftInput = linput ? linput : new DummyInputSource();
-	mRightInput = rinput ? rinput : new DummyInputSource();
+	mLeftInput = linput ? linput : new InputSource();
+	mRightInput = rinput ? rinput : new InputSource();
 }
 
 void DuelMatch::reset()

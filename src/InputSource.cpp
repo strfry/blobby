@@ -42,6 +42,11 @@ void InputSource::setInput(PlayerInput ip)
 	mInput = ip;
 }
 
+PlayerInput InputSource::getNextInput()
+{
+	return mInput;
+}
+
 std::ostream& operator<< (std::ostream& out, const PlayerInput& input)
 {
 	out << (input.left ? 't' : 'f') << (input.right ? 't' : 'f') << (input.up ? 't' : 'f');
