@@ -170,11 +170,11 @@ void PhysicWorld::blobbyStartAnimation(PlayerSide player)
 		mCurrentBlobbyAnimationSpeed[player] = BLOBBY_ANIMATION_SPEED;
 }
 
-void PhysicWorld::handleBlob(PlayerSide player)
+void PhysicWorld::handleBlob(PlayerSide player, PlayerInput input)
 {
 	float currentBlobbyGravity = GRAVITATION;
 
-	if (mPlayerInput[player].up)
+	if (input.up)
 	{
 		if (blobbyHitGround(player))
 		{
@@ -185,13 +185,13 @@ void PhysicWorld::handleBlob(PlayerSide player)
 		currentBlobbyGravity -= BLOBBY_JUMP_BUFFER;
 	}
 
-	if ((mPlayerInput[player].left || mPlayerInput[player].right) && blobbyHitGround(player))
+	if ((input.left || input.right) && blobbyHitGround(player))
 	{
 		blobbyStartAnimation(player);
 	}
 
-	mBlobVelocity[player].x = (mPlayerInput[player].right ? BLOBBY_SPEED : 0) -
-								(mPlayerInput[player].left ? BLOBBY_SPEED : 0);
+	mBlobVelocity[player].x = (input.right ? BLOBBY_SPEED : 0) -
+								(input.left ? BLOBBY_SPEED : 0);
 
 	// compute blobby fall movement (dt = 1)
 	// ds = a/2 * dt^2 + v * dt
@@ -258,8 +258,8 @@ int PhysicWorld::step(const PlayerInput& leftInput, const PlayerInput& rightInpu
 	mPlayerInput[LEFT_PLAYER] = leftInput;
 	mPlayerInput[RIGHT_PLAYER] = rightInput;
 	// Compute independent actions
-	handleBlob(LEFT_PLAYER);
-	handleBlob(RIGHT_PLAYER);
+	handleBlob(LEFT_PLAYER, leftInput);
+	handleBlob(RIGHT_PLAYER, rightInput);
 
 	// Move ball when game is running
 	if (isGameRunning)

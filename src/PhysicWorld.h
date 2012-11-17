@@ -90,7 +90,7 @@ class PhysicWorld
 		inline bool playerBottomBallCollision(int player) const;
 
 		// Do all blobby-related physic stuff which is independent from states
-		void handleBlob(PlayerSide player);
+		void handleBlob(PlayerSide player, PlayerInput input);
 
 		// Detect and handle ball to blobby collisions
 		bool handleBlobbyBallCollision(PlayerSide player);
