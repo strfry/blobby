@@ -466,25 +466,24 @@ bool NetworkGame::step()
 
 void NetworkGame::broadcastPhysicState()
 {
-	const PhysicWorld& world = mMatch->getWorld();
 	RakNet::BitStream stream;
 	stream.Write((unsigned char)ID_PHYSIC_UPDATE);
 	stream.Write((unsigned char)ID_TIMESTAMP);
 	stream.Write(RakNet::GetTime());
-	PhysicState ps = world.getState();
+	DuelMatchState ms = mMatch->getState();
 
 	boost::shared_ptr<GenericOut> out = createGenericWriter( &stream );
 
 	if (mSwitchedSide == LEFT_PLAYER)
-		ps.swapSides();
+		ms.swapSides();
 	
-	out->generic<PhysicState> (ps);
+	out->generic<DuelMatchState> (ms);
 
 	mServer.Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0,
 		mLeftPlayer, false);
 
 	// reset state and stream
-	ps = world.getState();
+	ms = mMatch->getState();
 	stream.Reset();
 	stream.Write((unsigned char)ID_PHYSIC_UPDATE);
 	stream.Write((unsigned char)ID_TIMESTAMP);
@@ -493,9 +492,9 @@ void NetworkGame::broadcastPhysicState()
 	out = createGenericWriter( &stream );
 	
 	if (mSwitchedSide == RIGHT_PLAYER)
-		ps.swapSides();
+		ms.swapSides();
 
-	out->generic<PhysicState> (ps);
+	out->generic<DuelMatchState> (ms);
 
 	mServer.Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0,
 		mRightPlayer, false);

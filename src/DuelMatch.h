@@ -121,9 +121,6 @@ class DuelMatch
 		// and is jumping at the moment
 		bool getBlobJump(PlayerSide player) const;
 
-		// Set a new state received from server over a RakNet BitStream
-		void setState(RakNet::BitStream* stream);
-
 		/// Set a new state using a saved DuelMatchState
 		void setState(const DuelMatchState& state);
 	

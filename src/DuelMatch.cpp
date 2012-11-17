@@ -293,14 +293,6 @@ PlayerSide DuelMatch::getServingPlayer() const
 	return mLogic->getServingPlayer();
 }
 
-void DuelMatch::setState(RakNet::BitStream* stream)
-{
-	PhysicState ps = mPhysicWorld->getState();
-	boost::shared_ptr<GenericIn> in = createGenericReader(stream);
-	in->generic<PhysicState> (ps);
-	mPhysicWorld->setState(ps);
-}
-
 void DuelMatch::setState(const DuelMatchState& state)
 {
 	mPhysicWorld->setState(state.worldState);

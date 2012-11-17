@@ -144,7 +144,10 @@ void NetworkGameState::step()
 				stream.IgnoreBytes(1);	//ID_TIMESTAMP
 				stream.Read(ival);	//TODO: un-lag based on timestamp delta
 				//printf("Physic packet received. Time: %d\n", ival);
-				mFakeMatch->setState(&stream);
+				DuelMatchState ms;
+				boost::shared_ptr<GenericIn> in = createGenericReader(&stream);
+				in->generic<DuelMatchState> (ms);
+				mFakeMatch->setState(ms);
 				break;
 			}
 			case ID_WIN_NOTIFICATION:
