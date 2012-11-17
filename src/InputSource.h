@@ -101,7 +101,7 @@ class InputSource
 		{
 		}
 		
-		void updateInput();
+		PlayerInput updateInput();
 		PlayerInput getInput() const;
 		void setInput(PlayerInput ip);
 	

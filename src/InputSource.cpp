@@ -32,9 +32,9 @@ PlayerInput InputSource::getInput() const
 	return mInput;
 }
 
-void InputSource::updateInput()
+PlayerInput InputSource::updateInput()
 {
-	mInput = getNextInput();
+	return (mInput = getNextInput());
 }
 
 void InputSource::setInput(PlayerInput ip)

@@ -100,27 +100,27 @@ void DuelMatch::setRules(std::string rulesFile)
 
 void DuelMatch::step()
 {
-	mLeftInput->updateInput();
-	mRightInput->updateInput();
-	
 	events = external_events;
-	
-	int leftScore = mLogic->getScore(LEFT_PLAYER);
-	int rightScore = mLogic->getScore(RIGHT_PLAYER);
-	
-
 
 	// in pause mode, step does nothing
 	if(mPaused)
 		return;
+		
+	PlayerInput leftIn = mLeftInput->updateInput();
+	PlayerInput rightIn = mRightInput->updateInput();
+	
+	int leftScore = mLogic->getScore(LEFT_PLAYER);
+	int rightScore = mLogic->getScore(RIGHT_PLAYER);
 
-
+	if(!mRemote)
+	{
+		leftIn = mLogic->transformInput( leftIn, LEFT_PLAYER );
+		rightIn = mLogic->transformInput( rightIn, LEFT_PLAYER );
+	}
 
 	// do steps in physic an logic
 	mLogic->step();
-	int physicEvents = mPhysicWorld->step( mLogic->transformInput( mLeftInput->getInput(), LEFT_PLAYER ),
-						mLogic->transformInput( mRightInput->getInput(), RIGHT_PLAYER ),
-						mLogic->isBallValid(), mLogic->isGameRunning() );
+	int physicEvents = mPhysicWorld->step( leftIn, rightIn, mLogic->isBallValid(), mLogic->isGameRunning() );
 
 	// check for all hit events
 	if(!mRemote)
