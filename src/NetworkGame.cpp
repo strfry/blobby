@@ -473,9 +473,12 @@ void NetworkGame::broadcastPhysicState()
 	stream.Write(RakNet::GetTime());
 	PhysicState ps = world.getState();
 
+	boost::shared_ptr<GenericOut> out = createGenericWriter( &stream );
+
 	if (mSwitchedSide == LEFT_PLAYER)
 		ps.swapSides();
-	ps.writeToStream(&stream);
+	
+	out->generic<PhysicState> (ps);
 
 	mServer.Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0,
 		mLeftPlayer, false);
@@ -487,10 +490,12 @@ void NetworkGame::broadcastPhysicState()
 	stream.Write((unsigned char)ID_TIMESTAMP);
 	stream.Write(RakNet::GetTime());
 
+	out = createGenericWriter( &stream );
+	
 	if (mSwitchedSide == RIGHT_PLAYER)
 		ps.swapSides();
 
-	ps.writeToStream(&stream);
+	out->generic<PhysicState> (ps);
 
 	mServer.Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0,
 		mRightPlayer, false);

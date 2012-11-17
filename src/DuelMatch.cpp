@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DuelMatchState.h"
 #include "MatchEvents.h"
 #include "PhysicWorld.h"
+#include "GenericIO.h"
 
 /* implementation */
 
@@ -295,7 +296,8 @@ PlayerSide DuelMatch::getServingPlayer() const
 void DuelMatch::setState(RakNet::BitStream* stream)
 {
 	PhysicState ps = mPhysicWorld->getState();
-	ps.readFromStream(stream);
+	boost::shared_ptr<GenericIn> in = createGenericReader(stream);
+	in->generic<PhysicState> (ps);
 	mPhysicWorld->setState(ps);
 }
 

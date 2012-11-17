@@ -41,13 +41,6 @@ struct PhysicState
 	
 	PlayerInput playerInput[MAX_PLAYERS];
 	
-	/// \todo remove code duplication!
-	///       this function is needed for compressing stream
-	bool blobbyHitGround(PlayerSide player) const;
-	
-	void writeToStream(RakNet::BitStream* stream) const;
-	void readFromStream(RakNet::BitStream* stream);
-	
 	// equality comparision
 	bool operator==(const PhysicState& other) const;
 	

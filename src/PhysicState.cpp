@@ -29,11 +29,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "GameConstants.h"
 #include "GenericIO.h"
 
-bool PhysicState::blobbyHitGround(PlayerSide player) const
-{
-	return blobPosition[player].y >= GROUND_PLANE_HEIGHT;
-}
-
 USER_SERIALIZER_IMPLEMENTATION_HELPER(PhysicState)
 {
 	io.number( value.blobPosition[LEFT_PLAYER].x );
@@ -61,107 +56,6 @@ USER_SERIALIZER_IMPLEMENTATION_HELPER(PhysicState)
 	io.template generic<PlayerInput> ( value.playerInput[LEFT_PLAYER] );
 	io.template generic<PlayerInput> ( value.playerInput[RIGHT_PLAYER] );
 	
-}
-
-void writeCompressedToBitStream(RakNet::BitStream* stream, float value, float min, float max)
-{
-	assert(min <= value && value <= max);
-	assert(stream);
-	unsigned short only2bytes = static_cast<unsigned short>((value - min) / (max - min) * std::numeric_limits<unsigned short>::max());
-	stream->Write(only2bytes);
-}
-
-void readCompressedFromBitStream(RakNet::BitStream* stream, float& value, float min, float max)
-{
-	unsigned short only2bytes;
-	stream->Read(only2bytes);
-	value = static_cast<float>(only2bytes) / static_cast<float>(std::numeric_limits<unsigned short>::max()) * (max - min) + min;
-}
-
-/* implementation */
-void PhysicState::writeToStream(RakNet::BitStream* stream) const
-{
-	// if the blobbys are standing on the ground, we need not send
-	// y position and velocity
-	stream->Write(blobbyHitGround(LEFT_PLAYER));
-	stream->Write(blobbyHitGround(RIGHT_PLAYER));
-	
-	if(!blobbyHitGround(LEFT_PLAYER))
-	{
-		writeCompressedToBitStream(stream, blobPosition[LEFT_PLAYER].y, 0, GROUND_PLANE_HEIGHT);
-		writeCompressedToBitStream(stream, blobVelocity[LEFT_PLAYER].y, -30, 30);
-	}
-	
-	if(!blobbyHitGround(RIGHT_PLAYER))
-	{
-		writeCompressedToBitStream(stream, blobPosition[RIGHT_PLAYER].y, 0, GROUND_PLANE_HEIGHT);
-		writeCompressedToBitStream(stream, blobVelocity[RIGHT_PLAYER].y, -30, 30);
-	}
-	
-	writeCompressedToBitStream(stream, blobPosition[LEFT_PLAYER].x, LEFT_PLANE, NET_POSITION_X);
-	writeCompressedToBitStream(stream, blobPosition[RIGHT_PLAYER].x, NET_POSITION_X, RIGHT_PLANE);
-	
-	writeCompressedToBitStream(stream, ballPosition.x, LEFT_PLANE, RIGHT_PLANE);
-	writeCompressedToBitStream(stream, ballPosition.y, -500, GROUND_PLANE_HEIGHT_MAX);
-
-	writeCompressedToBitStream(stream, ballVelocity.x, -30, 30);
-	writeCompressedToBitStream(stream, ballVelocity.y, -30, 30);
-
-	stream->Write(playerInput[LEFT_PLAYER].left);
-	stream->Write(playerInput[LEFT_PLAYER].right);
-	stream->Write(playerInput[LEFT_PLAYER].up);
-	stream->Write(playerInput[RIGHT_PLAYER].left);
-	stream->Write(playerInput[RIGHT_PLAYER].right);
-	stream->Write(playerInput[RIGHT_PLAYER].up);
-}
-
-void PhysicState::readFromStream(RakNet::BitStream* stream)
-{
-	bool leftGround;
-	bool rightGround;
-	stream->Read(leftGround);
-	stream->Read(rightGround);
-	
-	if(leftGround)
-	{
-		blobPosition[LEFT_PLAYER].y = GROUND_PLANE_HEIGHT;
-		blobVelocity[LEFT_PLAYER].y = 0;
-	}
-	else
-	{
-		readCompressedFromBitStream(stream, blobPosition[LEFT_PLAYER].y, 0, GROUND_PLANE_HEIGHT);
-		readCompressedFromBitStream(stream, blobVelocity[LEFT_PLAYER].y, -30, 30);
-	}
-	
-	if(rightGround)
-	{
-		blobPosition[RIGHT_PLAYER].y = GROUND_PLANE_HEIGHT;
-		blobVelocity[RIGHT_PLAYER].y = 0;
-	}
-	else
-	{
-		readCompressedFromBitStream(stream, blobPosition[RIGHT_PLAYER].y, 0, GROUND_PLANE_HEIGHT);
-		readCompressedFromBitStream(stream, blobVelocity[RIGHT_PLAYER].y, -30, 30);
-	}
-	
-	readCompressedFromBitStream(stream, blobPosition[LEFT_PLAYER].x, LEFT_PLANE, NET_POSITION_X);
-	readCompressedFromBitStream(stream, blobPosition[RIGHT_PLAYER].x, NET_POSITION_X, RIGHT_PLANE);
-	
-	readCompressedFromBitStream(stream, ballPosition.x, LEFT_PLANE, RIGHT_PLANE);
-	// maybe these values is a bit too pessimistic...
-	// but we have 65535 values, hence it should be precise enough
-	readCompressedFromBitStream(stream, ballPosition.y, -500, GROUND_PLANE_HEIGHT_MAX);
-
-	readCompressedFromBitStream(stream, ballVelocity.x, -30, 30);
-	readCompressedFromBitStream(stream, ballVelocity.y, -30, 30);
-	
-	stream->Read(playerInput[LEFT_PLAYER].left);
-	stream->Read(playerInput[LEFT_PLAYER].right);
-	stream->Read(playerInput[LEFT_PLAYER].up);
-	stream->Read(playerInput[RIGHT_PLAYER].left);
-	stream->Read(playerInput[RIGHT_PLAYER].right);
-	stream->Read(playerInput[RIGHT_PLAYER].up);
-
 }
 
 void PhysicState::swapSides()
