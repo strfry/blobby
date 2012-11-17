@@ -114,7 +114,7 @@ void MouseInputDevice::transferInput(PlayerInput& input)
 		input.left = true;
 	
 	// insert new data for evaluation
-	mLag.insertData(input, mPlayer == LEFT_PLAYER ? match->getLeftInputSource()->getInput() : match->getRightInputSource()->getInput());
+	mLag.insertData(input, match->getInputSource( mPlayer )->getInput() );
 	mInputs.push_back(input);
 	RenderManager::getSingleton().setMouseMarker(mMarkerX);
 }

@@ -330,3 +330,17 @@ Clock& DuelMatch::getClock()
 {
 	return mLogic->getClock();
 }
+
+InputSource* DuelMatch::getInputSource(PlayerSide player) const
+{
+	if(player == LEFT_PLAYER)
+	{
+		return mLeftInput;
+	} 
+	 else if (player == RIGHT_PLAYER)
+	{
+		return mRightInput;
+	}
+	
+	return 0;
+}

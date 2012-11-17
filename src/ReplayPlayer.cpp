@@ -90,7 +90,7 @@ bool ReplayPlayer::play(DuelMatch* virtual_match)
 		
 		PlayerInput left;
 		PlayerInput right;
-		loader->getInputAt(mPosition, (DummyInputSource*)virtual_match->getLeftInputSource(), (DummyInputSource*)virtual_match->getRightInputSource());
+		loader->getInputAt(mPosition, (DummyInputSource*)virtual_match->getInputSource( LEFT_PLAYER ), (DummyInputSource*)virtual_match->getInputSource( RIGHT_PLAYER ));
 		virtual_match->step();
 		
 		int point;
