@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "GameLogic.h"
 #include "Vector.h"
+#include "InputSource.h"
 
 namespace RakNet
 {
@@ -142,6 +143,8 @@ class DuelMatch
 
 		InputSource* mLeftInput;
 		InputSource* mRightInput;
+		
+		PlayerInput mTransformedInput[MAX_PLAYERS];
 
 		GameLogic mLogic;
 

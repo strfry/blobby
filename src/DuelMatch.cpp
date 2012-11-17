@@ -106,21 +106,22 @@ void DuelMatch::step()
 	if(mPaused)
 		return;
 		
-	PlayerInput leftIn = mLeftInput->updateInput();
-	PlayerInput rightIn = mRightInput->updateInput();
+	mTransformedInput[LEFT_PLAYER] = mLeftInput->updateInput();
+	mTransformedInput[RIGHT_PLAYER] = mRightInput->updateInput();
 	
 	int leftScore = mLogic->getScore(LEFT_PLAYER);
 	int rightScore = mLogic->getScore(RIGHT_PLAYER);
 
 	if(!mRemote)
 	{
-		leftIn = mLogic->transformInput( leftIn, LEFT_PLAYER );
-		rightIn = mLogic->transformInput( rightIn, LEFT_PLAYER );
+		mTransformedInput[LEFT_PLAYER] = mLogic->transformInput( mTransformedInput[LEFT_PLAYER], LEFT_PLAYER );
+		mTransformedInput[RIGHT_PLAYER] = mLogic->transformInput( mTransformedInput[RIGHT_PLAYER], RIGHT_PLAYER );
 	}
 
 	// do steps in physic an logic
 	mLogic->step();
-	int physicEvents = mPhysicWorld->step( leftIn, rightIn, mLogic->isBallValid(), mLogic->isGameRunning() );
+	int physicEvents = mPhysicWorld->step( mTransformedInput[LEFT_PLAYER], mTransformedInput[RIGHT_PLAYER], 
+											mLogic->isBallValid(), mLogic->isGameRunning() );
 
 	// check for all hit events
 	if(!mRemote)
@@ -302,6 +303,12 @@ void DuelMatch::setState(const DuelMatchState& state)
 {
 	mPhysicWorld->setState(state.worldState);
 	mLogic->setState(state.logicState);
+	
+	mTransformedInput[LEFT_PLAYER] = state.playerInput[LEFT_PLAYER];
+	mTransformedInput[RIGHT_PLAYER] = state.playerInput[RIGHT_PLAYER];
+	
+	mLeftInput->setInput(mTransformedInput[LEFT_PLAYER]);
+	mRightInput->setInput(mTransformedInput[RIGHT_PLAYER]);
 }
 
 DuelMatchState DuelMatch::getState() const
@@ -309,6 +316,8 @@ DuelMatchState DuelMatch::getState() const
 	DuelMatchState state;
 	state.worldState = mPhysicWorld->getState();
 	state.logicState = mLogic->getState();
+	state.playerInput[LEFT_PLAYER] = mTransformedInput[LEFT_PLAYER];
+	state.playerInput[RIGHT_PLAYER] = mTransformedInput[RIGHT_PLAYER];
 	
 	return state;
 }

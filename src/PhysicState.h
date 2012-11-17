@@ -39,8 +39,6 @@ struct PhysicState
 	Vector2 ballVelocity;
 	float ballAngularVelocity;
 	
-	PlayerInput playerInput[MAX_PLAYERS];
-	
 	// equality comparision
 	bool operator==(const PhysicState& other) const;
 	

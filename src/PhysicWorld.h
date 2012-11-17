@@ -106,8 +106,6 @@ class PhysicWorld
 		float mBlobState[MAX_PLAYERS];
 		float mCurrentBlobbyAnimationSpeed[MAX_PLAYERS];
 
-		PlayerInput mPlayerInput[MAX_PLAYERS];
-
 		float mLastHitIntensity;
 };
 

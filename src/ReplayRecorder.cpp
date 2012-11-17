@@ -284,8 +284,8 @@ void ReplayRecorder::record(const DuelMatchState& state)
 	// we save this 1 here just for compatibility
 	// set highest bit to 1
 	unsigned char packet = 1 << 7;
-	packet |= (state.worldState.playerInput[LEFT_PLAYER].getAll() & 7) << 3;
-	packet |= (state.worldState.playerInput[RIGHT_PLAYER].getAll() & 7) ;
+	packet |= (state.playerInput[LEFT_PLAYER].getAll() & 7) << 3;
+	packet |= (state.playerInput[RIGHT_PLAYER].getAll() & 7) ;
 	mSaveData.push_back(packet);
 	
 	// update the score

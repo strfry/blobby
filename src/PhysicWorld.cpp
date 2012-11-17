@@ -254,9 +254,6 @@ int PhysicWorld::step(const PlayerInput& leftInput, const PlayerInput& rightInpu
 
 	int events = 0;
 
-	// Set input
-	mPlayerInput[LEFT_PLAYER] = leftInput;
-	mPlayerInput[RIGHT_PLAYER] = rightInput;
 	// Compute independent actions
 	handleBlob(LEFT_PLAYER, leftInput);
 	handleBlob(RIGHT_PLAYER, rightInput);
@@ -420,9 +417,6 @@ PhysicState PhysicWorld::getState() const
 	st.ballPosition = mBallPosition;
 	st.ballVelocity = mBallVelocity;
 	st.ballAngularVelocity = mBallAngularVelocity;
-
-	st.playerInput[LEFT_PLAYER] = mPlayerInput[LEFT_PLAYER];
-	st.playerInput[RIGHT_PLAYER] = mPlayerInput[RIGHT_PLAYER];
 	return st;
 }
 
@@ -436,9 +430,6 @@ void PhysicWorld::setState(const PhysicState& ps)
 	mBallPosition = ps.ballPosition;
 	mBallVelocity = ps.ballVelocity;
 	mBallAngularVelocity = ps.ballAngularVelocity;
-
-	mPlayerInput[LEFT_PLAYER] = ps.playerInput[LEFT_PLAYER];
-	mPlayerInput[RIGHT_PLAYER] = ps.playerInput[RIGHT_PLAYER];
 }
 
 
