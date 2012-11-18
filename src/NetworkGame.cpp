@@ -53,7 +53,7 @@ NetworkGame::NetworkGame(RakServer& server,
 		mRightInput(new InputSource())
 
 {
-	mMatch = new DuelMatch(false, false, rules);
+	mMatch = new DuelMatch(false, rules);
 	mMatch->setPlayers( PlayerIdentity(leftPlayerName), PlayerIdentity(rightPlayerName) );
 	mMatch->setInputSources(mLeftInput, mRightInput);
 

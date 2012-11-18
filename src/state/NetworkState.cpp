@@ -54,7 +54,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 /* implementation */
 NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port):
 	mClient(new RakClient()),
-	mFakeMatch(new DuelMatch(true, true, "rules.lua"))
+	mFakeMatch(new DuelMatch(true, "rules.lua"))
 {	
 	IMGUI::getSingleton().resetSelection();
 	mWinningPlayer = NO_PLAYER;

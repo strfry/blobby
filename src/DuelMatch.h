@@ -56,7 +56,7 @@ class DuelMatch
 		// If remote is true, only physical responses will be calculated
 		// but hit events and score events are received from network
 
-		DuelMatch(bool global, bool remote, std::string rules);
+		DuelMatch(bool remote, std::string rules);
 		
 		void setPlayers( PlayerIdentity lplayer, PlayerIdentity rplayer);
 		void setInputSources(boost::shared_ptr<InputSource> linput, boost::shared_ptr<InputSource> rinput );
@@ -134,8 +134,6 @@ class DuelMatch
 		int getEvents() const { return events; }
 
 	private:
-		static DuelMatch* mMainGame;
-		bool mGlobal;
 
 		boost::scoped_ptr<PhysicWorld> mPhysicWorld;
 

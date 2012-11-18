@@ -34,9 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* implementation */
 
-DuelMatch* DuelMatch::mMainGame = 0;
-
-DuelMatch::DuelMatch(bool global, bool remote, std::string rules) :
+DuelMatch::DuelMatch(bool remote, std::string rules) :
 		// we send a pointer to an unconstructed object here!
 		mLogic(createGameLogic(rules, this)),
 		mPaused(false), 
@@ -45,12 +43,6 @@ DuelMatch::DuelMatch(bool global, bool remote, std::string rules) :
 		mRemote(remote)
 {
 	mPhysicWorld.reset( new PhysicWorld() );
-	mGlobal = global;
-	if (mGlobal)
-	{
-		assert(mMainGame == 0);
-		mMainGame = this;
-	}
 
 	setInputSources(boost::make_shared<InputSource>(), boost::make_shared<InputSource>());
 }
@@ -81,10 +73,6 @@ void DuelMatch::reset()
 
 DuelMatch::~DuelMatch()
 {
-	if (mGlobal)
-	{
-		mMainGame = 0;
-	}
 }
 
 void DuelMatch::setRules(std::string rulesFile)
