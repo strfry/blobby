@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "InputSource.h"
 #include "Global.h"
 
+class InputDevice;
+
 class LocalInputSource : public InputSource
 {
 	public:
@@ -32,5 +34,6 @@ class LocalInputSource : public InputSource
 		
 	private:
 		PlayerSide mPlayer;
+		InputDevice* mInputDevice;
 };
 

@@ -30,17 +30,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 LocalInputSource::LocalInputSource(PlayerSide player)
 	: mPlayer(player)
 {
-	 InputManager::getSingleton()->beginGame(player);
+	mInputDevice = InputManager::getSingleton()->beginGame(player);
 }
 
 LocalInputSource::~LocalInputSource()
 {
 	RenderManager::getSingleton().setMouseMarker(-6);
-	InputManager::getSingleton()->endGame();
+	delete mInputDevice;
 }
 
 
 PlayerInput LocalInputSource::getNextInput()
 {
-	return InputManager::getSingleton()->getGameInput(mPlayer);
+	PlayerInput pip;
+	mInputDevice->transferInput( pip );
+	return pip;
 }
