@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <string>
 #include <iosfwd>
 
-/*! \class PlayerInput
+/*! \struct PlayerInput
 	\brief struct for easy exchange of a single player input frame
 */
 struct PlayerInput
@@ -86,6 +86,8 @@ struct PlayerInput
 	bool up;
 };
 
+class DuelMatch;
+
 /*! \class InputSource
 	\brief abstracts several possible input sources.
 	\details This class abstracts several possible input sources, like local input 
@@ -97,6 +99,8 @@ struct PlayerInput
 class InputSource
 {
 	public:
+		InputSource();
+		
 		virtual ~InputSource()
 		{
 		}
@@ -105,10 +109,14 @@ class InputSource
 		PlayerInput getInput() const;
 		void setInput(PlayerInput ip);
 	
+		const DuelMatch* getMatch() const;
+		void setMatch(const DuelMatch* match); 
+	
 	private:
 		virtual PlayerInput getNextInput();
 	
 		PlayerInput mInput;
+		const DuelMatch* mMatch;
 };
 
 // This operator converts a PlayerInput structure in a packed string

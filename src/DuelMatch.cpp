@@ -52,8 +52,7 @@ DuelMatch::DuelMatch(bool global, bool remote, std::string rules) :
 		mMainGame = this;
 	}
 
-	mInputSources[LEFT_PLAYER] = boost::make_shared<InputSource>();
-	mInputSources[RIGHT_PLAYER] = boost::make_shared<InputSource>();
+	setInputSources(boost::make_shared<InputSource>(), boost::make_shared<InputSource>());
 }
 
 void DuelMatch::setPlayers( PlayerIdentity lplayer, PlayerIdentity rplayer)
@@ -69,6 +68,9 @@ void DuelMatch::setInputSources(boost::shared_ptr<InputSource> linput, boost::sh
 	
 	if(rinput)
 		mInputSources[RIGHT_PLAYER] = rinput;
+		
+	mInputSources[LEFT_PLAYER]->setMatch(this);
+	mInputSources[RIGHT_PLAYER]->setMatch(this);
 }
 
 void DuelMatch::reset()
