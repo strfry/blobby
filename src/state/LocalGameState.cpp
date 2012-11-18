@@ -58,6 +58,9 @@ LocalGameState::LocalGameState()
 	PlayerIdentity leftPlayer = config->loadPlayerIdentity(LEFT_PLAYER, false);
 	PlayerIdentity rightPlayer = config->loadPlayerIdentity(RIGHT_PLAYER, false);
 	
+	boost::shared_ptr<InputSource> leftInput = config->loadInputSource(LEFT_PLAYER);
+	boost::shared_ptr<InputSource> rightInput = config->loadInputSource(RIGHT_PLAYER); 
+	
 //	mLeftPlayer.loadFromConfig("left");
 //	mRightPlayer.loadFromConfig("right");
 	
@@ -78,7 +81,7 @@ LocalGameState::LocalGameState()
 	
 	SoundManager::getSingleton().playSound("sounds/pfiff.wav", ROUND_START_SOUND_VOLUME);
 
-	mMatch.reset(new DuelMatch(/*mLeftPlayer.getInputSource()*/0, /*mRightPlayer.getInputSource()*/0, true, false, "rules.lua"));
+	mMatch.reset(new DuelMatch( leftInput, rightInput, true, false, "rules.lua"));
 	mMatch->setPlayers(leftPlayer, rightPlayer);
 
 	mRecorder->setPlayerNames(leftPlayer.getName(), rightPlayer.getName());

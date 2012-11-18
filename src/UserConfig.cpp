@@ -25,12 +25,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <iostream>
 #include <map>
 
+#include <boost/make_shared.hpp>
+
 #include "tinyxml/tinyxml.h"
 
 #include "Global.h"
 #include "FileRead.h"
 #include "FileWrite.h"
 #include "PlayerIdentity.h"
+#include "LocalInputSource.h"
+#include "ScriptedInputSource.h"
 
 
 /* implementation */
@@ -83,6 +87,30 @@ PlayerIdentity UserConfig::loadPlayerIdentity(PlayerSide side, bool force_human)
 	player.setOscillating(getBool(prefix + "_blobby_oscillate"));
 	
 	return player;
+}
+
+boost::shared_ptr<InputSource> UserConfig::loadInputSource(PlayerSide side)
+{
+	std::string prefix = side == LEFT_PLAYER ? "left" : "right";
+	try
+	{
+		// these operations may throw, i.e., when the script is not found (should not happen)
+		//  or has errors
+		if (getBool(prefix + "_player_human")) 
+		{
+			return boost::make_shared<LocalInputSource>(side);
+		} 
+		else 
+		{
+			return boost::make_shared<ScriptedInputSource>("scripts/" + getString(prefix + "_script_name"), 
+																side, getInteger(prefix + "_script_strength"));
+		}
+	} catch (std::exception& e)
+	{
+		/// \todo REWORK ERROR REPORTING
+		std::cerr << e.what() << std::endl;
+		return boost::make_shared<InputSource>();
+	}
 }
 
 bool UserConfig::loadFile(const std::string& filename)

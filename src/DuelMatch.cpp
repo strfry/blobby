@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 /* includes */
 #include <cassert>
 
+#include <boost/make_shared.hpp>
+
 #include "DuelMatchState.h"
 #include "MatchEvents.h"
 #include "PhysicWorld.h"
@@ -34,7 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 DuelMatch* DuelMatch::mMainGame = 0;
 
-DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool remote, std::string rules) :
+DuelMatch::DuelMatch(boost::shared_ptr<InputSource> linput, boost::shared_ptr<InputSource> rinput, bool global, bool remote, std::string rules) :
 		// we send a pointer to an unconstructed object here!
 		mLogic(createGameLogic(rules, this)),
 		mPaused(false), 
@@ -50,8 +52,8 @@ DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool
 		mMainGame = this;
 	}
 
-	mLeftInput = linput ? linput : new InputSource();
-	mRightInput = rinput ? rinput : new InputSource();
+	mInputSources[LEFT_PLAYER] = linput ? linput : boost::make_shared<InputSource>();
+	mInputSources[RIGHT_PLAYER] = rinput ? rinput : boost::make_shared<InputSource>();
 }
 
 void DuelMatch::setPlayers( PlayerIdentity lplayer, PlayerIdentity rplayer)
@@ -93,8 +95,8 @@ void DuelMatch::step()
 	if(mPaused)
 		return;
 		
-	mTransformedInput[LEFT_PLAYER] = mLeftInput->updateInput();
-	mTransformedInput[RIGHT_PLAYER] = mRightInput->updateInput();
+	mTransformedInput[LEFT_PLAYER] = mInputSources[LEFT_PLAYER]->updateInput();
+	mTransformedInput[RIGHT_PLAYER] = mInputSources[RIGHT_PLAYER]->updateInput();
 	
 	int leftScore = mLogic->getScore(LEFT_PLAYER);
 	int rightScore = mLogic->getScore(RIGHT_PLAYER);
@@ -294,8 +296,8 @@ void DuelMatch::setState(const DuelMatchState& state)
 	mTransformedInput[LEFT_PLAYER] = state.playerInput[LEFT_PLAYER];
 	mTransformedInput[RIGHT_PLAYER] = state.playerInput[RIGHT_PLAYER];
 	
-	mLeftInput->setInput(mTransformedInput[LEFT_PLAYER]);
-	mRightInput->setInput(mTransformedInput[RIGHT_PLAYER]);
+	mInputSources[LEFT_PLAYER]->setInput( mTransformedInput[LEFT_PLAYER] );
+	mInputSources[RIGHT_PLAYER]->setInput( mTransformedInput[RIGHT_PLAYER] );
 }
 
 DuelMatchState DuelMatch::getState() const
@@ -326,18 +328,9 @@ Clock& DuelMatch::getClock()
 	return mLogic->getClock();
 }
 
-InputSource* DuelMatch::getInputSource(PlayerSide player) const
+boost::shared_ptr<InputSource> DuelMatch::getInputSource(PlayerSide player) const
 {
-	if(player == LEFT_PLAYER)
-	{
-		return mLeftInput;
-	} 
-	 else if (player == RIGHT_PLAYER)
-	{
-		return mRightInput;
-	}
-	
-	return 0;
+	return mInputSources[player];
 }
 
 void DuelMatch::resetBall( PlayerSide side ) 

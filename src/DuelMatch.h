@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <string>
 #include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include "GameLogic.h"
 #include "Vector.h"
@@ -61,7 +62,7 @@ class DuelMatch
 		// If remote is true, only physical responses will be calculated
 		// but hit events and score events are received from network
 
-		DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool remote, std::string rules);
+		DuelMatch(boost::shared_ptr<InputSource> linput, boost::shared_ptr<InputSource> rinput, bool global, bool remote, std::string rules);
 		
 		void setPlayers( PlayerIdentity lplayer, PlayerIdentity rplayer);
 
@@ -133,7 +134,7 @@ class DuelMatch
 		DuelMatchState getState() const;
 
 		//Input stuff for recording and playing replays
-		InputSource* getInputSource(PlayerSide player) const;
+		boost::shared_ptr<InputSource> getInputSource(PlayerSide player) const;
 	
 		PlayerIdentity getPlayer(PlayerSide player) const;
 	
@@ -147,12 +148,10 @@ class DuelMatch
 
 		boost::scoped_ptr<PhysicWorld> mPhysicWorld;
 
-		InputSource* mLeftInput;
-		InputSource* mRightInput;
-		
-		PlayerIdentity mPlayers[MAX_PLAYERS];
-		
+		boost::shared_ptr<InputSource> mInputSources[MAX_PLAYERS];
 		PlayerInput mTransformedInput[MAX_PLAYERS];
+		
+		PlayerIdentity mPlayers[MAX_PLAYERS];		
 
 		GameLogic mLogic;
 

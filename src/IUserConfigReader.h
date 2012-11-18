@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Global.h"
 
 class PlayerIdentity;
+class InputSource;
 
 class IUserConfigReader
 {
@@ -39,4 +40,5 @@ class IUserConfigReader
 		virtual int getInteger(const std::string& name) const = 0;
 		
 		virtual PlayerIdentity loadPlayerIdentity(PlayerSide player, bool force_human) = 0;
+		virtual boost::shared_ptr<InputSource> loadInputSource(PlayerSide player) = 0;
 };
