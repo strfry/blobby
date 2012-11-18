@@ -42,7 +42,5 @@ LocalInputSource::~LocalInputSource()
 
 PlayerInput LocalInputSource::getNextInput()
 {
-	PlayerInput pip;
-	mInputDevice->transferInput( pip );
-	return pip;
+	return mInputDevice->transferInput( this );
 }
