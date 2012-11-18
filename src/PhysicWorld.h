@@ -51,7 +51,7 @@ class PhysicWorld
 		// blobby information queries
 		Vector2 getBlobPosition(PlayerSide player) const;
 		Vector2 getBlobVelocity(PlayerSide player) const;
-		bool getBlobJump(PlayerSide player) const;
+		bool blobHitGround(PlayerSide player) const;
 		float getBlobState(PlayerSide player) const;
 
 		// Blobby animation methods
@@ -61,9 +61,6 @@ class PhysicWorld
 		// which was detected and also queried last.
 		void setLastHitIntensity(float intensity);
 		float getLastHitIntensity() const;
-
-		// This returns true if reset area is clear and the ball is steady
-		bool canStartRound(PlayerSide servingPlayer) const;
 
 		// This resets everything to the starting situation and
 		// wants to know, which player begins.
@@ -78,14 +75,8 @@ class PhysicWorld
 		// sets a new physic state
 		void setState(const PhysicState& state);
 
-		#ifdef DEBUG
-		bool checkPhysicStateValidity() const;
-		#endif
-
 	private:
 		void blobbyAnimationStep(PlayerSide player);
-	
-		bool blobbyHitGround(PlayerSide player) const;
 	
 		inline bool playerTopBallCollision(int player) const;
 		inline bool playerBottomBallCollision(int player) const;

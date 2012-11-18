@@ -112,6 +112,7 @@ class DuelMatch
 
 		bool getBallDown() const;
 		bool getBallActive() const;
+		bool canStartRound(PlayerSide servingPlayer) const;
 		
 		void pause();
 		void unpause();

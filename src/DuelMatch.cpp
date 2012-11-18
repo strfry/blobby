@@ -159,7 +159,7 @@ void DuelMatch::step()
 	// reset BallDown, reset the World
 	// to let the player serve
 	// and trigger the EVENT_RESET
-	if (!mLogic->isBallValid() && mPhysicWorld->canStartRound(mLogic->getServingPlayer()))
+	if (!mLogic->isBallValid() && canStartRound(mLogic->getServingPlayer()))
 	{
 		resetBall( mLogic->getServingPlayer() );
 		mLogic->onServe();
@@ -246,7 +246,7 @@ bool DuelMatch::getBallActive() const
 
 bool DuelMatch::getBlobJump(PlayerSide player) const
 {
-	return mPhysicWorld->getBlobJump(player);
+	return !mPhysicWorld->blobHitGround(player);
 }
 
 Vector2 DuelMatch::getBlobPosition(PlayerSide player) const
@@ -346,4 +346,11 @@ void DuelMatch::resetBall( PlayerSide side )
 	mPhysicWorld->setBallVelocity( Vector2(0, 0) ); 
 	mPhysicWorld->setBallAngularVelocity( (side == RIGHT_PLAYER ? -1 : 1) * STANDARD_BALL_ANGULAR_VELOCITY );
 	mPhysicWorld->setLastHitIntensity(0.0);
+}
+
+bool DuelMatch::canStartRound(PlayerSide servingPlayer) const
+{
+	Vector2 ballVelocity = mPhysicWorld->getBallVelocity();
+	return (mPhysicWorld->blobHitGround(servingPlayer) && ballVelocity.y < 1.5 &&
+				ballVelocity.y > -1.5 && mPhysicWorld->getBallPosition().y > 430);
 }
