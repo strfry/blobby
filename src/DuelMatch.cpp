@@ -52,6 +52,13 @@ DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool
 
 	mLeftInput = linput ? linput : new InputSource();
 	mRightInput = rinput ? rinput : new InputSource();
+	}
+}
+
+void DuelMatch::setPlayers( PlayerIdentity lplayer, PlayerIdentity rplayer)
+{
+	mPlayers[LEFT_PLAYER] = lplayer;
+	mPlayers[RIGHT_PLAYER] = rplayer;
 }
 
 void DuelMatch::reset()
@@ -353,4 +360,9 @@ bool DuelMatch::canStartRound(PlayerSide servingPlayer) const
 	Vector2 ballVelocity = mPhysicWorld->getBallVelocity();
 	return (mPhysicWorld->blobHitGround(servingPlayer) && ballVelocity.y < 1.5 &&
 				ballVelocity.y > -1.5 && mPhysicWorld->getBallPosition().y > 430);
+}
+
+PlayerIdentity DuelMatch::getPlayer(PlayerSide player) const
+{
+	return mPlayers[player];
 }

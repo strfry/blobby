@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "GameLogic.h"
 #include "Vector.h"
 #include "InputSource.h"
+#include "PlayerIdentity.h"
 
 namespace RakNet
 {
@@ -61,6 +62,8 @@ class DuelMatch
 		// but hit events and score events are received from network
 
 		DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool remote, std::string rules);
+		
+		void setPlayers( PlayerIdentity lplayer, PlayerIdentity rplayer);
 
 		~DuelMatch();
 
@@ -132,6 +135,8 @@ class DuelMatch
 		//Input stuff for recording and playing replays
 		InputSource* getInputSource(PlayerSide player) const;
 	
+		PlayerIdentity getPlayer(PlayerSide player) const;
+	
 		void setServingPlayer(PlayerSide side);
 	
 		int getEvents() const { return events; }
@@ -144,6 +149,8 @@ class DuelMatch
 
 		InputSource* mLeftInput;
 		InputSource* mRightInput;
+		
+		PlayerIdentity mPlayers[MAX_PLAYERS];
 		
 		PlayerInput mTransformedInput[MAX_PLAYERS];
 

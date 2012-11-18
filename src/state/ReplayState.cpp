@@ -71,6 +71,8 @@ void ReplayState::loadReplay(const std::string& file)
 		SoundManager::getSingleton().playSound(
 				"sounds/pfiff.wav", ROUND_START_SOUND_VOLUME);
 		
+		mReplayMatch->setPlayers(mReplayPlayer->getPlayerName(LEFT_PLAYER), mReplayPlayer->getPlayerName(RIGHT_PLAYER));
+		
 		mLeftPlayer.setColor(mReplayPlayer->getBlobColor(LEFT_PLAYER));
 		mRightPlayer.setColor(mReplayPlayer->getBlobColor(RIGHT_PLAYER));
 		

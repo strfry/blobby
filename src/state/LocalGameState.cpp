@@ -81,7 +81,8 @@ LocalGameState::LocalGameState()
 	mRecorder->setGameSpeed((float)IUserConfigReader::createUserConfigReader("config.xml")->getInteger("gamefps"));
 
 	mMatch.reset(new DuelMatch(mLeftPlayer.getInputSource(), mRightPlayer.getInputSource(), true, false, "rules.lua"));
-
+	mMatch->setPlayers(PlayerIdentity(mLeftPlayer.getName()), PlayerIdentity(mRightPlayer.getName()));
+	
 	RenderManager::getSingleton().setPlayernames(mLeftPlayer.getName(), mRightPlayer.getName());
 	IMGUI::getSingleton().resetSelection();
 }

@@ -94,6 +94,8 @@ NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port):
 		mRemotePlayer = &mLeftPlayer;
 	}
 	
+	mFakeMatch->setPlayers( mLeftPlayer.getName(), mRightPlayer.getName() );
+	
 	RenderManager::getSingleton().setScore(0, 0, false, false);
 	RenderManager::getSingleton().setPlayernames(mLeftPlayer.getName(), mRightPlayer.getName());
 

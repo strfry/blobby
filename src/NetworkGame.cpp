@@ -54,6 +54,7 @@ NetworkGame::NetworkGame(RakServer& server,
 
 {
 	mMatch = new DuelMatch(mLeftInput.get(), mRightInput.get(), false, false, rules);
+	mMatch->setPlayers( PlayerIdentity(mLeftPlayerName), PlayerIdentity(mRightPlayerName) );
 
 	mLeftPlayer = leftPlayer;
 	mRightPlayer = rightPlayer;
