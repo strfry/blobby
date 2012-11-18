@@ -81,8 +81,9 @@ LocalGameState::LocalGameState()
 	
 	SoundManager::getSingleton().playSound("sounds/pfiff.wav", ROUND_START_SOUND_VOLUME);
 
-	mMatch.reset(new DuelMatch( leftInput, rightInput, true, false, "rules.lua"));
+	mMatch.reset(new DuelMatch( true, false, "rules.lua"));
 	mMatch->setPlayers(leftPlayer, rightPlayer);
+	mMatch->setInputSources(leftInput, rightInput);
 
 	mRecorder->setPlayerNames(leftPlayer.getName(), rightPlayer.getName());
 	mRecorder->setPlayerColors( leftPlayer.getStaticColor(), rightPlayer.getStaticColor() );

@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 DuelMatch* DuelMatch::mMainGame = 0;
 
-DuelMatch::DuelMatch(boost::shared_ptr<InputSource> linput, boost::shared_ptr<InputSource> rinput, bool global, bool remote, std::string rules) :
+DuelMatch::DuelMatch(bool global, bool remote, std::string rules) :
 		// we send a pointer to an unconstructed object here!
 		mLogic(createGameLogic(rules, this)),
 		mPaused(false), 
@@ -52,14 +52,23 @@ DuelMatch::DuelMatch(boost::shared_ptr<InputSource> linput, boost::shared_ptr<In
 		mMainGame = this;
 	}
 
-	mInputSources[LEFT_PLAYER] = linput ? linput : boost::make_shared<InputSource>();
-	mInputSources[RIGHT_PLAYER] = rinput ? rinput : boost::make_shared<InputSource>();
+	mInputSources[LEFT_PLAYER] = boost::make_shared<InputSource>();
+	mInputSources[RIGHT_PLAYER] = boost::make_shared<InputSource>();
 }
 
 void DuelMatch::setPlayers( PlayerIdentity lplayer, PlayerIdentity rplayer)
 {
 	mPlayers[LEFT_PLAYER] = lplayer;
 	mPlayers[RIGHT_PLAYER] = rplayer;
+}
+
+void DuelMatch::setInputSources(boost::shared_ptr<InputSource> linput, boost::shared_ptr<InputSource> rinput )
+{
+	if(linput)
+		mInputSources[LEFT_PLAYER] = linput;
+	
+	if(rinput)
+		mInputSources[RIGHT_PLAYER] = rinput;
 }
 
 void DuelMatch::reset()

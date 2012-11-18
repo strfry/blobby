@@ -62,9 +62,10 @@ class DuelMatch
 		// If remote is true, only physical responses will be calculated
 		// but hit events and score events are received from network
 
-		DuelMatch(boost::shared_ptr<InputSource> linput, boost::shared_ptr<InputSource> rinput, bool global, bool remote, std::string rules);
+		DuelMatch(bool global, bool remote, std::string rules);
 		
 		void setPlayers( PlayerIdentity lplayer, PlayerIdentity rplayer);
+		void setInputSources(boost::shared_ptr<InputSource> linput, boost::shared_ptr<InputSource> rinput );
 
 		~DuelMatch();
 

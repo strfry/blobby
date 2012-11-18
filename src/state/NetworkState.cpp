@@ -56,7 +56,7 @@ NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port):
 	mLeftPlayer(LEFT_PLAYER),
 	mRightPlayer(RIGHT_PLAYER),
 	mClient(new RakClient()),
-	mFakeMatch(new DuelMatch(boost::shared_ptr<InputSource>(), boost::shared_ptr<InputSource>(), true, true, "rules.lua"))
+	mFakeMatch(new DuelMatch(true, true, "rules.lua"))
 {	
 	IMGUI::getSingleton().resetSelection();
 	mWinningPlayer = NO_PLAYER;
