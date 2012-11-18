@@ -52,7 +52,6 @@ DuelMatch::DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool
 
 	mLeftInput = linput ? linput : new InputSource();
 	mRightInput = rinput ? rinput : new InputSource();
-	}
 }
 
 void DuelMatch::setPlayers( PlayerIdentity lplayer, PlayerIdentity rplayer)

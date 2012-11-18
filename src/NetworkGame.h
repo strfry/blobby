@@ -72,8 +72,6 @@ class NetworkGame
 		PlayerID mLeftPlayer;
 		PlayerID mRightPlayer;
 		PlayerSide mSwitchedSide;
-		std::string mLeftPlayerName;
-		std::string mRightPlayerName;
 		Color mLeftPlayerColor;
 		Color mRightPlayerColor;
 
