@@ -367,3 +367,8 @@ PlayerIdentity DuelMatch::getPlayer(PlayerSide player) const
 {
 	return mPlayers[player];
 }
+
+PlayerIdentity& DuelMatch::getPlayer(PlayerSide player)
+{
+	return mPlayers[player];
+}

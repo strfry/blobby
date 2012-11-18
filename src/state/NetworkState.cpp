@@ -53,8 +53,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* implementation */
 NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port):
-	mLeftPlayer(LEFT_PLAYER),
-	mRightPlayer(RIGHT_PLAYER),
 	mClient(new RakClient()),
 	mFakeMatch(new DuelMatch(true, true, "rules.lua"))
 {	
@@ -82,22 +80,24 @@ NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port):
 	mFakeMatch->pause();
 	
 	// load/init players
-	mLeftPlayer.loadFromConfig("left", false);
-	mRightPlayer.loadFromConfig("right", false);
-	if(mOwnSide == LEFT_PLAYER){
-		mRightPlayer.setName("");
-		mLocalPlayer = &mLeftPlayer;
-		mRemotePlayer = &mRightPlayer;
-	}else{
-		mLeftPlayer.setName("");
-		mLocalPlayer = &mRightPlayer;
-		mRemotePlayer = &mLeftPlayer;
+	
+	if(mOwnSide == LEFT_PLAYER)
+	{
+		PlayerIdentity player = config.loadPlayerIdentity(LEFT_PLAYER, false);
+		mLocalPlayer = &mFakeMatch->getPlayer( LEFT_PLAYER );
+		mRemotePlayer = &mFakeMatch->getPlayer( RIGHT_PLAYER );
+		mFakeMatch->setPlayers( player, PlayerIdentity("") );
+	}
+	 else
+	{
+		PlayerIdentity player = config.loadPlayerIdentity(RIGHT_PLAYER, false);
+		mLocalPlayer = &mFakeMatch->getPlayer( RIGHT_PLAYER );
+		mRemotePlayer = &mFakeMatch->getPlayer( LEFT_PLAYER );
+		mFakeMatch->setPlayers( PlayerIdentity(""), player );
 	}
 	
-	mFakeMatch->setPlayers( mLeftPlayer.getName(), mRightPlayer.getName() );
-	
 	RenderManager::getSingleton().setScore(0, 0, false, false);
-	RenderManager::getSingleton().setPlayernames(mLeftPlayer.getName(), mRightPlayer.getName());
+	RenderManager::getSingleton().setPlayernames(mFakeMatch->getPlayer(LEFT_PLAYER).getName(), mFakeMatch->getPlayer(RIGHT_PLAYER).getName());
 
 	mSelectedChatmessage = 0;
 	mChatCursorPosition = 0;
@@ -131,7 +131,7 @@ void NetworkGameState::step()
 				stream.Write(myname, sizeof(myname));
 
 				// send color settings
-				stream.Write(mLocalPlayer->getColor().toInt());
+				stream.Write(mLocalPlayer->getStaticColor().toInt());
 
 				mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
 
@@ -301,7 +301,7 @@ void NetworkGameState::step()
 				stream.Read(temp);
 				Color ncolor = temp;
 
-				mRemotePlayer->setName(std::string(charName));
+				*mRemotePlayer = PlayerIdentity(charName);
 				
 				mFilename = mLocalPlayer->getName();
 				if(mFilename.size() > 7)
@@ -313,13 +313,12 @@ void NetworkGameState::step()
 				mFilename += oppname;
 				
 				// set names in render manager
-				RenderManager::getSingleton().setPlayernames(mLeftPlayer.getName(), mRightPlayer.getName());
+				RenderManager::getSingleton().setPlayernames(mFakeMatch->getPlayer(LEFT_PLAYER).getName(), 
+															mFakeMatch->getPlayer(RIGHT_PLAYER).getName());
 				
 				// check whether to use remote player color
 				if(mUseRemoteColor){
-					mRemotePlayer->setColor(ncolor);
-					RenderManager::getSingleton().setBlobColor(LEFT_PLAYER, mLeftPlayer.getColor());
-					RenderManager::getSingleton().setBlobColor(RIGHT_PLAYER, mRightPlayer.getColor());
+					mRemotePlayer->setStaticColor(ncolor);
 					RenderManager::getSingleton().redraw();
 				}
 				
@@ -479,8 +478,6 @@ void NetworkGameState::step()
 	}
 
 	presentGame(*mFakeMatch);
-	rmanager->setBlobColor(LEFT_PLAYER, mLeftPlayer.getColor());
-	rmanager->setBlobColor(RIGHT_PLAYER, mRightPlayer.getColor());
 
 	if (InputManager::getSingleton()->exit() && mNetworkState != PLAYING)
 	{
@@ -666,11 +663,7 @@ void NetworkGameState::step()
 		}
 		case PLAYER_WON:
 		{
-			std::string tmp;
-			if(mWinningPlayer==LEFT_PLAYER)
-				tmp = mLeftPlayer.getName();
-			else
-				tmp = mRightPlayer.getName();
+			std::string tmp = mFakeMatch->getPlayer(mWinningPlayer).getName();
 			imgui.doOverlay(GEN_ID, Vector2(200, 150), Vector2(700, 450));
 			imgui.doImage(GEN_ID, Vector2(200, 250), "gfx/pokal.bmp");
 			imgui.doText(GEN_ID, Vector2(274, 240), tmp);

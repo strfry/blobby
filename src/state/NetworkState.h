@@ -29,6 +29,7 @@ class RakClient;
 class RakServer;
 class DuelMatch;
 class NetworkGame;
+class PlayerIdentity;
 
 /*! \class NetworkGameState
 	\brief State for Network Game
@@ -60,13 +61,10 @@ private:
 		PLAYER_WON,
 		PAUSING
 	} mNetworkState;
-
-	Player mLeftPlayer;
-	Player mRightPlayer;
 	
 	// these are pointers to mLeftPlayer or mRightPlayer respectively, so we don't need a smart pointer here
-	Player* mLocalPlayer;
-	Player* mRemotePlayer;
+	PlayerIdentity* mLocalPlayer;
+	PlayerIdentity* mRemotePlayer;
 	
 	bool mUseRemoteColor;
 

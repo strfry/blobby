@@ -138,6 +138,7 @@ class DuelMatch
 		boost::shared_ptr<InputSource> getInputSource(PlayerSide player) const;
 	
 		PlayerIdentity getPlayer(PlayerSide player) const;
+		PlayerIdentity& getPlayer(PlayerSide player);
 	
 		void setServingPlayer(PlayerSide side);
 	
