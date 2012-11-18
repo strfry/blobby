@@ -87,11 +87,6 @@ DuelMatch::~DuelMatch()
 	}
 }
 
-DuelMatch* DuelMatch::getMainGame()
-{
-	return mMainGame;
-}
-
 void DuelMatch::setRules(std::string rulesFile)
 {
 	mLogic = createGameLogic(rulesFile, this);

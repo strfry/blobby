@@ -63,11 +63,6 @@ class DuelMatch
 
 		~DuelMatch();
 
-		// Allthough DuelMatch can be instantiated multiple times, a
-		// singleton may be registered for the purpose of scripted or
-		// interactive input. Note this can return 0.
-		static DuelMatch* getMainGame();
-		
 		void setRules(std::string rulesFile);
 		
 		void reset();
