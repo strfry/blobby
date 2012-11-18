@@ -79,6 +79,7 @@ class DuelMatch
 		// this methods allow external input 
 		// events triggered by the network
 		void setScore(int left, int right);
+		void resetBall(PlayerSide side);
 		
 		void trigger(int event);
 		void resetTriggeredEvents();

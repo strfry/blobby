@@ -46,6 +46,7 @@ class PhysicWorld
 		Vector2 getBallVelocity() const;
 		void setBallVelocity( Vector2 newVelocity );
 		float getBallRotation() const;
+		void setBallAngularVelocity( float angvel );
 		
 		// blobby information queries
 		Vector2 getBlobPosition(PlayerSide player) const;
@@ -66,7 +67,7 @@ class PhysicWorld
 
 		// This resets everything to the starting situation and
 		// wants to know, which player begins.
-		void reset(PlayerSide player);
+		//void reset(PlayerSide player);
 
 		// Important: This assumes a fixed framerate of 60 FPS!
 		int step(const PlayerInput& leftInput, const PlayerInput& rightInput, bool isBallValid, bool isGameRunning);

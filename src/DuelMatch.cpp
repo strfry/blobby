@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "MatchEvents.h"
 #include "PhysicWorld.h"
 #include "GenericIO.h"
+#include "GameConstants.h"
 
 /* implementation */
 
@@ -160,7 +161,7 @@ void DuelMatch::step()
 	// and trigger the EVENT_RESET
 	if (!mLogic->isBallValid() && mPhysicWorld->canStartRound(mLogic->getServingPlayer()))
 	{
-		mPhysicWorld->reset(mLogic->getServingPlayer());
+		resetBall( mLogic->getServingPlayer() );
 		mLogic->onServe();
 		events |= EVENT_RESET;
 	}
@@ -304,9 +305,9 @@ DuelMatchState DuelMatch::getState() const
 
 void DuelMatch::setServingPlayer(PlayerSide side)
 {
-	mLogic->setServingPlayer(side);
-	mLogic->onServe();
-	mPhysicWorld->reset(side);
+	mLogic->setServingPlayer( side );
+	resetBall( side );
+	mLogic->onServe( );
 }
 
 const Clock& DuelMatch::getClock() const
@@ -331,4 +332,18 @@ InputSource* DuelMatch::getInputSource(PlayerSide player) const
 	}
 	
 	return 0;
+}
+
+void DuelMatch::resetBall( PlayerSide side ) 
+{
+	if (side == LEFT_PLAYER)
+		mPhysicWorld->setBallPosition( Vector2(200, STANDARD_BALL_HEIGHT) );
+	else if (side == RIGHT_PLAYER)
+		mPhysicWorld->setBallPosition( Vector2(600, STANDARD_BALL_HEIGHT) );
+	else
+		mPhysicWorld->setBallPosition( Vector2(400, 450) );
+
+	mPhysicWorld->setBallVelocity( Vector2(0, 0) ); 
+	mPhysicWorld->setBallAngularVelocity( (side == RIGHT_PLAYER ? -1 : 1) * STANDARD_BALL_ANGULAR_VELOCITY );
+	mPhysicWorld->setLastHitIntensity(0.0);
 }
