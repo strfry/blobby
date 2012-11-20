@@ -55,14 +55,14 @@ NetworkGame::NetworkGame(RakServer& server,
 {
 	mMatch = new DuelMatch(false, rules);
 	mMatch->setPlayers( PlayerIdentity(leftPlayerName), PlayerIdentity(rightPlayerName) );
+	mMatch->getPlayer(LEFT_PLAYER).setStaticColor(leftColor);
+	mMatch->getPlayer(RIGHT_PLAYER).setStaticColor(rightColor);
 	mMatch->setInputSources(mLeftInput, mRightInput);
 
 	mLeftPlayer = leftPlayer;
 	mRightPlayer = rightPlayer;
 	mSwitchedSide = switchedSide;
-	mLeftPlayerColor = leftColor;
-	mRightPlayerColor = rightColor;
-
+	
 	mWinningPlayer = NO_PLAYER;
 
 	mPausing = false;
@@ -283,7 +283,7 @@ bool NetworkGame::step()
 					leftStream.Write((int)SpeedController::getMainInstance()->getGameSpeed());
 					strncpy(name, mMatch->getPlayer(LEFT_PLAYER).getName().c_str(), sizeof(name));
 					leftStream.Write(name, sizeof(name));
-					leftStream.Write(mRightPlayerColor.toInt());
+					leftStream.Write(mMatch->getPlayer(RIGHT_PLAYER).getStaticColor().toInt());
 					
 					// writing data into rightStream
 					RakNet::BitStream rightStream;
@@ -291,7 +291,7 @@ bool NetworkGame::step()
 					rightStream.Write((int)SpeedController::getMainInstance()->getGameSpeed());
 					strncpy(name, mMatch->getPlayer(LEFT_PLAYER).getName().c_str(), sizeof(name));
 					rightStream.Write(name, sizeof(name));
-					rightStream.Write(mLeftPlayerColor.toInt());
+					rightStream.Write(mMatch->getPlayer(LEFT_PLAYER).getStaticColor().toInt());
 					
 					mServer.Send(&leftStream, HIGH_PRIORITY, RELIABLE_ORDERED, 0,
 						     mLeftPlayer, false);

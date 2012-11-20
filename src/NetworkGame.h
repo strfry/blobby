@@ -72,8 +72,6 @@ class NetworkGame
 		PlayerID mLeftPlayer;
 		PlayerID mRightPlayer;
 		PlayerSide mSwitchedSide;
-		Color mLeftPlayerColor;
-		Color mRightPlayerColor;
 
 		PacketQueue mPacketQueue;
 

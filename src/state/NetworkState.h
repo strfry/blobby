@@ -69,8 +69,7 @@ private:
 	bool mUseRemoteColor;
 
 	boost::scoped_ptr<InputSource> mLocalInput;
-	PlayerSide mServingPlayer;
-
+	
 	bool mSaveReplay;
 	bool mWaitingForReplay;
 	std::string mFilename;
