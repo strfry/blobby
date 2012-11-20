@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "FileSystem.h"
 #include "FileWrite.h"
 #include "GenericIO.h"
+#include "InputSourceFactory.h"
 
 /* implementation */
 LocalGameState::~LocalGameState()
@@ -57,8 +58,8 @@ LocalGameState::LocalGameState()
 	PlayerIdentity leftPlayer = config->loadPlayerIdentity(LEFT_PLAYER, false);
 	PlayerIdentity rightPlayer = config->loadPlayerIdentity(RIGHT_PLAYER, false);
 	
-	boost::shared_ptr<InputSource> leftInput = config->loadInputSource(LEFT_PLAYER);
-	boost::shared_ptr<InputSource> rightInput = config->loadInputSource(RIGHT_PLAYER); 
+	boost::shared_ptr<InputSource> leftInput = InputSourceFactory::createInputSource( config, LEFT_PLAYER);
+	boost::shared_ptr<InputSource> rightInput = InputSourceFactory::createInputSource( config, RIGHT_PLAYER); 
 	
 //	mLeftPlayer.loadFromConfig("left");
 //	mRightPlayer.loadFromConfig("right");

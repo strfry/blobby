@@ -89,30 +89,6 @@ PlayerIdentity UserConfig::loadPlayerIdentity(PlayerSide side, bool force_human)
 	return player;
 }
 
-boost::shared_ptr<InputSource> UserConfig::loadInputSource(PlayerSide side)
-{
-	std::string prefix = side == LEFT_PLAYER ? "left" : "right";
-	try
-	{
-		// these operations may throw, i.e., when the script is not found (should not happen)
-		//  or has errors
-		if (getBool(prefix + "_player_human")) 
-		{
-			return boost::make_shared<LocalInputSource>(side);
-		} 
-		else 
-		{
-			return boost::make_shared<ScriptedInputSource>("scripts/" + getString(prefix + "_script_name"), 
-																side, getInteger(prefix + "_script_strength"));
-		}
-	} catch (std::exception& e)
-	{
-		/// \todo REWORK ERROR REPORTING
-		std::cerr << e.what() << std::endl;
-		return boost::make_shared<InputSource>();
-	}
-}
-
 bool UserConfig::loadFile(const std::string& filename)
 {
 	boost::shared_ptr<TiXmlDocument> configDoc = FileRead::readXMLDocument(filename);

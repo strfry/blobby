@@ -54,7 +54,6 @@ class UserConfig: public IUserConfigReader
 		int getInteger(const std::string& name) const;
 		
 		PlayerIdentity loadPlayerIdentity(PlayerSide player, bool force_human);
-		boost::shared_ptr<InputSource> loadInputSource(PlayerSide player);
 
 		void setFloat(const std::string& name, float value);
 		void setString(const std::string& name, const std::string& value);
@@ -63,6 +62,6 @@ class UserConfig: public IUserConfigReader
 	private:
 		std::vector<UserConfigVar*> mVars;
 		bool mChangeFlag;
-		UserConfigVar *findVarByName(const std::string& Name) const;
+		UserConfigVar* findVarByName(const std::string& Name) const;
 		UserConfigVar* createVar(const std::string& name, const std::string& defaultValue);
 };
