@@ -43,16 +43,7 @@ class PhysicWorld;
 */
 class DuelMatch
 {
-	public:
-		// This constructor takes the input sources used to get player input
-		// The parameter output tells DuelMatch if it should report its
-		// results to the user through RenderManager and SoundManager.
-		// A deacivation of the output is useful on dedicated servers
-
-		// If global is true, the instance registered as the main
-		// game and can be accessed from everywhere. There can only
-		// be one global game at a time, otherwise an assertion fails.
-		
+	public:	
 		// If remote is true, only physical responses will be calculated
 		// but hit events and score events are received from network
 
