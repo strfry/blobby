@@ -73,7 +73,7 @@ PlayerIdentity UserConfig::loadPlayerIdentity(PlayerSide side, bool force_human)
 	{
 		name = getBool(prefix + "_player_human") ?
 					getString(prefix + "_player_name") :
-					getString(prefix + "_script_name");
+					getString(prefix + "_script_name") + ".lua";
 	}
 	
 	PlayerIdentity player = PlayerIdentity(name);
