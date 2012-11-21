@@ -83,14 +83,14 @@ NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port):
 	
 	if(mOwnSide == LEFT_PLAYER)
 	{
-		PlayerIdentity player = config.loadPlayerIdentity(LEFT_PLAYER, false);
+		PlayerIdentity player = config.loadPlayerIdentity(LEFT_PLAYER, true);
 		mLocalPlayer = &mFakeMatch->getPlayer( LEFT_PLAYER );
 		mRemotePlayer = &mFakeMatch->getPlayer( RIGHT_PLAYER );
 		mFakeMatch->setPlayers( player, PlayerIdentity("") );
 	}
 	 else
 	{
-		PlayerIdentity player = config.loadPlayerIdentity(RIGHT_PLAYER, false);
+		PlayerIdentity player = config.loadPlayerIdentity(RIGHT_PLAYER, true);
 		mLocalPlayer = &mFakeMatch->getPlayer( RIGHT_PLAYER );
 		mRemotePlayer = &mFakeMatch->getPlayer( LEFT_PLAYER );
 		mFakeMatch->setPlayers( PlayerIdentity(""), player );
