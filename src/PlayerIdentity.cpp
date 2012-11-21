@@ -5,12 +5,19 @@ PlayerIdentity::PlayerIdentity(std::string name) : mName(name)
 	
 }
 
+PlayerIdentity::PlayerIdentity(const std::string& name, Color color, bool osci) : mName(name),
+																	mStaticColor(color),
+																	mOscillating(osci)
+{
+	
+}
+
 PlayerIdentity::~PlayerIdentity()
 {
 	
 }
 
-std::string PlayerIdentity::getName() const
+const std::string& PlayerIdentity::getName() const
 {
 	return mName;
 }

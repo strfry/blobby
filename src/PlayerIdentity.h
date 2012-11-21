@@ -28,9 +28,10 @@ class PlayerIdentity
 	public:
 		PlayerIdentity() {};
 		PlayerIdentity(std::string name);
+		PlayerIdentity(const std::string& name, Color color, bool osci);
 		~PlayerIdentity();
 
-		std::string getName() const;
+		const std::string& getName() const;
 		Color getStaticColor() const;
 		bool getOscillating() const;
 		
