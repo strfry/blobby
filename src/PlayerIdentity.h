@@ -35,6 +35,7 @@ class PlayerIdentity
 		Color getStaticColor() const;
 		bool getOscillating() const;
 		
+		void setName(const std::string& nname);
 		void setStaticColor(Color ncol);
 		void setOscillating(bool oc);
 	

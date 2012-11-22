@@ -32,6 +32,11 @@ bool PlayerIdentity::getOscillating() const
 	return mOscillating;
 }
 
+void PlayerIdentity::setName(const std::string& nname)
+{
+	mName = nname;
+}
+
 void PlayerIdentity::setStaticColor(Color c)
 {
 	mStaticColor = c;

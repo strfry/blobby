@@ -83,18 +83,22 @@ NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port):
 	
 	if(mOwnSide == LEFT_PLAYER)
 	{
-		PlayerIdentity player = config.loadPlayerIdentity(LEFT_PLAYER, true);
+		PlayerIdentity localplayer = config.loadPlayerIdentity(LEFT_PLAYER, true);
+		PlayerIdentity remoteplayer = config.loadPlayerIdentity(RIGHT_PLAYER, true);
 		mLocalPlayer = &mFakeMatch->getPlayer( LEFT_PLAYER );
 		mRemotePlayer = &mFakeMatch->getPlayer( RIGHT_PLAYER );
-		mFakeMatch->setPlayers( player, PlayerIdentity("") );
+		mFakeMatch->setPlayers( localplayer, remoteplayer );
 	}
 	 else
 	{
-		PlayerIdentity player = config.loadPlayerIdentity(RIGHT_PLAYER, true);
+		PlayerIdentity localplayer = config.loadPlayerIdentity(RIGHT_PLAYER, true);
+		PlayerIdentity remoteplayer = config.loadPlayerIdentity(LEFT_PLAYER, true);
 		mLocalPlayer = &mFakeMatch->getPlayer( RIGHT_PLAYER );
 		mRemotePlayer = &mFakeMatch->getPlayer( LEFT_PLAYER );
-		mFakeMatch->setPlayers( PlayerIdentity(""), player );
+		mFakeMatch->setPlayers( remoteplayer, localplayer );
 	}
+	
+	mRemotePlayer->setName("");
 	
 	RenderManager::getSingleton().setScore(0, 0, false, false);
 	RenderManager::getSingleton().setPlayernames(mFakeMatch->getPlayer(LEFT_PLAYER).getName(), mFakeMatch->getPlayer(RIGHT_PLAYER).getName());
@@ -302,7 +306,7 @@ void NetworkGameState::step()
 				stream.Read(temp);
 				Color ncolor = temp;
 
-				*mRemotePlayer = PlayerIdentity(charName);
+				mRemotePlayer->setName(charName);
 				
 				mFilename = mLocalPlayer->getName();
 				if(mFilename.size() > 7)
@@ -318,7 +322,8 @@ void NetworkGameState::step()
 															mFakeMatch->getPlayer(RIGHT_PLAYER).getName());
 				
 				// check whether to use remote player color
-				if(mUseRemoteColor){
+				if(mUseRemoteColor)
+				{
 					mRemotePlayer->setStaticColor(ncolor);
 					RenderManager::getSingleton().redraw();
 				}
