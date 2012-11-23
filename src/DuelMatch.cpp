@@ -292,6 +292,17 @@ void DuelMatch::setState(const DuelMatchState& state)
 	
 	mInputSources[LEFT_PLAYER]->setInput( mTransformedInput[LEFT_PLAYER] );
 	mInputSources[RIGHT_PLAYER]->setInput( mTransformedInput[RIGHT_PLAYER] );
+	
+	events &= ~EVENT_ERROR;
+	switch (state.errorSide)
+	{
+		case LEFT_PLAYER:
+			events |= EVENT_ERROR_LEFT;
+			break;
+		case RIGHT_PLAYER:
+			events |= EVENT_ERROR_RIGHT;
+			break;
+	}
 }
 
 DuelMatchState DuelMatch::getState() const
@@ -301,6 +312,8 @@ DuelMatchState DuelMatch::getState() const
 	state.logicState = mLogic->getState();
 	state.playerInput[LEFT_PLAYER] = mTransformedInput[LEFT_PLAYER];
 	state.playerInput[RIGHT_PLAYER] = mTransformedInput[RIGHT_PLAYER];
+	
+	state.errorSide = (events & EVENT_ERROR_LEFT) ? LEFT_PLAYER : (events & EVENT_ERROR_RIGHT) ? RIGHT_PLAYER : NO_PLAYER;
 	
 	return state;
 }

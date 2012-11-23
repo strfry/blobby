@@ -61,6 +61,10 @@ private:
 		PLAYER_WON,
 		PAUSING
 	} mNetworkState;
+
+	// server info
+	std::string mServerAddress;
+	uint16_t mPort;
 	
 	// these are pointers to mLeftPlayer or mRightPlayer respectively, so we don't need a smart pointer here
 	PlayerIdentity* mLocalPlayer;

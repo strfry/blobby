@@ -141,13 +141,13 @@ class IGameLogic
 		void step();		
 		
 		// script information
-		std::string getAuthor() const;
-		std::string getTitle() const;
+		virtual std::string getAuthor() const = 0;
+		virtual std::string getTitle() const  = 0;
 
 	protected:
 		/// this method must be called if a team scores
 		/// it increments the points of that team
-		void score(PlayerSide side, bool serve, int amount);
+		void score(PlayerSide side, int amount);
 
 		// helper functions
 		
@@ -172,16 +172,12 @@ class IGameLogic
 		}
 
 		/// this is called when a player makes a mistake
-		void onError(PlayerSide side);
+		void onError(PlayerSide errorSide, PlayerSide serveSide);
 		
 
 		
 		/// thi function can change input made by a player
 		virtual PlayerInput handleInput(PlayerInput ip, PlayerSide player) = 0;
-		
-		/// this function is called by onError, it contains the customizable part of the 
-		/// error handling
-		virtual void OnMistake(PlayerSide side) = 0;
 		
 		/// this function handles ball/player hits
 		virtual void OnBallHitsPlayerHandler(PlayerSide side) = 0;
@@ -206,10 +202,6 @@ class IGameLogic
 		/// lua rules can change it by changing SCORE_TO_WIN variable in the global scope
 		int mScoreToWin;
 		
-		
-		void setAuthor(std::string author);
-		void setTitle(std::string title);
-			
 	private:	
 		// data members
 		/// this array contains the scores
@@ -237,10 +229,6 @@ class IGameLogic
 		
 		/// clock for determining game time
 		Clock clock;
-		
-		
-		std::string mAuthor;
-		std::string mTitle;
 };
 
 extern const std::string DUMMY_RULES_NAME;

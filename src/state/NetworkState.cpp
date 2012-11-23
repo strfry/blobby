@@ -54,7 +54,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 /* implementation */
 NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port):
 	mClient(new RakClient()),
-	mFakeMatch(new DuelMatch(true, "rules.lua"))
+	mFakeMatch(new DuelMatch(true, "rules.lua")),
+	mServerAddress(servername), mPort(port)
 {	
 	IMGUI::getSingleton().resetSelection();
 	mWinningPlayer = NO_PLAYER;
@@ -578,20 +579,31 @@ void NetworkGameState::step()
 		case OPPONENT_DISCONNECTED:
 		{
 			imgui.doCursor();
-			imgui.doOverlay(GEN_ID, Vector2(100.0, 210.0),
-					Vector2(700.0, 370.0));
-			imgui.doText(GEN_ID, Vector2(140.0, 250.0),
-					TextManager::GAME_OPP_LEFT);
-			if (imgui.doButton(GEN_ID, Vector2(230.0, 300.0),
-					TextManager::LBL_OK))
+			imgui.doOverlay(GEN_ID, Vector2(100.0, 205.0), Vector2(700.0, 380.0));
+			imgui.doText(GEN_ID, Vector2(140.0, 245.0),	TextManager::GAME_OPP_LEFT);
+			
+			if (imgui.doButton(GEN_ID, Vector2(230.0, 295.0), TextManager::LBL_OK))
 			{
 				deleteCurrentState();
 				setCurrentState(new MainMenuState);
 			}
-			if (imgui.doButton(GEN_ID, Vector2(350.0, 300.0), TextManager::RP_SAVE))
+			
+			if (imgui.doButton(GEN_ID, Vector2(350.0, 295.0), TextManager::RP_SAVE))
 			{
 				mSaveReplay = true;
 				imgui.resetSelection();
+			}
+			
+			if (imgui.doButton(GEN_ID, Vector2(250.0, 330.0), TextManager::NET_STAY_ON_SERVER))
+			{
+				// we need to make a copy here because this variables get deleted in destrutor
+				// when deleteCurrentState runs
+				std::string server = mServerAddress;
+				uint16_t port = mPort;
+				
+				deleteCurrentState();
+				setCurrentState(new NetworkGameState(server, port));
+				return;
 			}
 			break;
 		}
