@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "GenericIOFwd.h"
 
 class PlayerInput;
+class AttributesInterface;
 
 /// \class IReplayLoader
 /// \brief Base class for replay loaders.
@@ -85,6 +86,7 @@ class IReplayLoader
 		/// gets the date this replay was recorded
 		virtual std::time_t getDate() const = 0;
 		
+		virtual const AttributesInterface& getAttributes() const = 0;
 		
 		// Replay data interface
 		
@@ -93,7 +95,7 @@ class IReplayLoader
 		///				Has to be in range 0 ... getLength();
 		/// \param left[out] target where left player input is stored
 		/// \param right[out] target where right player input is stored
-		virtual void getInputAt(int step, InputSource* left, InputSource* right) = 0;
+		virtual void getInputAt(unsigned int step, InputSource* left, InputSource* right) = 0;
 		
 		
 		/// \brief checks wether the specified position is a savepoint
