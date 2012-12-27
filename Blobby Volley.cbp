@@ -40,6 +40,8 @@
 			<Add library="physfs" />
 			<Add library="OpenGL32" />
 		</Linker>
+		<Unit filename="src/AttributesInterface.cpp" />
+		<Unit filename="src/AttributesInterface.h" />
 		<Unit filename="src/BlobbyDebug.cpp" />
 		<Unit filename="src/BlobbyDebug.h" />
 		<Unit filename="src/Blood.cpp" />
@@ -347,7 +349,7 @@
 			<debugger />
 			<lib_finder disable_auto="1" />
 			<DoxyBlocks>
-				<comment_style block="0" line="0" />
+				<comment_style block="5" line="1" />
 				<doxyfile_project />
 				<doxyfile_build />
 				<doxyfile_warnings />

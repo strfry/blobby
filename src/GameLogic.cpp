@@ -57,8 +57,8 @@ const std::string FALLBACK_RULES_NAME = "__FALLBACK__";
 const std::string DUMMY_RULES_NAME = "__DUMMY__";
 
 
-IGameLogic::IGameLogic():	mLastError(NO_PLAYER), 
-							mServingPlayer(NO_PLAYER), 
+IGameLogic::IGameLogic():	mLastError(NO_PLAYER),
+							mServingPlayer(NO_PLAYER),
 							mWinningPlayer(NO_PLAYER),
 							mScoreToWin(IUserConfigReader::createUserConfigReader("config.xml")->getInteger("scoretowin")),
 							mSquishWall(0),
@@ -77,7 +77,7 @@ IGameLogic::IGameLogic():	mLastError(NO_PLAYER),
 	mSquish[RIGHT_PLAYER] = 0;
 }
 
-IGameLogic::~IGameLogic() 
+IGameLogic::~IGameLogic()
 {
 	// nothing to do
 }
@@ -98,7 +98,7 @@ void IGameLogic::setScore(PlayerSide side, int score)
 }
 
 
-int IGameLogic::getScoreToWin() const 
+int IGameLogic::getScoreToWin() const
 {
 	return mScoreToWin;
 }
@@ -144,7 +144,7 @@ GameLogicState IGameLogic::getState() const
 	gls.squishGround = mSquishGround;
 	gls.isGameRunning = mIsGameRunning;
 	gls.isBallValid = mIsBallValid;
-	
+
 	return gls;
 }
 
@@ -167,14 +167,14 @@ void IGameLogic::setState(GameLogicState gls)
 void IGameLogic::step()
 {
 	clock.step();
-	
+
 	if(clock.isRunning())
 	{
 		--mSquish[0];
 		--mSquish[1];
 		--mSquishWall;
 		--mSquishGround;
-		
+
 		OnGameHandler();
 	}
 }
@@ -201,17 +201,17 @@ void IGameLogic::onServe()
 	mIsGameRunning = false;
 }
 
-void IGameLogic::onBallHitsGround(PlayerSide side) 
+void IGameLogic::onBallHitsGround(PlayerSide side)
 {
 	// check if collision valid
 	if(!isGroundCollisionValid())
 		return;
-	
+
 	// otherwise, set the squish value
 	mSquishGround = SQUISH_TOLERANCE;
-	
+
 	mTouches[other_side(side)] = 0;
-	
+
 	OnBallHitsGroundHandler(side);
 }
 
@@ -247,19 +247,19 @@ void IGameLogic::onBallHitsPlayer(PlayerSide side)
 {
 	if(!isCollisionValid(side))
 		return;
-	
+
 	// otherwise, set the squish value
 	mSquish[side2index(side)] = SQUISH_TOLERANCE;
 	// now, the other blobby has to accept the new hit!
 	mSquish[side2index(other_side(side))] = 0;
-	
+
 	// set the ball activity
 	mIsGameRunning = true;
 
 	// count the touches
 	mTouches[side2index(side)]++;
 	OnBallHitsPlayerHandler(side);
-	
+
 	// reset other players touches after OnBallHitsPlayerHandler is called, so
 	// we have still access to its old value inside the handler function
 	mTouches[side2index(other_side(side))] = 0;
@@ -269,10 +269,10 @@ void IGameLogic::onBallHitsWall(PlayerSide side)
 {
 	if(!isWallCollisionValid())
 		return;
-	
+
 	// otherwise, set the squish value
 	mSquishWall = SQUISH_TOLERANCE;
-	
+
 	OnBallHitsWallHandler(side);
 }
 
@@ -280,10 +280,10 @@ void IGameLogic::onBallHitsNet(PlayerSide side)
 {
 	if(!isWallCollisionValid())
 		return;
-	
+
 	// otherwise, set the squish value
 	mSquishWall = SQUISH_TOLERANCE;
-	
+
 	OnBallHitsNetHandler(side);
 }
 
@@ -293,7 +293,7 @@ void IGameLogic::score(PlayerSide side, int amount)
 	mScores[index] += amount;
 	if (mScores[index] < 0)
 		mScores[index] = 0;
-	
+
 	mWinningPlayer = checkWin();
 }
 
@@ -301,14 +301,14 @@ void IGameLogic::onError(PlayerSide errorSide, PlayerSide serveSide)
 {
 	mLastError = errorSide;
 	mIsBallValid = false;
-	
+
 	mTouches[0] = 0;
 	mTouches[1] = 0;
 	mSquish[0] = 0;
 	mSquish[1] = 0;
 	mSquishWall = 0;
 	mSquishGround = 0;
-	
+
 	mServingPlayer = serveSide;
 }
 
@@ -316,65 +316,65 @@ void IGameLogic::onError(PlayerSide errorSide, PlayerSide serveSide)
 // 	Dummy Game Logic
 // ---------------------
 
-class DummyGameLogic : public IGameLogic 
+class DummyGameLogic : public IGameLogic
 {
 	public:
-		DummyGameLogic() 
+		DummyGameLogic()
 		{
 		}
 		virtual ~DummyGameLogic()
 		{
-			
+
 		}
-		
+
 		virtual GameLogic clone() const
 		{
 			return GameLogic(new DummyGameLogic());
 		}
-		
-		virtual std::string getSourceFile() const 
+
+		virtual std::string getSourceFile() const
 		{
 			return std::string("");
 		}
-		
-		virtual std::string getAuthor() const 
+
+		virtual std::string getAuthor() const
 		{
 			return "Blobby Volley 2 Developers";
 		}
-		
-		virtual std::string getTitle() const 
+
+		virtual std::string getTitle() const
 		{
 			return DUMMY_RULES_NAME;
 		}
 
 	protected:
-		
-		virtual PlayerSide checkWin() const 
+
+		virtual PlayerSide checkWin() const
 		{
 			return NO_PLAYER;
 		}
-		
+
 		virtual PlayerInput handleInput(PlayerInput ip, PlayerSide player)
 		{
 			return ip;
 		}
-		
+
 		virtual void OnBallHitsPlayerHandler(PlayerSide side)
 		{
 		}
-		
+
 		virtual void OnBallHitsWallHandler(PlayerSide side)
 		{
 		}
-		
+
 		virtual void OnBallHitsNetHandler(PlayerSide side)
 		{
 		}
-		
+
 		virtual void OnBallHitsGroundHandler(PlayerSide side)
 		{
 		}
-		
+
 		virtual void OnGameHandler()
 		{
 		}
@@ -385,47 +385,47 @@ class DummyGameLogic : public IGameLogic
 // 	Fallback Game Logic
 // ---------------------
 
-class FallbackGameLogic : public DummyGameLogic 
+class FallbackGameLogic : public DummyGameLogic
 {
 	public:
-		FallbackGameLogic() 
+		FallbackGameLogic()
 		{
 		}
 		virtual ~FallbackGameLogic()
 		{
-			
+
 		}
-		
+
 		virtual GameLogic clone() const
 		{
 			return GameLogic(new FallbackGameLogic());
 		}
-		
-		virtual std::string getTitle() const 
+
+		virtual std::string getTitle() const
 		{
 			return FALLBACK_RULES_NAME;
 		}
-		
+
 protected:
-		
-		virtual PlayerSide checkWin() const 
+
+		virtual PlayerSide checkWin() const
 		{
 			int left = getScore(LEFT_PLAYER);
 			int right = getScore(RIGHT_PLAYER);
 			int stw = getScoreToWin();
-			if( left >= stw && left >= right + 2 ) 
+			if( left >= stw && left >= right + 2 )
 			{
 				return LEFT_PLAYER;
 			}
-			
-			if( right >= stw && right >= left + 2 ) 
+
+			if( right >= stw && right >= left + 2 )
 			{
 				return RIGHT_PLAYER;
 			}
-			
+
 			return NO_PLAYER;
 		}
-		
+
 		virtual void OnBallHitsPlayerHandler(PlayerSide side)
 		{
 			if (getTouches(side) > 3)
@@ -434,7 +434,7 @@ protected:
 				onError( side, other_side(side) );
 			}
 		}
-		
+
 		virtual void OnBallHitsGroundHandler(PlayerSide side)
 		{
 			score( other_side(side), 1 );
@@ -448,12 +448,12 @@ class LuaGameLogic : public FallbackGameLogic
 	public:
 		LuaGameLogic(const std::string& file, DuelMatch* match);
 		virtual ~LuaGameLogic();
-		
-		virtual std::string getSourceFile() const 
+
+		virtual std::string getSourceFile() const
 		{
 			return mSourceFile;
 		}
-		
+
 		virtual GameLogic clone() const
 		{
 			lua_getglobal(mState, "__MATCH_POINTER");
@@ -461,20 +461,20 @@ class LuaGameLogic : public FallbackGameLogic
 			lua_pop(mState, 1);
 			return GameLogic(new LuaGameLogic(mSourceFile, match));
 		}
-		
+
 		virtual std::string getAuthor() const
 		{
 			return mAuthor;
 		}
-		
+
 		virtual std::string getTitle() const
 		{
 			return mTitle;
 		}
 
-		
+
 	protected:
-		
+
 		virtual PlayerInput handleInput(PlayerInput ip, PlayerSide player);
 		virtual PlayerSide checkWin() const;
 		virtual void OnBallHitsPlayerHandler(PlayerSide side);
@@ -482,15 +482,15 @@ class LuaGameLogic : public FallbackGameLogic
 		virtual void OnBallHitsNetHandler(PlayerSide side);
 		virtual void OnBallHitsGroundHandler(PlayerSide side);
 		virtual void OnGameHandler();
-		
+
 		// helper functions
 		void setLuaGlobalVariable(const char* name, double value);
 		bool luaCheckFunc(const char* fname) const;
-		
+
 		static LuaGameLogic* getGameLogic(lua_State* state);
-		
+
 	private:
-		
+
 		// lua functions
 		static int luaTouches(lua_State* state);
 		static int luaLaunched(lua_State* state);
@@ -504,31 +504,31 @@ class LuaGameLogic : public FallbackGameLogic
 		static int luaSpeedY(lua_State* state);
 		static int luaMistake(lua_State* state);
 		static int luaScore(lua_State* state);
-		static int luaGetScore(lua_State* state); 
+		static int luaGetScore(lua_State* state);
 		static int luaGetOpponent(lua_State* state);
 		static int luaGetServingPlayer(lua_State* state);
 		static int luaGetGameTime(lua_State* state);
-		
+
 		// lua state
 		lua_State* mState;
-		
+
 		std::string mSourceFile;
-		
+
 		std::string mAuthor;
 		std::string mTitle;
 };
 
 
-LuaGameLogic::LuaGameLogic( const std::string& filename, DuelMatch* match ) : mState( lua_open() ), mSourceFile(filename) 
+LuaGameLogic::LuaGameLogic( const std::string& filename, DuelMatch* match ) : mState( lua_open() ), mSourceFile(filename)
 {
 	lua_pushlightuserdata(mState, this);
 	lua_setglobal(mState, "__GAME_LOGIC_POINTER");
-	
+
 	lua_pushlightuserdata(mState, match);
 	lua_setglobal(mState, "__MATCH_POINTER");
 	lua_pushnumber(mState, getScoreToWin());
 	lua_setglobal(mState, "SCORE_TO_WIN");
-	
+
 
 	// add functions
 	luaopen_math(mState);
@@ -548,8 +548,8 @@ LuaGameLogic::LuaGameLogic( const std::string& filename, DuelMatch* match ) : mS
 	lua_register(mState, "opponent", luaGetOpponent);
 	lua_register(mState, "servingplayer", luaGetServingPlayer);
 	lua_register(mState, "time", luaGetGameTime);
-	
-		
+
+
 	// set game constants
 	setLuaGlobalVariable("CONST_FIELD_WIDTH", RIGHT_PLANE);
 	setLuaGlobalVariable("CONST_GROUND_HEIGHT", GROUND_PLANE_HEIGHT_MAX);
@@ -565,13 +565,13 @@ LuaGameLogic::LuaGameLogic( const std::string& filename, DuelMatch* match ) : mS
 	setLuaGlobalVariable("NO_PLAYER", NO_PLAYER);
 	setLuaGlobalVariable("LEFT_PLAYER", LEFT_PLAYER);
 	setLuaGlobalVariable("RIGHT_PLAYER", RIGHT_PLAYER);
-	
+
 	// now load script file
 	int error = FileRead::readLuaScript(std::string("rules/") + filename, mState);
-	
+
 	if (error == 0)
 		error = lua_pcall(mState, 0, 6, 0);
-	
+
 	if (error)
 	{
 		std::cerr << "Lua Error: " << lua_tostring(mState, -1);
@@ -586,17 +586,17 @@ LuaGameLogic::LuaGameLogic( const std::string& filename, DuelMatch* match ) : mS
 	lua_getglobal(mState, "SCORE_TO_WIN");
 	mScoreToWin = lua_toint(mState, -1);
 	lua_pop(mState, 1);
-	
+
 	lua_getglobal(mState, "__AUTHOR__");
 	const char* author = lua_tostring(mState, -1);
 	mAuthor = ( author ? author : "unknown author" );
 	lua_pop(mState, 1);
-	
+
 	lua_getglobal(mState, "__TITLE__");
 	const char* title = lua_tostring(mState, -1);
 	mTitle = ( title ? title : "untitled script" );
 	lua_pop(mState, 1);
-	
+
 	std::cout << "loaded rules "<< getTitle()<< " by " << getAuthor() << " from " << mSourceFile << std::endl;
 }
 
@@ -619,7 +619,7 @@ bool LuaGameLogic::luaCheckFunc(const char* fname) const
 		lua_pop(mState, 1);
 		return false;
 	}
-	
+
 	return true;
 }
 
@@ -630,7 +630,7 @@ PlayerSide LuaGameLogic::checkWin() const
 	{
 		return FallbackGameLogic::checkWin();
 	}
-	
+
 	lua_pushnumber(mState, getScore(LEFT_PLAYER) );
 	lua_pushnumber(mState, getScore(RIGHT_PLAYER) );
 	if( lua_pcall(mState, 2, 1, 0) )
@@ -638,19 +638,19 @@ PlayerSide LuaGameLogic::checkWin() const
 		std::cerr << "Lua Error: " << lua_tostring(mState, -1);
 		std::cerr << std::endl;
 	};
-	
+
 	won = lua_toboolean(mState, -1);
 	lua_pop(mState, 1);
 
-	if(won) 
+	if(won)
 	{
 		if( getScore(LEFT_PLAYER) > getScore(RIGHT_PLAYER) )
 			return LEFT_PLAYER;
-			
+
 		if( getScore(LEFT_PLAYER) < getScore(RIGHT_PLAYER) )
 			return RIGHT_PLAYER;
 	}
-	
+
 	return NO_PLAYER;
 }
 
@@ -664,12 +664,12 @@ PlayerInput LuaGameLogic::handleInput(PlayerInput ip, PlayerSide player)
 	lua_pushboolean(mState, ip.left);
 	lua_pushboolean(mState, ip.right);
 	lua_pushboolean(mState, ip.up);
-	if(lua_pcall(mState, 4, 3, 0)) 
+	if(lua_pcall(mState, 4, 3, 0))
 	{
 		std::cerr << "Lua Error: " << lua_tostring(mState, -1);
 		std::cerr << std::endl;
 	};
-	
+
 	PlayerInput ret;
 	ret.up = lua_toboolean(mState, -1);
 	ret.right = lua_toboolean(mState, -2);
@@ -715,9 +715,9 @@ void LuaGameLogic::OnBallHitsNetHandler(PlayerSide side)
 		FallbackGameLogic::OnBallHitsNetHandler(side);
 		return;
 	}
-	
+
 	lua_pushnumber(mState, side);
-	
+
 	if( lua_pcall(mState, 1, 0, 0) )
 	{
 		std::cerr << "Lua Error: " << lua_tostring(mState, -1);
@@ -732,9 +732,9 @@ void LuaGameLogic::OnBallHitsGroundHandler(PlayerSide side)
 		FallbackGameLogic::OnBallHitsGroundHandler(side);
 		return;
 	}
-	
+
 	lua_pushnumber(mState, side);
-	
+
 	if( lua_pcall(mState, 1, 0, 0) )
 	{
 		std::cerr << "Lua Error: " << lua_tostring(mState, -1);
@@ -767,7 +767,7 @@ LuaGameLogic* LuaGameLogic::getGameLogic(lua_State* state)
 int LuaGameLogic::luaTouches(lua_State* state)
 {
 	LuaGameLogic* gl = getGameLogic(state);
-	
+
 	PlayerSide side = (PlayerSide)lua_toint(state, -1);
 	lua_pop(state, 1);
 	lua_pushnumber(state, gl->getTouches(side));
@@ -779,7 +779,7 @@ int LuaGameLogic::luaLaunched(lua_State* state)
 	lua_getglobal(state, "__MATCH_POINTER");
 	DuelMatch* match = (DuelMatch*)lua_touserdata(state, -1);
 	lua_pop(state, 1);
-	
+
 	PlayerSide side = (PlayerSide)lua_toint(state, -1);
 	lua_pop(state, 1);
 	lua_pushboolean(state, match->getBlobJump(side));
@@ -791,7 +791,7 @@ int LuaGameLogic::luaBallX(lua_State* state)
 	lua_getglobal(state, "__MATCH_POINTER");
 	DuelMatch* match = (DuelMatch*)lua_touserdata(state, -1);
 	lua_pop(state, 1);
-	
+
 	float pos = match->getBallPosition().x;
 	lua_pushnumber(state, pos);
 	return 1;
@@ -802,7 +802,7 @@ int LuaGameLogic::luaBallY(lua_State* state)
 	lua_getglobal(state, "__MATCH_POINTER");
 	DuelMatch* match = (DuelMatch*)lua_touserdata(state, -1);
 	lua_pop(state, 1);
-	
+
 	float pos = match->getBallPosition().y;
 	lua_pushnumber(state, pos);
 	return 1;
@@ -813,7 +813,7 @@ int LuaGameLogic::luaBSpeedX(lua_State* state)
 	lua_getglobal(state, "__MATCH_POINTER");
 	DuelMatch* match = (DuelMatch*)lua_touserdata(state, -1);
 	lua_pop(state, 1);
-	
+
 	float vel = match->getBallVelocity().x;
 	lua_pushnumber(state, vel);
 	return 1;
@@ -824,7 +824,7 @@ int LuaGameLogic::luaBSpeedY(lua_State* state)
 	lua_getglobal(state, "__MATCH_POINTER");
 	DuelMatch* match = (DuelMatch*)lua_touserdata(state, -1);
 	lua_pop(state, 1);
-	
+
 	float vel = match->getBallVelocity().y;
 	lua_pushnumber(state, vel);
 	return 1;
@@ -835,7 +835,7 @@ int LuaGameLogic::luaPosX(lua_State* state)
 	lua_getglobal(state, "__MATCH_POINTER");
 	DuelMatch* match = (DuelMatch*)lua_touserdata(state, -1);
 	lua_pop(state, 1);
-	
+
 	PlayerSide side = (PlayerSide)lua_toint(state, -1);
 	lua_pop(state, 1);
 	float pos = match->getBlobPosition(side).x;
@@ -848,7 +848,7 @@ int LuaGameLogic::luaPosY(lua_State* state)
 	lua_getglobal(state, "__MATCH_POINTER");
 	DuelMatch* match = (DuelMatch*)lua_touserdata(state, -1);
 	lua_pop(state, 1);
-	
+
 	PlayerSide side = (PlayerSide)lua_toint(state, -1);
 	lua_pop(state, 1);
 	float pos = match->getBlobPosition(side).y;
@@ -861,7 +861,7 @@ int LuaGameLogic::luaSpeedX(lua_State* state)
 	lua_getglobal(state, "__MATCH_POINTER");
 	DuelMatch* match = (DuelMatch*)lua_touserdata(state, -1);
 	lua_pop(state, 1);
-	
+
 	PlayerSide side = (PlayerSide)lua_toint(state, -1);
 	lua_pop(state, 1);
 	float pos = match->getBlobVelocity(side).x;
@@ -874,7 +874,7 @@ int LuaGameLogic::luaSpeedY(lua_State* state)
 	lua_getglobal(state, "__MATCH_POINTER");
 	DuelMatch* match = (DuelMatch*)lua_touserdata(state, -1);
 	lua_pop(state, 1);
-	
+
 	PlayerSide side = (PlayerSide)lua_toint(state, -1);
 	lua_pop(state, 1);
 	float pos = match->getBlobVelocity(side).y;
@@ -887,12 +887,12 @@ int LuaGameLogic::luaGetScore(lua_State* state)
 	int pl = lua_toint(state, -1);
 	lua_pop(state, 1);
 	LuaGameLogic* gl = getGameLogic(state);
-	
+
 	lua_pushnumber(state, gl->getScore((PlayerSide)pl));
 	return 1;
 }
 
-int LuaGameLogic::luaMistake(lua_State* state) 
+int LuaGameLogic::luaMistake(lua_State* state)
 {
 	int amount = lua_toint(state, -1);
  	lua_pop(state, 1);
@@ -901,25 +901,25 @@ int LuaGameLogic::luaMistake(lua_State* state)
 	PlayerSide mistakeSide = (PlayerSide)lua_toint(state, -1);
 	lua_pop(state, 1);
 	LuaGameLogic* gl = getGameLogic(state);
-	
+
 	gl->score(other_side(mistakeSide), amount);
 	gl->onError(mistakeSide, serveSide);
 	return 0;
 }
 
-int LuaGameLogic::luaScore(lua_State* state) 
+int LuaGameLogic::luaScore(lua_State* state)
 {
 	int amount = lua_toint(state, -1);
 	lua_pop(state, 1);
 	int player = lua_toint(state, -1);
 	lua_pop(state, 1);
 	LuaGameLogic* gl = getGameLogic(state);
-	
+
 	gl->score((PlayerSide)player, amount);
 	return 0;
 }
 
-int LuaGameLogic::luaGetOpponent(lua_State* state) 
+int LuaGameLogic::luaGetOpponent(lua_State* state)
 {
 	int pl = lua_toint(state, -1);
 	lua_pop(state, 1);
@@ -927,14 +927,14 @@ int LuaGameLogic::luaGetOpponent(lua_State* state)
 	return 1;
 }
 
-int LuaGameLogic::luaGetServingPlayer(lua_State* state) 
+int LuaGameLogic::luaGetServingPlayer(lua_State* state)
 {
 	LuaGameLogic* gl = getGameLogic(state);
 	lua_pushnumber(state, gl->getServingPlayer());
 	return 1;
 }
 
-int LuaGameLogic::luaGetGameTime(lua_State* state) 
+int LuaGameLogic::luaGetGameTime(lua_State* state)
 {
 	LuaGameLogic* gl = getGameLogic(state);
 	lua_pushnumber(state, gl->getClock().getTime());
@@ -950,23 +950,23 @@ GameLogic createGameLogic(const std::string& file, DuelMatch* match)
 	if(file == DUMMY_RULES_NAME)
 	{
 		return GameLogic(new DummyGameLogic());
-	} 
+	}
 		else if (file == FALLBACK_RULES_NAME)
 	{
 		return GameLogic(new FallbackGameLogic());
 	}
-	
-	try 
+
+	try
 	{
 		return GameLogic( new LuaGameLogic(file, match) );
-	} 
-	catch( std::exception& exp) 
+	}
+	catch( std::exception& exp)
 	{
 		std::cerr << "Script Error: Could not create LuaGameLogic: \n";
-		std::cerr << exp.what() << std::endl;
+		std::cerr << boost::diagnostic_information(exp) << std::endl;
 		std::cerr << "              Using fallback ruleset";
 		std::cerr << std::endl;
 		return GameLogic(new FallbackGameLogic());
 	}
-	
+
 }

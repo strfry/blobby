@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "InputSource.h"
 #include "DuelMatchState.h"
 #include "GenericIOFwd.h"
+#include "AttributesInterface.h"
 
 namespace RakNet
 {
@@ -47,9 +48,9 @@ struct VersionMismatchException : public std::exception
 {
 	VersionMismatchException(const std::string& filename, uint8_t major, uint8_t minor);
 	~VersionMismatchException() throw();
-	
+
 	virtual const char* what() const throw();
-	
+
 	std::string error;
 	uint8_t major;
 	uint8_t minor;
@@ -58,7 +59,7 @@ struct VersionMismatchException : public std::exception
 
 /// \brief recording game
 /// \todo we safe replays in continuous storeage (array or std::vector)
-///			which might be ineffective for huge replays (1h ~ 270kb) 
+///			which might be ineffective for huge replays (1h ~ 270kb)
 class ReplayRecorder
 {
 	public:
@@ -66,20 +67,20 @@ class ReplayRecorder
 		~ReplayRecorder();
 
 		void save(boost::shared_ptr<FileWrite> target) const;
-		
+
 		void send(boost::shared_ptr<GenericOut> stream) const;
 		void receive(boost::shared_ptr<GenericIn>stream);
-		
+
 		// recording functions
 		void record(const DuelMatchState& input);
 		// saves the final score
 		void finalize(unsigned int left, unsigned int right);
-		
+
 		// game setup setting
 		void setPlayerNames(const std::string& left, const std::string& right);
 		void setPlayerColors(Color left, Color right);
 		void setGameSpeed(int fps);
-		
+
 	private:
 
 		void writeFileHeader(boost::shared_ptr<GenericOut>, uint32_t checksum) const;
@@ -93,12 +94,9 @@ class ReplayRecorder
 		std::vector<ReplaySavePoint> mSavePoints;
 
 		// general replay attributes
-		std::string mPlayerNames[MAX_PLAYERS];
-		Color mPlayerColors[MAX_PLAYERS];
-		unsigned int mEndScore[MAX_PLAYERS];
-		unsigned int mGameSpeed;
-		
-		
+		AttributesInterface mAttributes;
+
+
 		// here we save the information needed to create the header
 		//  pointers  to replay sections
 		/// \todo this is ugly
