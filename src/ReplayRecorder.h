@@ -101,6 +101,7 @@ class ReplayRecorder
 		//  pointers  to replay sections
 		/// \todo this is ugly
 		mutable uint32_t attr_ptr;
+		mutable uint32_t attr_size;
 		mutable uint32_t jptb_ptr;
 		mutable uint32_t data_ptr;
 		mutable uint32_t states_ptr;

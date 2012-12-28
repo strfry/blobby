@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <boost/lexical_cast.hpp>
 
 #include "Global.h"
+#include "GenericIO.h"
 
 
 /* implementation */
@@ -41,7 +42,7 @@ struct AttributesInterface::Container
 		map_type::const_iterator it = mMap.find(name);
 		if(it == mMap.end())
 		{
-			BOOST_THROW_EXCEPTION (AttributeNotFoundException() << AttributeNotFoundException::attribute_name_info(name));
+			BOOST_THROW_EXCEPTION (AttributeNotFoundException() << attribute_name_info(name));
 		}
 
 		return it;
@@ -84,39 +85,68 @@ std::string AttributesInterface::getAttributeAsString(const std::string name) co
 		case EAT_STRING:
 			return getAttributeString(name);
 		case EAT_COLOR:
-			/// \todo
-			return getAttributeString(name);
+			{
+				Color c = getAttributeColor(name);
+				return boost::lexical_cast<std::string>(c.r) + " " + boost::lexical_cast<std::string>(c.g) + " " + boost::lexical_cast<std::string>(c.b);
+			}
 	}
+}
+
+// helper macro for exception code
+#define ADD_EXCEPTION_INFORMATION		\
+catch (std::exception& ex)					\
+{											\
+	BOOST_THROW_EXCEPTION (boost::enable_error_info(ex) << attribute_name_info(name));			\
 }
 
 std::string AttributesInterface::getAttributeString(const std::string& name) const
 {
-	boost::any attrib = mContainer->get(name);
-	return boost::any_cast<std::string>( attrib );
+	try
+	{
+		boost::any attrib = mContainer->get(name);
+		return boost::any_cast<std::string>( attrib );
+	}
+	ADD_EXCEPTION_INFORMATION;
 }
 
 float AttributesInterface::getAttributeFloat(const std::string& name) const
 {
-	boost::any attrib = mContainer->get(name);
-	return boost::any_cast<float>( attrib );
+	try
+	{
+		boost::any attrib = mContainer->get(name);
+		return boost::any_cast<float>( attrib );
+	}
+	ADD_EXCEPTION_INFORMATION;
 }
 
 int AttributesInterface::getAttributeInteger(const std::string& name) const
 {
-	boost::any attrib = mContainer->get(name);
-	return boost::any_cast<int>( attrib );
+	try
+	{
+		boost::any attrib = mContainer->get(name);
+		return boost::any_cast<int>( attrib );
+	}
+	ADD_EXCEPTION_INFORMATION;
 }
 
 bool AttributesInterface::getAttributeBoolean(const std::string& name) const
 {
-	boost::any attrib = mContainer->get(name);
-	return boost::any_cast<bool>( attrib );
+	try
+	{
+		boost::any attrib = mContainer->get(name);
+		return boost::any_cast<bool>( attrib );
+	}
+	ADD_EXCEPTION_INFORMATION;
 }
 
 Color AttributesInterface::getAttributeColor(const std::string& name) const
 {
-	boost::any attrib = mContainer->get(name);
-	return boost::any_cast<Color>( attrib );
+	try
+	{
+		boost::any attrib = mContainer->get(name);
+		return boost::any_cast<Color>( attrib );
+	}
+	ADD_EXCEPTION_INFORMATION;
 }
 
 
@@ -189,3 +219,99 @@ void AttributesInterface::setAttributeColor(const std::string& name, Color value
 {
 	mContainer->set(name, value);
 }
+
+// serializing attributes
+
+template<>
+void UserSerializer<AttributesInterface>::serialize( GenericOut& io, const AttributesInterface& value)
+{
+	unsigned int numAttr = value.getAttributeCount();
+	io.uint32(numAttr);
+	for(unsigned int i = 0; i < numAttr; ++i)
+	{
+		std::string name = value.getAttributeName(i);
+		AttributesInterface::AttributeType type = value.getAttributeType(name);
+		unsigned int typeint = type;
+
+		io.string(name);
+		io.uint32(typeint);
+
+		switch(type)
+		{
+		case AttributesInterface::EAT_STRING:
+			io.string(value.getAttributeString(name));
+			break;
+		case AttributesInterface::EAT_FLOAT:
+			io.number(value.getAttributeFloat(name));
+			break;
+		case AttributesInterface::EAT_INTEGER:
+			io.uint32(value.getAttributeInteger(name));
+			break;
+		case AttributesInterface::EAT_BOOLEAN:
+			io.boolean(value.getAttributeBoolean(name));
+			break;
+		case AttributesInterface::EAT_COLOR:
+			io.generic<Color>(value.getAttributeColor(name));
+			break;
+		default:
+			BOOST_THROW_EXCEPTION(std::runtime_error("unknown attribute type in serialisation"));
+		}
+	}
+}
+template<>
+void UserSerializer<AttributesInterface>::serialize( GenericIn& io, AttributesInterface& val)
+{
+	unsigned int numAttr = val.getAttributeCount();
+
+	io.uint32(numAttr);
+	for(unsigned int i = 0; i < numAttr; ++i)
+	{
+		std::string name;
+		unsigned int type;
+
+		io.string(name);
+		io.uint32(type);
+
+		switch((AttributesInterface::AttributeType)type)
+		{
+		case AttributesInterface::EAT_STRING:
+			{
+				std::string str;
+				io.string(str);
+				val.setAttributeString(name, str);
+			}
+			break;
+		case AttributesInterface::EAT_FLOAT:
+			{
+				float f;
+				io.number(f);
+				val.setAttributeFloat(name, f);
+			}
+			break;
+		case AttributesInterface::EAT_INTEGER:
+			{
+				unsigned int itg;
+				io.uint32(itg);
+				val.setAttributeInteger(name, itg);
+			}
+			break;
+		case AttributesInterface::EAT_BOOLEAN:
+			{
+				bool b;
+				io.boolean(b);
+				val.setAttributeBoolean(name, b);
+			}
+			break;
+		case AttributesInterface::EAT_COLOR:
+			{
+				Color c;
+				io.generic<Color>(c);
+				val.setAttributeColor(name, c);
+			}
+			break;
+		default:
+			BOOST_THROW_EXCEPTION(std::runtime_error("unknown attribute type in derialisation"));
+		}
+	}
+}
+

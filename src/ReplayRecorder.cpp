@@ -133,7 +133,7 @@ void ReplayRecorder::send(boost::shared_ptr<GenericOut> target) const
 	target->uint32( mAttributes.getAttributeInteger("LeftFinalScore") );
 	target->uint32( mAttributes.getAttributeInteger("RightFinalScore") );
 
-	target->generic<std::vector<unsigned char> >(mSaveData);
+	target->generic<std::vector<unsigned char> > (mSaveData);
 	target->generic<std::vector<ReplaySavePoint> > (mSavePoints);
 }
 
@@ -187,7 +187,6 @@ void ReplayRecorder::writeReplayHeader(boost::shared_ptr<GenericOut> file) const
 	uint32_t header_ptr = file->tell();
 	uint32_t header_size =  9*sizeof(header_ptr);
 
-	uint32_t attr_size = 128;											/// for now, we reserve 128 bytes!
 	uint32_t jptb_size = 128;											/// for now, we reserve 128 bytes!
 	uint32_t data_size = mSaveData.size();								/// assumes 1 byte per data record!
 	uint32_t states_size = mSavePoints.size() * sizeof(ReplaySavePoint);
@@ -213,34 +212,16 @@ void ReplayRecorder::writeAttributesSection(boost::shared_ptr<GenericOut> file) 
 	// we have to check that we are at attr_ptr!
 	char attr_header[4] = {'a', 't', 'r', '\n'};
 
-	uint32_t gamespeed = mAttributes.getAttributeInteger("GameSpeed");
-	uint32_t gamelength = mSaveData.size();	/// \attention 1 byte = 1 step is assumed here
-	uint32_t gameduration = gamelength / gamespeed;
-	uint32_t gamedat = std::time(0);
-	// check that we can really safe time in gamedat. ideally, we should use a static assertion here
+	// check that we can really safe time in GameDate. ideally, we should use a static assertion here
 	//static_assert (sizeof(uint32_t) >= sizeof(time_t), "time_t does not fit into 32bit" );
 
 	file->array(attr_header, sizeof(attr_header));
-	file->uint32(gamespeed);
-	file->uint32(gameduration);
-	file->uint32(gamelength);
-	file->uint32(gamedat);
-
-	// write blob colors
-	file->generic<Color>( mAttributes.getAttributeColor("LeftColor") );
-	file->generic<Color>( mAttributes.getAttributeColor("RightColor") );
-
-	file->uint32( mAttributes.getAttributeInteger("LeftEndScore") );
-	file->uint32( mAttributes.getAttributeInteger("RightEndScore") );
-
-	// write names
-	file->string(mAttributes.getAttributeString("LeftPlayerName"));
-	file->string(mAttributes.getAttributeString("RightPlayerName"));
+	file->generic<AttributesInterface> ( mAttributes );
 
 	// we need to check that we don't use more space than we got!
 
 	// set up writing for next section. not good!
-	file->seek(attr_ptr + 128);
+	attr_size = file->tell() - attr_ptr;
 }
 
 void ReplayRecorder::writeJumpTable(boost::shared_ptr<GenericOut> file) const
@@ -337,4 +318,7 @@ void ReplayRecorder::finalize(unsigned int left, unsigned int right)
 		unsigned char packet = 0;
 		mSaveData.push_back(packet);
 	}
+
+	mAttributes.setAttributeInteger("GameDuration", mSaveData.size() / mAttributes.getAttributeInteger("GameSpeed") );
+	mAttributes.setAttributeInteger("GameDate", std::time(0));
 }

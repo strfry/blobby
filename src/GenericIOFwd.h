@@ -21,8 +21,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #pragma once
 
 /** \file GenericIOFwd.h
-	
-	Including this header will declare the types 
+
+	Including this header will declare the types
 	\p GenericIn an \p GenericOut so they can be passed
 	as parameters etc. If you wan't to use these classes
 	for actual io, you have to include GenericIO.h.
@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	parse all the template stuff, though.
 */
 
-/// base class template for all GenericIO operations. do not use this class directly. 
+/// base class template for all GenericIO operations. do not use this class directly.
 /// use the provided typedefs GenericIn and GenericOut instead.
 template<class tag>
 class GenericIO;

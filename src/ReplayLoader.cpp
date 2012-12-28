@@ -102,19 +102,19 @@ IReplayLoader* IReplayLoader::createReplayLoader(const std::string& filename)
 ***************************************************************************************************/
 
 
-/*! \class ReplayLoader_V1X
-	\brief Replay Loader V 1.x
-	\details Replay Loader for 1.0 and 1.1 replays
+/*! \class ReplayLoader_V2X
+	\brief Replay Loader V 2.x
+	\details Replay Loader for 2.0 replays
 */
-class ReplayLoader_V1X: public IReplayLoader
+class ReplayLoader_V2X: public IReplayLoader
 {
 	public:
-		ReplayLoader_V1X() {};
+		ReplayLoader_V2X() {};
 
-		virtual ~ReplayLoader_V1X() { };
+		virtual ~ReplayLoader_V2X() { };
 
-		virtual int getVersionMajor() const { return 1; };
-		virtual int getVersionMinor() const { return 1; };
+		virtual int getVersionMajor() const { return 2; };
+		virtual int getVersionMinor() const { return 0; };
 
 		virtual std::string getPlayerName(PlayerSide player) const
 		{
@@ -260,6 +260,8 @@ class ReplayLoader_V1X: public IReplayLoader
 			file->uint32(data_ptr);
 			file->uint32(data_size);
 
+			mGameLength = data_size;
+
 			// legacy support for 1.0 RC 1 replays
 			if(minor_version != 0)
 			{
@@ -272,83 +274,26 @@ class ReplayLoader_V1X: public IReplayLoader
 			file->seek(attr_ptr + 4);
 			// copy attributes into buffer
 
-			// read the attributes
-			unsigned int temp;
-			file->uint32(temp);
-			mAttributes.setAttributeInteger("GameSpeed", temp);
-			file->uint32(temp);
-			mAttributes.setAttributeInteger("GameDuration", temp);
-			file->uint32(mGameLength);
-			file->uint32(temp);
-			mAttributes.setAttributeInteger("GameDate", temp);
-
-			Color tempcol;
-			file->generic<Color> (tempcol);
-			mAttributes.setAttributeColor("LeftColor", tempcol);
-			file->generic<Color> (tempcol);
-			mAttributes.setAttributeColor("RightColor", tempcol);
-
-			if(minor_version != 0)
-			{
-				file->uint32(temp);
-				mAttributes.setAttributeInteger("LeftFinalScore", temp);
-				file->uint32(temp);
-				mAttributes.setAttributeInteger("RightFinalScore", temp);
-
-				std::string tempstr;
-				file->string(tempstr);
-				mAttributes.setAttributeString("LeftPlayerName", tempstr);
-				file->string(tempstr);
-				mAttributes.setAttributeString("RightPlayerName", tempstr);
-			}
-			 else
-			{
-				std::string tempstr;
-				tempstr = "";
-
-				unsigned char c;
-				do
-				{
-					file->byte(c);
-					tempstr += c;
-				} while(c);
-
-				mAttributes.setAttributeString("LeftPlayerName", tempstr);
-				tempstr = "";
-
-				do
-				{
-					file->byte(c);
-					tempstr += c;
-				} while(c);
-				mAttributes.setAttributeString("RightPlayerName", tempstr);
-			}
+			file->generic<AttributesInterface> (mAttributes);
 
 			// now, read the raw data
 			file->seek(data_ptr + 8);		// jump over the dat marker and over the length value
-			/// \todo why do we set mBufferSize again? should we check if these two are identical
 			// read into buffer
 			mBuffer = boost::shared_array<char>(new char[data_size]);
 			file->array(mBuffer.get(), data_size);
 			mReplayOffset = 0;
 
 			// now read savepoints
-			if(minor_version != 0)
+			file->seek(states_ptr + 4);		// jump over the sta marker
+			file->uint32(mSavePointsCount);
+			mSavePoints.reserve(mSavePointsCount);
+			for(unsigned int i = 0; i < mSavePointsCount; ++i)
 			{
-				file->seek(states_ptr + 4);		// jump over the sta marker
-				file->uint32(mSavePointsCount);
-				mSavePoints.reserve(mSavePointsCount);
-				for(unsigned int i = 0; i < mSavePointsCount; ++i)
-				{
-					ReplaySavePoint sp;
-					file->generic<ReplaySavePoint>(sp);
-					mSavePoints.push_back(sp);
-				}
+				ReplaySavePoint sp;
+				file->generic<ReplaySavePoint>(sp);
+				mSavePoints.push_back(sp);
 			}
-			 else
-			{
-				mSavePointsCount = 0;
-			}
+
 
 			/// \todo check that mSavePointsCount and states_size match
 
@@ -380,7 +325,9 @@ IReplayLoader* IReplayLoader::createReplayLoader(int major)
 		case 0:
 			break;
 		case 1:
-			return new ReplayLoader_V1X();
+			break;
+		case 2:
+			return new ReplayLoader_V2X();
 			break;
 	}
 

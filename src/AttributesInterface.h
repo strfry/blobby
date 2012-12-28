@@ -15,9 +15,10 @@ class AttributesInterface
 		// exception classes
 		class AttributeNotFoundException : public virtual boost::exception, public virtual std::exception
 		{
-		public:
-			typedef boost::error_info<struct attribute_name, std::string> attribute_name_info;
+
 		};
+
+		typedef boost::error_info<struct attribute_name, std::string> attribute_name_info;
 
 		AttributesInterface();
 		~AttributesInterface();
