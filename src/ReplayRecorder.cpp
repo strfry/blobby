@@ -123,15 +123,7 @@ void ReplayRecorder::save( boost::shared_ptr<FileWrite> file) const
 
 void ReplayRecorder::send(boost::shared_ptr<GenericOut> target) const
 {
-	target->string(mAttributes.getAttributeString("LeftPlayerName"));
-	target->string(mAttributes.getAttributeString("RightPlayerName"));
-
-	target->generic<Color> (mAttributes.getAttributeColor("LeftColor"));
-	target->generic<Color> (mAttributes.getAttributeColor("RightColor"));
-
-	target->uint32( mAttributes.getAttributeInteger("GameSpeed") );
-	target->uint32( mAttributes.getAttributeInteger("LeftFinalScore") );
-	target->uint32( mAttributes.getAttributeInteger("RightFinalScore") );
+	target->generic<AttributesInterface> (mAttributes);
 
 	target->generic<std::vector<unsigned char> > (mSaveData);
 	target->generic<std::vector<ReplaySavePoint> > (mSavePoints);
@@ -139,27 +131,7 @@ void ReplayRecorder::send(boost::shared_ptr<GenericOut> target) const
 
 void ReplayRecorder::receive(boost::shared_ptr<GenericIn> source)
 {
-	std::string temp;
-	source->string(temp);
-	mAttributes.setAttributeString("LeftPlayerName", temp);
-	source->string(temp);
-	mAttributes.setAttributeString("RightPlayerName", temp);
-
-	Color tempc;
-	source->generic<Color> (tempc);
-	mAttributes.setAttributeColor("LeftColor", tempc);
-	source->generic<Color> (tempc);
-	mAttributes.setAttributeColor("RightColor", tempc);
-
-	unsigned int tempi;
-	source->uint32( tempi );
-	mAttributes.setAttributeInteger("GameSpeed", tempi);
-	source->uint32(tempi);
-	mAttributes.setAttributeInteger("LeftFinalScore", tempi);
-	source->uint32(tempi);
-	mAttributes.setAttributeInteger("RightFinalScore", tempi);
-
-
+	source->generic<AttributesInterface> (mAttributes);
 
 	source->generic<std::vector<unsigned char> >(mSaveData);
 	source->generic<std::vector<ReplaySavePoint> > (mSavePoints);
