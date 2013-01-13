@@ -204,7 +204,6 @@ class ReplayLoader_V2X: public IReplayLoader
 		// 		we can save this parameter in ReplayPlayer
 		virtual SavepointIndex getSavePoint(int targetPosition, int& savepoint) const
 		{
-			/*
 			// desired index can't be lower that this value,
 			// cause additional savepoints could shift it only right
 			unsigned int index = targetPosition / REPLAY_SAVEPOINT_PERIOD;
@@ -235,27 +234,6 @@ class ReplayLoader_V2X: public IReplayLoader
 				index = nextIndex;
 				savepoint = nextPos;
 			} while (true);
-
-			return SavepointIndex(index);
-			*/
-			// desired index can't be lower that this value,
-			// cause additional savepoints could shift it only right
-			int index;
-			for(index = 0; index < mSavePointsCount; ++index)
-			{
-				if(mSavePoints[index].step > targetPosition)
-				{
-					break;
-				}
-			}
-
-			index -= 1;
-			std::cout << "ID: " << index << "\n";
-
-			if(index >= mSavePointsCount || index < 0)
-				return SavepointIndex::NO_SAVEPOINT;
-
-			savepoint = mSavePoints[index].step;
 
 			return SavepointIndex(index);
 		}
