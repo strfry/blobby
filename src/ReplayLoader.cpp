@@ -255,6 +255,8 @@ class ReplayLoader_V2X: public IReplayLoader
 			if(index >= mSavePointsCount || index < 0)
 				return SavepointIndex::NO_SAVEPOINT;
 
+			savepoint = mSavePoints[index].step;
+
 			return SavepointIndex(index);
 		}
 
