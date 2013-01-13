@@ -204,6 +204,7 @@ class ReplayLoader_V2X: public IReplayLoader
 		// 		we can save this parameter in ReplayPlayer
 		virtual SavepointIndex getSavePoint(int targetPosition, int& savepoint) const
 		{
+			/*
 			// desired index can't be lower that this value,
 			// cause additional savepoints could shift it only right
 			unsigned int index = targetPosition / REPLAY_SAVEPOINT_PERIOD;
@@ -236,6 +237,25 @@ class ReplayLoader_V2X: public IReplayLoader
 			} while (true);
 
 			return SavepointIndex(index);
+			*/
+			// desired index can't be lower that this value,
+			// cause additional savepoints could shift it only right
+			int index;
+			for(index = 0; index < mSavePointsCount; ++index)
+			{
+				if(mSavePoints[index].step > targetPosition)
+				{
+					break;
+				}
+			}
+
+			index -= 1;
+			std::cout << "ID: " << index << "\n";
+
+			if(index >= mSavePointsCount || index < 0)
+				return SavepointIndex::NO_SAVEPOINT;
+
+			return SavepointIndex(index);
 		}
 
 		virtual void readSavePoint(SavepointIndex index, ReplaySavePoint& state) const
@@ -262,15 +282,10 @@ class ReplayLoader_V2X: public IReplayLoader
 			file->uint32(jptb_size);
 			file->uint32(data_ptr);
 			file->uint32(data_size);
+			file->uint32(states_ptr);
+			file->uint32(states_size);
 
 			mGameLength = data_size;
-
-			// legacy support for 1.0 RC 1 replays
-			if(minor_version != 0)
-			{
-				file->uint32(states_ptr);
-				file->uint32(states_size);
-			}
 
 			// now, we read the attributes section
 			//  jump over the attr - marker
@@ -289,6 +304,7 @@ class ReplayLoader_V2X: public IReplayLoader
 			// now read savepoints
 			file->seek(states_ptr + 4);		// jump over the sta marker
 			file->uint32(mSavePointsCount);
+			std::cout << "SAVE POINT COUNT: " << mSavePointsCount << "\n";
 			mSavePoints.reserve(mSavePointsCount);
 			for(unsigned int i = 0; i < mSavePointsCount; ++i)
 			{
