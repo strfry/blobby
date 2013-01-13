@@ -259,7 +259,7 @@ void ReplayRecorder::record(const DuelMatchState& state)
 
 	// update the score
 	mAttributes.setAttributeInteger("LeftEndScore", state.logicState.leftScore);
-	mAttributes.setAttributeInteger("LeftEndScore", state.logicState.rightScore);
+	mAttributes.setAttributeInteger("RightEndScore", state.logicState.rightScore);
 }
 
 void ReplayRecorder::setPlayerNames(const std::string& left, const std::string& right)
