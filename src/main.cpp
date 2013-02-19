@@ -274,5 +274,3 @@ int main(int argc, char* argv[])
 	deinit();
 	exit(EXIT_SUCCESS);
 }
-
-
