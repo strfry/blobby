@@ -23,19 +23,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Vector.h"
 #include "InputSource.h"
 #include "BlobbyDebug.h"
-
-
-const float BLOBBY_SPEED = 4.5; // BLOBBY_SPEED is necessary to determine the size of the input buffer
-
-namespace RakNet
-{
-	class BitStream;
-}
+#include "PhysicState.h"
 
 /*! \brief blobby world
 	\details This class encapuslates the physical world where blobby happens. It manages the two blobs,
 			the ball and collisions between them and the environment, it calculates object movements etc.
-	\todo remove all game logic related stuff!
 */
 class PhysicWorld : public ObjectCounter<PhysicWorld>
 {
@@ -43,86 +35,47 @@ class PhysicWorld : public ObjectCounter<PhysicWorld>
 		PhysicWorld();
 		~PhysicWorld();
 
+		// ball information queries
+		Vector2 getBallPosition() const;
+		void setBallPosition( Vector2 newPosition );
 		Vector2 getBallVelocity() const;
-		bool getBlobJump(PlayerSide player) const;
-		bool getBallActive() const;
-
-		void setLeftInput(const PlayerInput& input);
-		void setRightInput(const PlayerInput& input);
-
-		Vector2 getBlob(PlayerSide player) const;
-		Vector2 getBall() const;
-
-		float getBlobState(PlayerSide player) const;
+		void setBallVelocity( Vector2 newVelocity );
 		float getBallRotation() const;
+		void setBallAngularVelocity( float angvel );
+		
+		// blobby information queries
+		Vector2 getBlobPosition(PlayerSide player) const;
+		Vector2 getBlobVelocity(PlayerSide player) const;
+		bool blobHitGround(PlayerSide player) const;
+		float getBlobState(PlayerSide player) const;
 
-		float getBallSpeed() const;
-
-		// These functions tell about ball collisions for game logic and sound
-		bool ballHitLeftPlayer() const;
-		bool ballHitRightPlayer() const;
-		bool ballHitLeftGround() const;
-		bool ballHitRightGround() const;
-
-		bool blobbyHitGround(PlayerSide player) const;
-
-		// Blobby animation methods
-		void blobbyAnimationStep(PlayerSide player);
-		void blobbyStartAnimation(PlayerSide player);
-
-		// This reports the intensity of the collision
+		// Methods to set/get the intensity of the collision
 		// which was detected and also queried last.
-		float lastHitIntensity() const;
-
-		// Here the game logic can decide whether the ball is valid.
-		// If not, no ball to player collision checking is done,
-		// the input is ignored an the ball experiences a strong damping
-		void setBallValidity(bool validity);
-
-		// This returns true if the ball is not valid and the ball is steady
-		bool roundFinished() const;
-
-		// This resets everything to the starting situation and
-		// wants to know, which player begins.
-		void reset(PlayerSide player);
-
-		// This resets the player to their starting positions
-		void resetPlayer();
+		void setLastHitIntensity(float intensity);
+		float getLastHitIntensity() const;
 
 		// Important: This assumes a fixed framerate of 60 FPS!
-		void step();
-
-		// For reducing ball speed after rule violation
-		void dampBall();
-
-		// Set a new state received from server over a RakNet BitStream
-		void setState(RakNet::BitStream* stream);
-
-		// Fill a Bitstream with the state
-		void getState(RakNet::BitStream* stream) const;
-
-		// Fill a Bitstream with a side reversed state
-		void getSwappedState(RakNet::BitStream* stream) const;
-
-		//Input stuff for recording and playing replays
-		const PlayerInput* getPlayersInput() const;
+		int step(const PlayerInput& leftInput, const PlayerInput& rightInput, bool isBallValid, bool isGameRunning);
 		
-		#ifdef DEBUG
-		bool checkPhysicStateValidity() const;
-		#endif
+		// gets the physic state
+		PhysicState getState() const;
+	
+		// sets a new physic state
+		void setState(const PhysicState& state);
 
 	private:
+		// Blobby animation methods
+		void blobbyStartAnimation(PlayerSide player);
+		void blobbyAnimationStep(PlayerSide player);
+	
 		inline bool playerTopBallCollision(int player) const;
 		inline bool playerBottomBallCollision(int player) const;
-		bool resetAreaClear()const;
 
 		// Do all blobby-related physic stuff which is independent from states
-		void handleBlob(PlayerSide player);
+		void handleBlob(PlayerSide player, PlayerInput input);
 
 		// Detect and handle ball to blobby collisions
-		void handleBlobbyBallCollision(PlayerSide player);
-
-		bool mBallHitByBlob[MAX_PLAYERS];
+		bool handleBlobbyBallCollision(PlayerSide player);
 
 		Vector2 mBlobPosition[MAX_PLAYERS];
 		Vector2 mBallPosition;
@@ -135,14 +88,7 @@ class PhysicWorld : public ObjectCounter<PhysicWorld>
 		float mBlobState[MAX_PLAYERS];
 		float mCurrentBlobbyAnimationSpeed[MAX_PLAYERS];
 
-		PlayerInput mPlayerInput[MAX_PLAYERS];
-
-		bool mIsGameRunning;
-		bool mIsBallValid;
-
 		float mLastHitIntensity;
-		///! \todo thats not relevant for physics! It's game logic!!
-		float mTimeSinceBallout;
 };
 
 

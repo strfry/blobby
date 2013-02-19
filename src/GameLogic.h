@@ -22,10 +22,21 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <memory>
 #include <cassert>
+#include <string>
 
 #include "Global.h"
 #include "Clock.h"
 #include "BlobbyDebug.h"
+
+class IGameLogic;
+
+/// typedef to make GameLogic an auto_ptr
+/// \todo is auto_ptr the best choice here?
+typedef std::auto_ptr<IGameLogic> GameLogic;
+
+class GameLogicState;
+class DuelMatch;
+class PlayerInput;
 
 /// \class IGameLogic
 /// \brief Interface for managing game rules, score counting etc.
@@ -39,20 +50,23 @@ class IGameLogic: public ObjectCounter<IGameLogic>
 		IGameLogic();
 		virtual ~IGameLogic();
 		
+		virtual GameLogic clone() const = 0;
+		virtual std::string getSourceFile() const = 0;
+		
 		// -----------------------------------------------------------------------------------------
 		// 								Read/Write Basic Data
 		// -----------------------------------------------------------------------------------------
 		
 		// methods for querying the score/touches of a patricular team
+		/// returns hits count of the specified player
+		int getTouches(PlayerSide side) const;
+		
 		/// returns current points of one player
 		int getScore(PlayerSide side) const;
 		
 		/// sets the score of the specified player
 		void setScore(PlayerSide side, int score);		// when might need such a method if we add saved games
 		
-		
-		/// returns the number of times a player has hit the ball.
-		int getHits(PlayerSide side) const;
 		
 		// method for querying and setting the serving player
 		/// returns which player is the serving player
@@ -69,14 +83,23 @@ class IGameLogic: public ObjectCounter<IGameLogic>
 		/// After this request, that value is reset.
 		PlayerSide getLastErrorSide();
 		
-		// methods for setting/getting the target score
-		/// sets the score required for winning.
-		void setScoreToWin(int stw);
+		// method for getting the target score
 		/// returns the score required for winning.
 		int getScoreToWin() const;
 		
 		/// gets the associated clock
 		Clock& getClock();
+		
+		/// transform input
+		PlayerInput transformInput(PlayerInput ip, PlayerSide player);
+		
+		// -----------------------------------------------------------------------------------------
+		//						Read / Write - State
+		// -----------------------------------------------------------------------------------------
+		
+		GameLogicState getState() const;
+		void setState(GameLogicState gls);
+		
 		
 		// -----------------------------------------------------------------------------------------
 		// 								Event - Handlers
@@ -85,15 +108,29 @@ class IGameLogic: public ObjectCounter<IGameLogic>
 		// methods to inform the game logic what is happening in the game
 		
 		
+		/// called when the serve begins
+		void onServe();
+
 		/// called when ball hits ground
 		void onBallHitsGround(PlayerSide side);
-		
+
 		/// called when ball hits player
 		void onBallHitsPlayer(PlayerSide side);
-				
-		/// returns whether the collision was valid (max. 3 hits)
-		bool isCollisionValid(PlayerSide side) const;
 
+		/// called when ball hits wall
+		void onBallHitsWall(PlayerSide side);
+		
+		/// called when ball hits net
+		void onBallHitsNet(PlayerSide side);
+
+		/// returns whether ball is valid
+		bool isBallValid() const;
+		/// returns whether game is running
+		bool isGameRunning() const;
+		/// returns whether the collision was valid (not squished)
+		bool isCollisionValid(PlayerSide side) const;
+		bool isWallCollisionValid() const;
+		bool isGroundCollisionValid() const;
 		
 		// set/unset pause mode
 		/// pauses the game logic. 
@@ -103,19 +140,22 @@ class IGameLogic: public ObjectCounter<IGameLogic>
 		
 		/// must be called every step
 		void step();		
+		
+		// script information
+		virtual std::string getAuthor() const = 0;
+		virtual std::string getTitle() const  = 0;
 
 	protected:
 		/// this method must be called if a team scores
-		/// is increments the points of that team
-		void score(PlayerSide side);
+		/// it increments the points of that team
+		void score(PlayerSide side, int amount);
 
 		// helper functions
 		
 		/// convert player side into array index
 		static inline int side2index(PlayerSide side)
 		{
-			assert(side == LEFT_PLAYER || side == RIGHT_PLAYER);
-			return side - LEFT_PLAYER;
+			return side == NO_PLAYER ? MAX_PLAYERS : side - LEFT_PLAYER;
 		}
 		
 		/// determine the opposite player side
@@ -132,51 +172,70 @@ class IGameLogic: public ObjectCounter<IGameLogic>
 			}
 		}
 
-	private:	
-		/// resets score and touches
-		void reset();
-		
 		/// this is called when a player makes a mistake
-		void onError(PlayerSide side);
+		void onError(PlayerSide errorSide, PlayerSide serveSide);
 		
-		/// this function is called by onError, it contains the customizable part of the 
-		/// error handling
-		virtual void OnMistake(PlayerSide side) = 0;
+
+		
+		/// thi function can change input made by a player
+		virtual PlayerInput handleInput(PlayerInput ip, PlayerSide player) = 0;
+		
+		/// this function handles ball/player hits
+		virtual void OnBallHitsPlayerHandler(PlayerSide side) = 0;
+		
+		/// this function handles ball/wall hits
+		virtual void OnBallHitsWallHandler(PlayerSide side) = 0;
+		
+		/// this function handles ball/ground hits
+		virtual void OnBallHitsGroundHandler(PlayerSide side) = 0;
+		
+		/// this function handles ball/net hits
+		virtual void OnBallHitsNetHandler(PlayerSide side) = 0;
+		
+		
+		/// this function gets called every frame
+		virtual void OnGameHandler() = 0;
 		
 		/// this function checks whether a player has won the game
 		virtual PlayerSide checkWin() const = 0;
-			
 		
-		// data memberss
+		/// config parameter: score to win
+		/// lua rules can change it by changing SCORE_TO_WIN variable in the global scope
+		int mScoreToWin;
+		
+	private:	
+		// data members
 		/// this array contains the scores
 		int mScores[2];
-		/// in this array the number of touches are counted
+		/// in this array the touches are counted
 		int mTouches[2];
-		/// this is an helper array to prevent counting hits that happen too fast twice
+
+		/// these are helper arrays to prevent counting hits that happen too fast twice
 		int mSquish[2];
+		int mSquishWall;	// also for net squishes
+		int mSquishGround;
 		
 		/// last side that made an error
 		PlayerSide mLastError;
 		/// player that is currently serving
 		PlayerSide mServingPlayer;
+		/// whether ball is touchable
+		bool mIsBallValid;
+		/// whether game is running (first ball hit was made)
+		bool mIsGameRunning;
 		
 		/// player that has won the game
 		/// \todo do we really need to cache this information here??
 		PlayerSide mWinningPlayer;
 		
-		/// config parameter: score to win
-		/// \todo how do we use config parameters with lua rules?
-		int mScoreToWin;
-		
-		/// clock for determining game tome
+		/// clock for determining game time
 		Clock clock;
 };
 
-/// typedef to make GameLogic an auto_ptr
-/// \todo is auto_ptr the best choice here?
-typedef std::auto_ptr<IGameLogic> GameLogic;
+extern const std::string DUMMY_RULES_NAME;
+extern const std::string FALLBACK_RULES_NAME;
 
-// function for creating a game logic object
-GameLogic createGameLogic(const std::string& rulefile);
+// functions for creating a game logic object
+GameLogic createGameLogic(const std::string& rulefile, DuelMatch* match);
 
 

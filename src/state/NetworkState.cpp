@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <boost/lexical_cast.hpp>
 #include <boost/scoped_array.hpp>
+#include <boost/make_shared.hpp>
 
 #include "raknet/RakClient.h"
 #include "raknet/RakServer.h"
@@ -44,15 +45,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "LocalInputSource.h"
 #include "UserConfig.h"
 #include "FileExceptions.h"
+#include "GenericIO.h"
 #include "ScriptedInputSource.h"
+#include "FileRead.h"
+#include "FileWrite.h"
+#include "MatchEvents.h"
 
 
 /* implementation */
 NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port):
-	mLeftPlayer(LEFT_PLAYER),
-	mRightPlayer(RIGHT_PLAYER),
 	mClient(new RakClient()),
-	mFakeMatch(new DuelMatch(0, 0, true, true))
+	mFakeMatch(new DuelMatch(true, "rules.lua")),
+	mServerAddress(servername), mPort(port)
 {	
 	IMGUI::getSingleton().resetSelection();
 	mWinningPlayer = NO_PLAYER;
@@ -78,20 +82,28 @@ NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port):
 	mFakeMatch->pause();
 	
 	// load/init players
-	mLeftPlayer.loadFromConfig("left", false);
-	mRightPlayer.loadFromConfig("right", false);
-	if(mOwnSide == LEFT_PLAYER){
-		mRightPlayer.setName("");
-		mLocalPlayer = &mLeftPlayer;
-		mRemotePlayer = &mRightPlayer;
-	}else{
-		mLeftPlayer.setName("");
-		mLocalPlayer = &mRightPlayer;
-		mRemotePlayer = &mLeftPlayer;
+	
+	if(mOwnSide == LEFT_PLAYER)
+	{
+		PlayerIdentity localplayer = config.loadPlayerIdentity(LEFT_PLAYER, true);
+		PlayerIdentity remoteplayer = config.loadPlayerIdentity(RIGHT_PLAYER, true);
+		mLocalPlayer = &mFakeMatch->getPlayer( LEFT_PLAYER );
+		mRemotePlayer = &mFakeMatch->getPlayer( RIGHT_PLAYER );
+		mFakeMatch->setPlayers( localplayer, remoteplayer );
+	}
+	 else
+	{
+		PlayerIdentity localplayer = config.loadPlayerIdentity(RIGHT_PLAYER, true);
+		PlayerIdentity remoteplayer = config.loadPlayerIdentity(LEFT_PLAYER, true);
+		mLocalPlayer = &mFakeMatch->getPlayer( RIGHT_PLAYER );
+		mRemotePlayer = &mFakeMatch->getPlayer( LEFT_PLAYER );
+		mFakeMatch->setPlayers( remoteplayer, localplayer );
 	}
 	
+	mRemotePlayer->setName("");
+	
 	RenderManager::getSingleton().setScore(0, 0, false, false);
-	RenderManager::getSingleton().setPlayernames(mLeftPlayer.getName(), mRightPlayer.getName());
+	RenderManager::getSingleton().setPlayernames(mFakeMatch->getPlayer(LEFT_PLAYER).getName(), mFakeMatch->getPlayer(RIGHT_PLAYER).getName());
 
 	mSelectedChatmessage = 0;
 	mChatCursorPosition = 0;
@@ -125,7 +137,7 @@ void NetworkGameState::step()
 				stream.Write(myname, sizeof(myname));
 
 				// send color settings
-				stream.Write(mLocalPlayer->getColor().toInt());
+				stream.Write(mLocalPlayer->getStaticColor().toInt());
 
 				mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
 
@@ -140,7 +152,10 @@ void NetworkGameState::step()
 				stream.IgnoreBytes(1);	//ID_TIMESTAMP
 				stream.Read(ival);	//TODO: un-lag based on timestamp delta
 				//printf("Physic packet received. Time: %d\n", ival);
-				mFakeMatch->setState(&stream);
+				DuelMatchState ms;
+				boost::shared_ptr<GenericIn> in = createGenericReader(&stream);
+				in->generic<DuelMatchState> (ms);
+				mFakeMatch->setState(ms);
 				break;
 			}
 			case ID_WIN_NOTIFICATION:
@@ -165,11 +180,10 @@ void NetworkGameState::step()
 					mNetworkState = OPPONENT_DISCONNECTED;
 				break;
 			}
-			case ID_BALL_RESET:
+			case ID_UPDATE_SCORE:
 			{
 				RakNet::BitStream stream((char*)packet->data, packet->length, false);
-				stream.IgnoreBytes(1);	//ID_BALL_RESET
-				stream.Read((int&)mServingPlayer);
+				stream.IgnoreBytes(1);	//ID_UPDATE_SCORE
 				
 				// read and set new score
 				int nLeftScore;
@@ -179,7 +193,26 @@ void NetworkGameState::step()
 				stream.Read(nRightScore);
 				stream.Read(time);
 				mFakeMatch->setScore(nLeftScore, nRightScore);
-				mFakeMatch->setServingPlayer(mServingPlayer);
+				// sync the clocks... normally, they should not differ
+				mFakeMatch->getClock().setTime(time);
+				break;
+			}
+			case ID_BALL_RESET:
+			{
+				PlayerSide servingPlayer;
+				RakNet::BitStream stream((char*)packet->data, packet->length, false);
+				stream.IgnoreBytes(1);	//ID_BALL_RESET
+				stream.Read((int&)servingPlayer);
+				
+				// read and set new score
+				int nLeftScore;
+				int nRightScore;
+				int time;
+				stream.Read(nLeftScore);
+				stream.Read(nRightScore);
+				stream.Read(time);
+				mFakeMatch->setScore(nLeftScore, nRightScore);
+				mFakeMatch->setServingPlayer(servingPlayer);
 				// sync the clocks... normally, they should not differ
 				mFakeMatch->getClock().setTime(time);
 				
@@ -207,10 +240,10 @@ void NetworkGameState::step()
 				stream.Read(side);
 				switch((PlayerSide)side){
 					case LEFT_PLAYER:
-						mFakeMatch->trigger(DuelMatch::EVENT_BALL_HIT_LEFT_GROUND);
+						mFakeMatch->trigger(EVENT_BALL_HIT_LEFT_GROUND);
 						break;
 					case RIGHT_PLAYER:
-						mFakeMatch->trigger(DuelMatch::EVENT_BALL_HIT_RIGHT_GROUND);
+						mFakeMatch->trigger(EVENT_BALL_HIT_RIGHT_GROUND);
 						break;
 					default:
 						assert(0);
@@ -223,15 +256,15 @@ void NetworkGameState::step()
 				int side;
 				RakNet::BitStream stream((char*)packet->data, packet->length, false);
 				stream.IgnoreBytes(1);	//ID_PLAYER_BALL_COLLISION
-				// FIXME ensure that this intensity is used
 				stream.Read(intensity);
+				mFakeMatch->setLastHitIntensity(intensity);
 				stream.Read(side);
 				switch((PlayerSide)side){
 					case LEFT_PLAYER:
-						mFakeMatch->trigger(DuelMatch::EVENT_LEFT_BLOBBY_HIT);
+						mFakeMatch->trigger(EVENT_LEFT_BLOBBY_HIT);
 						break;
 					case RIGHT_PLAYER:
-						mFakeMatch->trigger(DuelMatch::EVENT_RIGHT_BLOBBY_HIT);
+						mFakeMatch->trigger(EVENT_RIGHT_BLOBBY_HIT);
 						break;
 					default:
 						assert(0);
@@ -275,7 +308,7 @@ void NetworkGameState::step()
 				stream.Read(temp);
 				Color ncolor = temp;
 
-				mRemotePlayer->setName(std::string(charName));
+				mRemotePlayer->setName(charName);
 				
 				mFilename = mLocalPlayer->getName();
 				if(mFilename.size() > 7)
@@ -287,13 +320,13 @@ void NetworkGameState::step()
 				mFilename += oppname;
 				
 				// set names in render manager
-				RenderManager::getSingleton().setPlayernames(mLeftPlayer.getName(), mRightPlayer.getName());
+				RenderManager::getSingleton().setPlayernames(mFakeMatch->getPlayer(LEFT_PLAYER).getName(), 
+															mFakeMatch->getPlayer(RIGHT_PLAYER).getName());
 				
 				// check whether to use remote player color
-				if(mUseRemoteColor){
-					mRemotePlayer->setColor(ncolor);
-					RenderManager::getSingleton().setBlobColor(LEFT_PLAYER, mLeftPlayer.getColor());
-					RenderManager::getSingleton().setBlobColor(RIGHT_PLAYER, mRightPlayer.getColor());
+				if(mUseRemoteColor)
+				{
+					mRemotePlayer->setStaticColor(ncolor);
 					RenderManager::getSingleton().redraw();
 				}
 				
@@ -307,6 +340,63 @@ void NetworkGameState::step()
 				
 				// game ready whistle
 				SoundManager::getSingleton().playSound("sounds/pfiff.wav", ROUND_START_SOUND_VOLUME);
+				break;
+			}
+			case ID_RULES_CHECKSUM:
+			{
+				RakNet::BitStream stream((char*)packet->data, packet->length, false);
+				
+				stream.IgnoreBytes(1);	// ignore ID_RULES_CHECKSUM
+				
+				int serverChecksum;
+				stream.Read(serverChecksum);
+				int ourChecksum = 0;
+				if (serverChecksum != 0)
+				{
+					try
+					{
+						FileRead rulesFile("server_rules.lua");
+						ourChecksum = rulesFile.calcChecksum(0);
+						rulesFile.close();
+					}
+					catch( FileLoadException& ex )
+					{
+						// file doesn't exist - nothing to do here
+					}
+				}
+				
+				RakNet::BitStream stream2;
+				stream2.Write((unsigned char)ID_RULES);
+				stream2.Write(bool(serverChecksum != 0 && serverChecksum != ourChecksum));
+				mClient->Send(&stream2, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
+				
+				break;
+			}
+			case ID_RULES:
+			{
+				RakNet::BitStream stream((char*)packet->data, packet->length, false);
+				
+				stream.IgnoreBytes(1);	// ignore ID_RULES
+				
+				int rulesLength;
+				stream.Read(rulesLength);
+				if (rulesLength)
+				{
+					boost::shared_array<char>  rulesString( new char[rulesLength + 1] );
+					stream.Read(rulesString.get(), rulesLength);
+					// null terminate
+					rulesString[rulesLength] = 0;
+					FileWrite rulesFile("server_rules.lua");
+					rulesFile.write(rulesString.get(), rulesLength);
+					rulesFile.close();
+					mFakeMatch->setRules("server_rules.lua");
+				} 
+				else
+				{
+					// either old server, or we have to use fallback ruleset
+					mFakeMatch->setRules( FALLBACK_RULES_NAME );
+				}
+				
 				break;
 			}
 			case ID_CONNECTION_ATTEMPT_FAILED:
@@ -352,20 +442,24 @@ void NetworkGameState::step()
 				if(!mWaitingForReplay)
 					break;
 				
-				RakNet::BitStream stream((char*)packet->data, packet->length, false);
+				RakNet::BitStream stream = RakNet::BitStream((char*)packet->data, packet->length, false);
 				stream.IgnoreBytes(1);	// ID_REPLAY
 				
 				try 
 				{
+					boost::shared_ptr<GenericIn> reader = createGenericReader( &stream );
 					ReplayRecorder dummyRec;
-					dummyRec.receive(stream);
-					dummyRec.save((std::string("replays/") + mFilename + std::string(".bvr")));
-				} catch( FileLoadException& ex) 
+					dummyRec.receive( reader );
+					
+					boost::shared_ptr<FileWrite> fw = boost::make_shared<FileWrite>((std::string("replays/") + mFilename + std::string(".bvr")));
+					dummyRec.save( fw );
+				}
+				 catch( FileLoadException& ex) 
 				{
 					mErrorMessage = std::string("Unable to create file:" + ex.getFileName());
 					mSaveReplay = true;	// try again
 				}
-				catch( FileAlreadyExistsException& ex) 
+				 catch( FileAlreadyExistsException& ex) 
 				{
 					mErrorMessage = std::string("File already exists!:"+ ex.getFileName());
 					mSaveReplay = true;
@@ -391,12 +485,7 @@ void NetworkGameState::step()
 		}
 	}
 
-	PlayerInput input = mNetworkState == PLAYING ?
-		mLocalInput->getInput() : PlayerInput();
-
 	presentGame(*mFakeMatch);
-	rmanager->setBlobColor(LEFT_PLAYER, mLeftPlayer.getColor());
-	rmanager->setBlobColor(RIGHT_PLAYER, mRightPlayer.getColor());
 
 	if (InputManager::getSingleton()->exit() && mNetworkState != PLAYING)
 	{
@@ -491,20 +580,31 @@ void NetworkGameState::step()
 		case OPPONENT_DISCONNECTED:
 		{
 			imgui.doCursor();
-			imgui.doOverlay(GEN_ID, Vector2(100.0, 210.0),
-					Vector2(700.0, 370.0));
-			imgui.doText(GEN_ID, Vector2(140.0, 250.0),
-					TextManager::GAME_OPP_LEFT);
-			if (imgui.doButton(GEN_ID, Vector2(230.0, 300.0),
-					TextManager::LBL_OK))
+			imgui.doOverlay(GEN_ID, Vector2(100.0, 210.0), Vector2(700.0, 390.0));
+			imgui.doText(GEN_ID, Vector2(140.0, 240.0),	TextManager::GAME_OPP_LEFT);
+			
+			if (imgui.doButton(GEN_ID, Vector2(230.0, 290.0), TextManager::LBL_OK))
 			{
 				deleteCurrentState();
 				setCurrentState(new MainMenuState);
 			}
-			if (imgui.doButton(GEN_ID, Vector2(350.0, 300.0), TextManager::RP_SAVE))
+			
+			if (imgui.doButton(GEN_ID, Vector2(350.0, 290.0), TextManager::RP_SAVE))
 			{
 				mSaveReplay = true;
 				imgui.resetSelection();
+			}
+			
+			if (imgui.doButton(GEN_ID, Vector2(250.0, 340.0), TextManager::NET_STAY_ON_SERVER))
+			{
+				// we need to make a copy here because this variables get deleted in destrutor
+				// when deleteCurrentState runs
+				std::string server = mServerAddress;
+				uint16_t port = mPort;
+				
+				deleteCurrentState();
+				setCurrentState(new NetworkGameState(server, port));
+				return;
 			}
 			break;
 		}
@@ -562,6 +662,8 @@ void NetworkGameState::step()
 		{
 			mFakeMatch->step();
 
+			PlayerInput input = mLocalInput->updateInput();
+
 			if (InputManager::getSingleton()->exit())
 			{
 				RakNet::BitStream stream;
@@ -580,11 +682,7 @@ void NetworkGameState::step()
 		}
 		case PLAYER_WON:
 		{
-			std::string tmp;
-			if(mWinningPlayer==LEFT_PLAYER)
-				tmp = mLeftPlayer.getName();
-			else
-				tmp = mRightPlayer.getName();
+			std::string tmp = mFakeMatch->getPlayer(mWinningPlayer).getName();
 			imgui.doOverlay(GEN_ID, Vector2(200, 150), Vector2(700, 450));
 			imgui.doImage(GEN_ID, Vector2(200, 250), "gfx/pokal.bmp");
 			imgui.doText(GEN_ID, Vector2(274, 240), tmp);
@@ -799,7 +897,7 @@ void NetworkHostState::step()
 						*mServer, leftPlayer, rightPlayer,
 						leftPlayerName, rightPlayerName,
 						mLeftColor, mRightColor,
-						switchSide);
+						switchSide, "rules.lua");
 				}
 			}
 		}

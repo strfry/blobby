@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <list>
 
 #include <boost/scoped_ptr.hpp>
+#include <boost/shared_array.hpp>
 
 #include "Global.h"
 #include "raknet/NetworkTypes.h"
@@ -49,7 +50,8 @@ class NetworkGame : public ObjectCounter<NetworkGame>
 				PlayerID leftPlayer, PlayerID rightPlayer,
 				std::string leftPlayerName, std::string rightPlayerName,
 				Color leftColor, Color rightColor, 
-				PlayerSide switchedSide = NO_PLAYER);
+				PlayerSide switchedSide,
+				std::string rules);
 
 		~NetworkGame();
 
@@ -65,19 +67,18 @@ class NetworkGame : public ObjectCounter<NetworkGame>
 		void broadcastBitstream(RakNet::BitStream* stream, RakNet::BitStream* switchedstream);
 		void broadcastBitstream(RakNet::BitStream* stream);
 		void broadcastPhysicState();
+		bool isGameStarted() { return mRulesSent[LEFT_PLAYER] && mRulesSent[RIGHT_PLAYER]; }
 
 		RakServer& mServer;
 		PlayerID mLeftPlayer;
 		PlayerID mRightPlayer;
 		PlayerSide mSwitchedSide;
-		std::string mLeftPlayerName;
-		std::string mRightPlayerName;
 
 		PacketQueue mPacketQueue;
 
 		DuelMatch* mMatch;
-		boost::scoped_ptr<DummyInputSource> mLeftInput;
-		boost::scoped_ptr<DummyInputSource> mRightInput;
+		boost::shared_ptr<InputSource> mLeftInput;
+		boost::shared_ptr<InputSource> mRightInput;
 		PlayerSide mWinningPlayer;
 
 		boost::scoped_ptr<ReplayRecorder> mRecorder;
@@ -86,5 +87,9 @@ class NetworkGame : public ObjectCounter<NetworkGame>
 
 		float mGameSpeed;
 		SpeedController* mGameFPSController;
+
+		bool mRulesSent[MAX_PLAYERS];
+		int mRulesLength;
+		boost::shared_array<char> mRulesString;
 };
 

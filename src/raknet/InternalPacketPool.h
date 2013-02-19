@@ -1,7 +1,7 @@
 /* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
 /**
- * @file 
- * @brief Internal Packet Pool Class Declaration. 
+ * @file
+ * @brief Internal Packet Pool Class Declaration.
  *
  * Copyright (c) 2003, Rakkarsoft LLC and Kevin Jenkins
  * All rights reserved.
@@ -47,13 +47,13 @@ struct IPPTag
 
 
 /**
- * @brief Manage Internal Packet using pools. 
- * 
- * This class provide memory management for packets used internally in RakNet. 
- * @see PacketPool 
- * 
- * @note Implement Singleton Pattern 
- * 
+ * @brief Manage Internal Packet using pools.
+ *
+ * This class provide memory management for packets used internally in RakNet.
+ * @see PacketPool
+ *
+ * @note Implement Singleton Pattern
+ *
  */
 class InternalPacketPool : public ObjectCounter<InternalPacketPool>
 {
@@ -67,32 +67,32 @@ public:
 	 */
 	~InternalPacketPool();
 	/**
-	 * Retrieve a new InternalPacket instance. 
-	 * @return a pointer to an InternalPacket structure. 
+	 * Retrieve a new InternalPacket instance.
+	 * @return a pointer to an InternalPacket structure.
 	 */
 	InternalPacket* GetPointer( void );
 	/**
 	 * Free am InternalPacket instance
-	 * @param p a pointer to the InternalPacket instance. 
+	 * @param p a pointer to the InternalPacket instance.
 	 */
 	void ReleasePointer( InternalPacket *p );
 	/**
-	 * Clear the pool 
+	 * Clear the pool
 	 */
 	void ClearPool( void );
 
 private:
 	/**
-	 * InternalPacket pool 
+	 * InternalPacket pool
 	 */
-	std::stack<InternalPacket*, std::deque<InternalPacket*, CountingAllocator<InternalPacket*, IPPTag>>> pool;
+	std::stack<InternalPacket*, std::deque<InternalPacket*, CountingAllocator<InternalPacket*, IPPTag> > > pool;
 	/**
-	 * Multithread access management 
+	 * Multithread access management
 	 */
 
 #ifdef _DEBUG
 	/**
-	 * Used in debugging stage to monitor the number of internal packet released. 
+	 * Used in debugging stage to monitor the number of internal packet released.
 	 */
 	int packetsReleased;
 #endif

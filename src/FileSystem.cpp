@@ -52,19 +52,19 @@ FileSystem::~FileSystem()
 	mFileSystemSingleton = 0;
 }
 
-std::vector<std::string> FileSystem::enumerateFiles(const std::string& directory, const std::string& extension)
+std::vector<std::string> FileSystem::enumerateFiles(const std::string& directory, const std::string& extension, bool keepExtension)
 {
 	std::vector<std::string> files;
 	char** filenames = PHYSFS_enumerateFiles(directory.c_str());
 	
 	// now test which files have type extension
-	/// \todo this does not ensure that extension really is at the end of the string
 	for (int i = 0; filenames[i] != 0; ++i)
 	{
 		std::string tmp = filenames[i];
-		if (tmp.find(extension) != std::string::npos)
+		int position = tmp.length() - extension.length();
+		if (position >= 0 && tmp.substr(position) == extension)
 		{
-			files.push_back(std::string(tmp.begin(), tmp.end() - extension.length()));
+			files.push_back(std::string(tmp.begin(), keepExtension ? (tmp.end()) : (tmp.end() - extension.length()) ));
 		}
 	}
 	
@@ -112,7 +112,7 @@ void FileSystem::setWriteDir(const std::string& dirname)
 {
 	if( !PHYSFS_setWriteDir(dirname.c_str()) )
 	{
-		throw( PhysfsException() );
+		BOOST_THROW_EXCEPTION( PhysfsException() );
 	};
 	addToSearchPath(dirname, false);
 }

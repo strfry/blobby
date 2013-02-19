@@ -23,10 +23,45 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* includes */
 #include <ostream>
+#include <cassert>
 
 /* implementation */
 
-/// \todo do we still need this file?
+InputSource::InputSource() : mInput(), mMatch(0)
+{
+	
+}
+
+PlayerInput InputSource::getInput() const
+{
+	return mInput;
+}
+
+PlayerInput InputSource::updateInput()
+{
+	return (mInput = getNextInput());
+}
+
+void InputSource::setInput(PlayerInput ip)
+{
+	mInput = ip;
+}
+
+PlayerInput InputSource::getNextInput()
+{
+	return mInput;
+}
+
+const DuelMatch* InputSource::getMatch() const
+{
+	return mMatch;
+}
+
+void InputSource::setMatch(const DuelMatch* match)
+{
+	assert(mMatch == 0);
+	mMatch = match;
+}
 
 std::ostream& operator<< (std::ostream& out, const PlayerInput& input)
 {

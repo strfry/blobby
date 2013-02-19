@@ -87,7 +87,7 @@ SDL_Surface* RenderManager::loadSurface(std::string filename)
 	SDL_Surface* newSurface = SDL_LoadBMP_RW(rwops , 1);
 	
 	if (!newSurface)
-		throw FileLoadException(filename);
+		BOOST_THROW_EXCEPTION ( FileLoadException(filename) );
 	
 	return newSurface;
 }
@@ -193,7 +193,7 @@ SDL_Rect RenderManager::ballRect(const Vector2& position)
 		(short)(lround(position.y) - 32),
 		64,
 		64
-	};        
+	};
 	return rect;
 }
 
@@ -249,4 +249,15 @@ void RenderManager::drawGame(bool draw)
 void RenderManager::setTitle(const std::string& title)
 {
 	SDL_WM_SetCaption(title.c_str(), "");
+}
+
+Color RenderManager::getOscillationColor() const
+{
+	float time = float(SDL_GetTicks()) / 1000.0;
+	
+	return Color(	
+					int((std::sin(time*1.5) + 1.0) * 128),
+					int((std::sin(time*2.5) + 1.0) * 128),
+					int((std::sin(time*3.5) + 1.0) * 128)
+				);
 }

@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <iosfwd>
 #include "BlobbyDebug.h"
 
-/*! \class PlayerInput
+/*! \struct PlayerInput
 	\brief struct for easy exchange of a single player input frame
 */
 struct PlayerInput : public ObjectCounter<PlayerInput>
@@ -87,46 +87,50 @@ struct PlayerInput : public ObjectCounter<PlayerInput>
 	bool up;
 };
 
+class DuelMatch;
+
 /*! \class InputSource
 	\brief abstracts several possible input sources.
 	\details This class abstracts several possible input sources, like local input 
-		from InputManager, input from a scripted player or input over network
-		which in turn can all be recorded over a decorator
-		It should be only called once per frame because some implementations
-		may use this to activate a refresh routine on their actual source
-*/
+		from InputDevices, input from a scripted player or input over network
+		which in turn can all be recorded by a recorder.
+		The updateInput method has to be called (and is called)
+		once per frame in DuelMatch in local mode, so input written with 
+		setInput will be overwritten in these cases.*/
 class InputSource : public ObjectCounter<InputSource>
 {
-public:
-	virtual PlayerInput getInput() = 0;
-	virtual ~InputSource()
-	{
-	}
-};
-
-// This class serves as a dummy input source.
-// It can optionally be set from outside if low level input access
-// is required at a higher level
-
-class DummyInputSource : public InputSource
-{
 	public:
-		virtual PlayerInput getInput()
-		{
-			return mInput;
-		}
+		InputSource();
 		
-		virtual ~DummyInputSource()
+		virtual ~InputSource()
 		{
 		}
 		
-		void setInput(PlayerInput input)
-		{
-			mInput = input;
-		}
+		/// forces a recalculation of the input
+		PlayerInput updateInput();
 		
+		/// gets the current input
+		PlayerInput getInput() const;
+		
+		/// set input which is returned on next call
+		/// of getInput
+		void setInput(PlayerInput ip);
+	
+		/// gets  match associated with this InputSource
+		const DuelMatch* getMatch() const;
+		/// sets match associated with this InputSource
+		/// should only be called once!
+		void setMatch(const DuelMatch* match); 
+	
 	private:
+		/// method that actually calculates the new input
+		virtual PlayerInput getNextInput();
+	
+		/// cached input
 		PlayerInput mInput;
+		
+		/// match connected with this source
+		const DuelMatch* mMatch;
 };
 
 // This operator converts a PlayerInput structure in a packed string

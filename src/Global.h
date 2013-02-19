@@ -37,9 +37,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 const int BLOBBY_PORT = 1234;
 
 const int BLOBBY_VERSION_MAJOR = 0;
-const int BLOBBY_VERSION_MINOR = 99;
+const int BLOBBY_VERSION_MINOR = 101;
 
-const char AppTitle[] = "Blobby Volley 2 Version 1.0 RC2";
+const char AppTitle[] = "Blobby Volley 2 Version 1.0 RC3";
 
 const float ROUND_START_SOUND_VOLUME = 0.2;
 const float BALL_HIT_PLAYER_SOUND_VOLUME = 0.4;
@@ -55,7 +55,7 @@ enum PlayerSide
 	//LEFT_PLAYER_2 = 2,
 	//RIGHT_PLAYER_2 = 3,
 	MAX_PLAYERS // This is always one more than the highest player enum
-			// and can be used to declare arrays
+	            // and can be used to declare arrays
 };
 
 enum InputDeviceName
@@ -72,12 +72,16 @@ enum InputDeviceName
 struct Color
 {
 	Color(int red, int green, int blue)
-		: r(red), g(green), b(blue) {}
+	: r(red)
+	, g(green)
+	, b(blue)
+	{}
 	
 	/// \sa toInt()
-	Color(unsigned int col) : 	r(col&0xff), 
-								g((col>>8)&0xff), 
-								b((col>>16)&0xff) 
+	Color(unsigned int col)
+	: r(col&0xff)
+	, g((col>>8)&0xff)
+	, b((col>>16)&0xff) 
 	{
 		
 	}

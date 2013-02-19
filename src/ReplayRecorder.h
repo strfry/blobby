@@ -25,17 +25,21 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <string>
 #include <vector>
 
+#include <boost/shared_ptr.hpp>
+
 #include "Global.h"
 #include "ReplayDefs.h"
 #include "InputSource.h"
+#include "DuelMatchState.h"
 #include "BlobbyDebug.h"
-
-class FileWrite;
+#include "GenericIOFwd.h"
 
 namespace RakNet
 {
 	class BitStream;
 }
+
+class FileWrite;
 
 /*! \class VersionMismatchException
 	\brief thrown when replays of incompatible version are loaded.
@@ -62,11 +66,17 @@ class ReplayRecorder : public ObjectCounter<ReplayRecorder>
 		ReplayRecorder();
 		~ReplayRecorder();
 
-		void save(const std::string& filename) const;
-		void save(RakNet::BitStream& stream) const;
-		void receive(RakNet::BitStream& stream);
-		void record(const PlayerInput* input);
+		void save(boost::shared_ptr<FileWrite> target) const;
 		
+		void send(boost::shared_ptr<GenericOut> stream) const;
+		void receive(boost::shared_ptr<GenericIn>stream);
+		
+		// recording functions
+		void record(const DuelMatchState& input);
+		// saves the final score
+		void finalize(unsigned int left, unsigned int right);
+		
+		// game setup setting
 		void setPlayerNames(const std::string& left, const std::string& right);
 		void setPlayerColors(Color left, Color right);
 		void setGameSpeed(int fps);
@@ -80,24 +90,28 @@ class ReplayRecorder : public ObjectCounter<ReplayRecorder>
 				return "replay";
 			};
 		};
-
-		void writeFileHeader(FileWrite&, uint32_t checksum) const;
-		void writeReplayHeader(FileWrite&) const;
-		void writeAttributesSection(FileWrite&) const;
-		void writeJumpTable(FileWrite&) const;
-		void writeDataSection(FileWrite&) const;
+		void writeFileHeader(boost::shared_ptr<GenericOut>, uint32_t checksum) const;
+		void writeReplayHeader(boost::shared_ptr<GenericOut>) const;
+		void writeAttributesSection(boost::shared_ptr<GenericOut>) const;
+		void writeJumpTable(boost::shared_ptr<GenericOut>) const;
+		void writeInputSection(boost::shared_ptr<GenericOut>) const;
+		void writeStatesSection(boost::shared_ptr<GenericOut>) const;
 
 		std::vector<uint8_t, CountingAllocator<uint8_t, r_tag> > mSaveData;
+		std::vector<ReplaySavePoint> mSavePoints;
 
 		// general replay attributes
 		std::string mPlayerNames[MAX_PLAYERS];
 		Color mPlayerColors[MAX_PLAYERS];
-		int mGameSpeed;
+		unsigned int mEndScore[MAX_PLAYERS];
+		unsigned int mGameSpeed;
 		
 		
 		// here we save the information needed to create the header
 		//  pointers  to replay sections
+		/// \todo this is ugly
 		mutable uint32_t attr_ptr;
 		mutable uint32_t jptb_ptr;
 		mutable uint32_t data_ptr;
+		mutable uint32_t states_ptr;
 };

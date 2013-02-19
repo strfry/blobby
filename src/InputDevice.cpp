@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "DuelMatch.h"
 #include "RenderManager.h"
+#include "GameConstants.h"
 
 /* implementation */
 
@@ -50,15 +51,14 @@ MouseInputDevice::MouseInputDevice(PlayerSide player, int jumpbutton)
 	}
 }
 
-void MouseInputDevice::transferInput(PlayerInput& input)
+PlayerInput MouseInputDevice::transferInput(const InputSource* source)
 {
 	// check if we have a running game, 
 	// otherwise leave directly
-	DuelMatch* match = DuelMatch::getMainGame();
-	if (match == 0)
-		return;
+	const DuelMatch* match = source->getMatch();
+	assert(match);
 		
-	input = PlayerInput();
+	PlayerInput input = PlayerInput();
 	
 	int mMouseXPos;
 	bool warp = SDL_GetAppState() & SDL_APPINPUTFOCUS;
@@ -113,9 +113,11 @@ void MouseInputDevice::transferInput(PlayerInput& input)
 		input.left = true;
 	
 	// insert new data for evaluation
-	mLag.insertData(input, match->getPlayersInput()[mPlayer]);
+	mLag.insertData(input, match->getInputSource( mPlayer )->getInput() );
 	mInputs.push_back(input);
 	RenderManager::getSingleton().setMouseMarker(mMarkerX);
+	
+	return input;
 }
 
 
@@ -131,10 +133,10 @@ KeyboardInputDevice::KeyboardInputDevice(SDLKey leftKey, SDLKey rightKey, SDLKey
 	mJumpKey = jumpKey;	
 }
 
-void KeyboardInputDevice::transferInput(PlayerInput& input)
+PlayerInput KeyboardInputDevice::transferInput(const InputSource* input)
 {
 	Uint8* keyState = SDL_GetKeyState(0);	
-	input = PlayerInput(keyState[mLeftKey], keyState[mRightKey], keyState[mJumpKey]);
+	return PlayerInput(keyState[mLeftKey], keyState[mRightKey], keyState[mJumpKey]);
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -250,11 +252,12 @@ JoystickInputDevice::JoystickInputDevice(JoystickAction laction, JoystickAction 
 {
 }
 
-void JoystickInputDevice::transferInput(PlayerInput& input)
+PlayerInput JoystickInputDevice::transferInput(const InputSource* source)
 {
-	input.left = getAction(mLeftAction);
-	input.right = getAction(mRightAction);
-	input.up = getAction(mJumpAction);
+	return PlayerInput( getAction(mLeftAction), 
+						getAction(mRightAction), 
+						getAction(mJumpAction)
+					);
 }
 
 bool JoystickInputDevice::getAction(const JoystickAction& action)

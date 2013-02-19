@@ -23,6 +23,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* includes */
 #include <string>
+#include <vector>
+#include <utility>
+#include <iostream> // debugging
 
 #include <boost/lexical_cast.hpp>
 
@@ -30,11 +33,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "raknet/PacketEnumerations.h"
 #include "raknet/RakServer.h"
 
+#include "blobnet/layer/Http.hpp"
+#include "blobnet/exception/HttpException.hpp"
+
+#include "tinyxml/tinyxml.h"
+
 #include "NetworkState.h"
 #include "TextManager.h"
 #include "IMGUI.h"
 #include "RakNetPacket.h"
 #include "IUserConfigReader.h"
+#include "FileWrite.h"
+#include "FileRead.h"
 
 
 /* implementation */
@@ -72,7 +82,7 @@ void NetworkSearchState::step()
 	{
 		bool skip = false;
 		bool skip_iter = false;
-		if (!skip)
+
 		while ((packet = receivePacket(*iter)) && !skip)
 		{
 			switch(packet->data[0])
@@ -205,7 +215,7 @@ void NetworkSearchState::step()
 	std::vector<std::string> servernames;
 	for (int i = 0; i < mScannedServers.size(); i++)
 	{
-		servernames.push_back(mScannedServers[i].name);
+		servernames.push_back(std::string(mScannedServers[i].name) + " (" + mScannedServers[i].waitingplayer + ")" );
 	}
 
 	bool doEnterServer = false;
@@ -271,7 +281,7 @@ void NetworkSearchState::step()
 
 		std::stringstream activegames;
 		activegames << TextManager::getSingleton()->getString(TextManager::NET_ACTIVE_GAMES)
-					<< mScannedServers[mSelectedServer].activegames;
+					<< ": " << mScannedServers[mSelectedServer].activegames;
 		imgui.doText(GEN_ID, Vector2(50, 160), activegames.str());
 		std::stringstream waitingplayer;
 		waitingplayer << TextManager::getSingleton()->getString(TextManager::NET_WAITING_PLAYER)
@@ -338,16 +348,89 @@ OnlineSearchState::OnlineSearchState()
 
 void OnlineSearchState::searchServers()
 {
-	/// \todo does anyone know how exaclty mPingClient works?
-	mScannedServers.clear();
-	//TODO: Insert Masterserverconnection code here! At the moment we are using the old code here!
-	mPingClient->PingServer("blobby.blub-game.com", BLOBBY_PORT, 0, true);
-	/// \todo thats a hack to make us use our speed server. add a better 
-	///			method to connect to servers with arbitrary Ports
-	mPingClient->PingServer("pgb.game-host.org", BLOBBY_PORT + 1, 0, true);
-	
+	// Get the serverlist
+	try {
+		BlobNet::Layer::Http http("blobby.sourceforge.net", 80);
+
+		std::stringstream serverListXml;
+		http.request("server.php", serverListXml);
+
+		// this trows an exception if the file could not be opened for writing
+		FileWrite file("onlineserver.xml");
+
+		file.write(serverListXml.str());
+		
+		file.close();
+	} catch (...) {
+		std::cout << "Can't get onlineserver.xml" << std::endl;
+	}
+
+	std::vector< std::pair<std::string, int> > serverList;
+
+	// Get the serverlist
+	try {
+		boost::shared_ptr<TiXmlDocument> serverListXml = FileRead::readXMLDocument("onlineserver.xml");
+
+		if (serverListXml->Error())
+		{
+			std::cerr << "Warning: Parse error in " << "onlineserver.xml";
+			std::cerr << "!" << std::endl;
+		}
+		
+		TiXmlElement* onlineserverElem = serverListXml->FirstChildElement("onlineserver");
+		
+		if (onlineserverElem == NULL)
+		{
+			std::cout << "Can't read onlineserver.xml" << std::endl;
+			return;
+		}
+
+		for (TiXmlElement* serverElem = onlineserverElem->FirstChildElement("server"); 
+		     serverElem != NULL; 
+		     serverElem = serverElem->NextSiblingElement("server"))
+		{
+			std::string host;
+			int port;
+			for (TiXmlElement* varElem = serverElem->FirstChildElement("var");
+			     varElem != NULL;
+			     varElem = varElem->NextSiblingElement("var"))
+			{
+				const char* tmp;
+				tmp = varElem->Attribute("host");
+				if(tmp)
+				{
+					host = tmp;
+					continue;
+				}
+					
+				tmp = varElem->Attribute("port");
+				if(tmp)
+				{
+					try
+					{
+						port = boost::lexical_cast<int>(tmp);
+					}
+					catch (boost::bad_lexical_cast)
+					{
+						port = BLOBBY_PORT;
+					}
+					if ((port <= 0) || (port > 65535))
+					{
+						port = BLOBBY_PORT;
+					}
+					continue;
+				}
+			}
+			std::pair<std::string, int> pairs(host, port);
+			serverList.push_back(pairs);
+		}
+	} catch (...) {
+		std::cout << "Can't read onlineserver.xml" << std::endl;
+	}
+
+		
 	/// \todo check if we already try to connect to this one!
-	std::string address = IUserConfigReader::createUserConfigReader("config.xml")->getString("network_last_server");
+	std::string address = IUserConfigReader::createUserConfigReader("config.xml")->getString("additional_network_server");
 	std::string server = address;
 	int port = BLOBBY_PORT;
 	std::size_t found = address.find(':');
@@ -365,7 +448,19 @@ void OnlineSearchState::searchServers()
 		if ((port <= 0) || (port > 65535))
 			port = BLOBBY_PORT;
 	}
-	mPingClient->PingServer(server.c_str(), port, 0, true);
+
+	std::pair<std::string, int> pairs(server.c_str(), port);
+	serverList.push_back(pairs);
+
+	/// \todo does anyone know how exaclty mPingClient works?
+	mScannedServers.clear();
+
+	for(int i = 0; i < serverList.size(); i++)
+	{
+		mPingClient->PingServer(serverList[i].first.c_str(), serverList[i].second, 0, true);
+	}
+
+
 	
 }
 

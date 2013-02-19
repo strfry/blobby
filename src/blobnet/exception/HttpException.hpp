@@ -1,6 +1,6 @@
 /*=============================================================================
-Blobby Volley 2
-Copyright (C) 2008 Jonathan Sieber (jonathan_sieber@yahoo.de)
+blobNet
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,39 +17,29 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
-#pragma once
+#ifndef _BLOBNET_EXCEPTION_HTTPEXCEPTION_HPP_
+#define _BLOBNET_EXCEPTION_HTTPEXCEPTION_HPP_
 
-#include <string>
+/* Includes */
+#include <stdexcept>
 
-#include <boost/scoped_ptr.hpp>
-
-#include "Global.h"
-#include "BlobbyDebug.h"
-
-class InputSource;
-
-class Player : public ObjectCounter<Player>
-{
+namespace BlobNet {
+namespace Exception {
+	/*!	\class HttpException
+		\brief Runtimeexception for HttpErrors
+	*/
+	class HttpException : public std::runtime_error
+	{
 	public:
-		Player(PlayerSide side);
-		~Player();
+		/// @brief constructor
+		/// @param message Message to describe the error
+		HttpException(const std::string& message) : std::runtime_error(message)
+		{	
+		};
+	};
+}
+}
 
-		void loadFromConfig(const std::string& prefix, bool initInput = true);
+#endif
 
-		InputSource* getInputSource() const;
-		std::string getName() const;
-		Color getColor() const;
-		
-		void setColor(Color ncol);
-		void setName(const std::string& name);
-	private:
-
-		bool mInitialised;
-		const PlayerSide mPlayerSide;
-		boost::scoped_ptr<InputSource> mInputSource;
-		std::string mName;
-		
-		Color mStaticColor;
-		bool mOscillating;
-};
 

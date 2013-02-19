@@ -1,6 +1,7 @@
 add_subdirectory(lua)
 add_subdirectory(tinyxml)
 add_subdirectory(raknet)
+add_subdirectory(blobnet)
 
 add_definitions(-DTIXML_USE_STL)
 include_directories(.)
@@ -20,6 +21,12 @@ set(common_SRC
 	FileWrite.cpp FileWrite.h
 	FileRead.cpp FileRead.h
 	FileSystem.cpp FileSystem.h
+	PhysicState.cpp PhysicState.h
+	DuelMatchState.cpp DuelMatchState.h
+	GameLogicState.cpp GameLogicState.h
+	GenericIO.cpp GenericIO.h
+	ReplaySavePoint.cpp ReplaySavePoint.h
+	InputSource.cpp InputSource.h
 	)
 	
 set (blobby_SRC ${common_SRC}
@@ -30,7 +37,6 @@ set (blobby_SRC ${common_SRC}
 	LagDetectionSystem.cpp LagDetectionSystem.h
 	InputDevice.cpp InputDevice.h
 	InputManager.cpp InputManager.h
-	InputSource.cpp InputSource.h
 	LocalInputSource.h
 	Player.cpp Player.h
 	RenderManager.cpp RenderManager.h
@@ -44,6 +50,7 @@ set (blobby_SRC ${common_SRC}
 	ReplayRecorder.cpp ReplayRecorder.h
 	ReplayPlayer.cpp ReplayPlayer.h
 	ReplayLoader.cpp
+	InputSourceFactory.cpp InputSourceFactory.h
 	state/State.cpp state/State.h
 	state/LocalGameState.cpp state/LocalGameState.h
 	state/NetworkState.cpp state/NetworkState.h
@@ -79,7 +86,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 add_executable(blobby ${blobby_SRC})
-target_link_libraries(blobby lua raknet tinyxml ${RAKNET_LIBRARIES} ${PHYSFS_LIBRARY} ${SDL_LIBRARY} ${OPENGL_LIBRARIES})
+target_link_libraries(blobby lua raknet blobnet tinyxml ${RAKNET_LIBRARIES} ${PHYSFS_LIBRARY} ${SDL_LIBRARY} ${OPENGL_LIBRARIES})
 
 if (UNIX)
 	add_executable(blobby-server ${blobby-server_SRC})

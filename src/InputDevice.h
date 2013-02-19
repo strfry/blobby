@@ -82,7 +82,7 @@ class InputDevice : public ObjectCounter<InputDevice>
 		InputDevice() {}
 		virtual ~InputDevice() {}
 
-		virtual void transferInput(PlayerInput& mInput) = 0;
+		virtual PlayerInput transferInput(const InputSource* ips) = 0;
 };
 
 /*! \class MouseInputDevice
@@ -100,7 +100,7 @@ class MouseInputDevice : public InputDevice
 	public:
 		virtual ~MouseInputDevice(){};
 		MouseInputDevice(PlayerSide player, int jumpbutton);
-		void transferInput(PlayerInput& input);
+		virtual PlayerInput transferInput(const InputSource* ips);
 };
 
 /*! \class KeyboardInputDevice
@@ -115,7 +115,7 @@ class KeyboardInputDevice : public InputDevice
 	public:
 		virtual ~KeyboardInputDevice(){};
 		KeyboardInputDevice(SDLKey leftKey, SDLKey rightKey, SDLKey jumpKey);
-		void transferInput(PlayerInput& input);
+		virtual PlayerInput transferInput(const InputSource* ips);
 };
 
 /*! \class JoystickInputDevice
@@ -134,6 +134,6 @@ class JoystickInputDevice : public InputDevice
 		JoystickInputDevice(JoystickAction laction, JoystickAction raction,
 				JoystickAction jaction);
 
-		void transferInput(PlayerInput& input);
+		virtual PlayerInput transferInput(const InputSource* ips);
 };
 

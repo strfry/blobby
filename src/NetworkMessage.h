@@ -44,7 +44,10 @@ enum MessageType
 	ID_VERSION_MISMATCH,
 	ID_CURRENTLY_UNUSED,	// this value is to ensure network protocol compatibility between 0.9c and 1.0
 	ID_REPLAY,
-	ID_CHAT_MESSAGE
+	ID_CHAT_MESSAGE,
+	ID_UPDATE_SCORE,
+	ID_RULES_CHECKSUM,
+	ID_RULES
 };
 
 // General Information:
@@ -130,7 +133,8 @@ enum MessageType
 // 	Structure:
 // 		ID_GAME_READY
 //		gamespeed (int)
-// 		opponentname(char[16])
+// 		opponent name (char[16])
+//		opponent color (int)
 //
 // ID_ENTER_GAME
 // 	Description:
@@ -189,6 +193,39 @@ enum MessageType
 // 		Sent from server to client to transmitt the replay
 // 	Structure:
 // 		ID_REPLAY
+//		size (int)
+//		data
+//
+// ID_UPDATE_SCORE
+// 	Description:
+// 		 Message sent from server to all clients when the score
+// 		 was changed. It includes an informarmation about new score
+// 		 and is used to synchronize the score.
+// 	Structure:
+// 		ID_UPDATE_SCORE
+// 		left score (int)
+// 		right score (int)
+//		time (int)
+//
+// ID_RULES_CHECKSUM
+// 	Description:
+// 		Sent from server to client to tell rules file checksum
+// 		Client should send ID_RULES after receiving ID_RULES_CHECKSUM
+// 			to tell server if he needs rules file transmitting
+// 	Structure:
+// 		ID_RULES_CHECKSUM
+//		checksum (int)
+//
+// ID_RULES
+// 	Description:
+// 		Sent from client to server to request a rules file
+// 		Sent from server to client to transmit the rules file
+// 		Game is starting only after transmitting a rules file
+// 	Structure (from client ro server):
+// 		ID_RULES
+//		needRules (bool)
+// 	Structure (from server ro client):
+// 		ID_RULES
 //		size (int)
 //		data
 //

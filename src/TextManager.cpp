@@ -99,8 +99,8 @@ bool TextManager::loadFromXML(std::string filename){
 	
 	// this loop assumes that the strings in the xml file are in the correct order
 	//  in each step, it reads the next string element and writes it to the next position in mStrings
-	for (	TiXmlElement* stringel = language->FirstChildElement("string"); 
-			stringel; 
+	for (	TiXmlElement* stringel = language->FirstChildElement("string");
+			stringel;
 			stringel = stringel->NextSiblingElement("string"))
 	
 	{
@@ -135,7 +135,7 @@ bool TextManager::loadFromXML(std::string filename){
 	if(num_strings != found_count)
 	{
 		std::cerr << "missing translations: got " << found_count << 
-					" out of " << num_strings << " translation entries" << std::endl; 
+					" out of " << num_strings << " translation entries" << std::endl;
 	}
 	
 	return true;
@@ -194,6 +194,7 @@ void TextManager::setDefault()
 	mStrings[NET_DISCONNECT] = "disconnected from server";
 	mStrings[NET_CON_FAILED] = "connection failed";
 	mStrings[NET_SERVER_FULL] = "server full";
+	mStrings[NET_STAY_ON_SERVER] = "stay on server";
 	
 	mStrings[OP_INPUT_OP] = "input options";
 	mStrings[OP_GFX_OP] = "graphic options";
@@ -245,6 +246,7 @@ void TextManager::setDefault()
 	mStrings[OP_WEAK] = "weak";
 	mStrings[OP_MEDIUM] = "medium";
 	mStrings[OP_STRONG] = "strong";
+	mStrings[OP_RULES] = "rules:";
 	
 	mStrings[UPDATE_NOTIFICATION] = "please visit http://blobby.sourceforge.net/ for a new version of blobby volley";
 }

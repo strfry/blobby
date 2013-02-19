@@ -19,12 +19,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #pragma once
 
-#include "PhysicWorld.h"
+#include <string>
+#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
+
 #include "GameLogic.h"
 #include "Vector.h"
+#include "InputSource.h"
+#include "PlayerIdentity.h"
+
 #include "BlobbyDebug.h"
 
 class InputSource;
+class DuelMatchState;
+class PhysicWorld;
 
 /*! \class DuelMatch
 	\brief class representing a blobby game.
@@ -37,27 +45,18 @@ class InputSource;
 */
 class DuelMatch : public ObjectCounter<DuelMatch>
 {
-	public:
-		// This constructor takes the input sources used to get player input
-		// The parameter output tells DuelMatch if it should report its
-		// results to the user through RenderManager and SoundManager.
-		// A deacivation of the output is useful on dedicated servers
-
-		// If global is true, the instance registered as the main
-		// game and can be accessed from everywhere. There can only
-		// be one global game at a time, otherwise an assertion fails.
-		
+	public:	
 		// If remote is true, only physical responses will be calculated
 		// but hit events and score events are received from network
 
-		DuelMatch(InputSource* linput, InputSource* rinput, bool global, bool remote);
+		DuelMatch(bool remote, std::string rules);
+		
+		void setPlayers( PlayerIdentity lplayer, PlayerIdentity rplayer);
+		void setInputSources(boost::shared_ptr<InputSource> linput, boost::shared_ptr<InputSource> rinput );
 
 		~DuelMatch();
 
-		// Allthough DuelMatch can be instantiated multiple times, a
-		// singleton may be registered for the purpose of scripted or
-		// interactive input. Note this can return 0.
-		static DuelMatch* getMainGame();
+		void setRules(std::string rulesFile);
 		
 		void reset();
 
@@ -67,6 +66,7 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		// this methods allow external input 
 		// events triggered by the network
 		void setScore(int left, int right);
+		void resetBall(PlayerSide side);
 		
 		void trigger(int event);
 		void resetTriggeredEvents();
@@ -83,19 +83,23 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		int getScore(PlayerSide player) const;
 		int getScoreToWin() const;
 		PlayerSide getServingPlayer() const;
+		
+		void setLastHitIntensity(float intensity);
 
 		int getHitcount(PlayerSide player) const;
 
 		Vector2 getBallPosition() const;
 		Vector2 getBallVelocity() const;
 		Vector2 getBlobPosition(PlayerSide player) const;
+		Vector2 getBlobVelocity(PlayerSide player) const;
 		
-		const PhysicWorld& getWorld() const{ return mPhysicWorld; };
+		const PhysicWorld& getWorld() const{ return *mPhysicWorld.get(); };
 		const Clock& getClock() const;
 		Clock& getClock();
 
 		bool getBallDown() const;
 		bool getBallActive() const;
+		bool canStartRound(PlayerSide servingPlayer) const;
 		
 		void pause();
 		void unpause();
@@ -106,43 +110,33 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		// and is jumping at the moment
 		bool getBlobJump(PlayerSide player) const;
 
-		// Set a new state received from server over a RakNet BitStream
-		void setState(RakNet::BitStream* stream);
+		/// Set a new state using a saved DuelMatchState
+		void setState(const DuelMatchState& state);
+	
+		/// gets the current state
+		DuelMatchState getState() const;
 
 		//Input stuff for recording and playing replays
-		const PlayerInput* getPlayersInput() const;
-		void setPlayersInput(const PlayerInput& left, const PlayerInput& right);
-		
+		boost::shared_ptr<InputSource> getInputSource(PlayerSide player) const;
+	
+		PlayerIdentity getPlayer(PlayerSide player) const;
+		PlayerIdentity& getPlayer(PlayerSide player);
+	
 		void setServingPlayer(PlayerSide side);
-		
-		enum 
-		{
-			EVENT_LEFT_BLOBBY_HIT = 1,
-			EVENT_RIGHT_BLOBBY_HIT = 2,
-			EVENT_BALL_HIT_LEFT_GROUND = 4,
-			EVENT_BALL_HIT_RIGHT_GROUND = 8,
-			EVENT_BALL_HIT_GROUND = EVENT_BALL_HIT_LEFT_GROUND | EVENT_BALL_HIT_RIGHT_GROUND,
-			EVENT_ERROR_LEFT = 16,
-			EVENT_ERROR_RIGHT = 32,
-			EVENT_ERROR = EVENT_ERROR_LEFT | EVENT_ERROR_RIGHT,
-			EVENT_RESET = 64
-		};
-		
+	
 		int getEvents() const { return events; }
 
 	private:
-		static DuelMatch* mMainGame;
-		bool mGlobal;
 
-		PhysicWorld mPhysicWorld;
+		boost::scoped_ptr<PhysicWorld> mPhysicWorld;
 
-		InputSource* mLeftInput;
-		InputSource* mRightInput;
+		boost::shared_ptr<InputSource> mInputSources[MAX_PLAYERS];
+		PlayerInput mTransformedInput[MAX_PLAYERS];
+		
+		PlayerIdentity mPlayers[MAX_PLAYERS];		
 
 		GameLogic mLogic;
 
-		bool mBallDown;
-		
 		bool mPaused;
 
 		int events;

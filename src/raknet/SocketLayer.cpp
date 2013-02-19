@@ -46,7 +46,7 @@ typedef int socklen_t;
 #include "AsynchronousFileIO.h"
 #endif
 
-bool SocketLayer::socketLayerStarted = false;
+int SocketLayer::socketLayerInstanceCount = 0;
 
 SocketLayer SocketLayer::I;
 
@@ -88,7 +88,7 @@ void Error(const char* message)
 SocketLayer::SocketLayer()
 {
 	// Check if the socketlayer is already started
-	if (socketLayerStarted == false)
+	if (socketLayerInstanceCount == 0)
 	{
 #ifdef _WIN32
 		WSADATA winsockInfo;
@@ -99,22 +99,24 @@ SocketLayer::SocketLayer()
 			LOG("SocketLayer", "WSAStartup failed")
 		}
 #endif
-		// The socketlayer started
-		socketLayerStarted = true;
 	}
+	
+	// increase usecount
+	socketLayerInstanceCount++;
 }
 
 SocketLayer::~SocketLayer()
 {
-	if (socketLayerStarted == true)
+	if (socketLayerInstanceCount == 1)
 	{
 #ifdef _WIN32
 		// Terminate use of the Winsock DLL
 		WSACleanup();
 #endif
-		// The socketlayer stopped
-		socketLayerStarted = false;
 	}
+	
+	// decrease usecount
+	socketLayerInstanceCount--;
 }
 
 SOCKET SocketLayer::Connect(SOCKET writeSocket, unsigned int binaryAddress, unsigned short port)
@@ -236,7 +238,7 @@ const char* SocketLayer::DomainNameToIP( const char *domainName )
 	return inet_ntoa( addr );
 }
 
-void SocketLayer::Write( SOCKET writeSocket, const char* data, int length )
+int SocketLayer::Write( SOCKET writeSocket, const char* data, int length )
 {
 #ifdef _DEBUG
 	assert( writeSocket != INVALID_SOCKET );
@@ -250,9 +252,11 @@ void SocketLayer::Write( SOCKET writeSocket, const char* data, int length )
 
 	//AsynchronousFileIO::Instance()->PostWriteCompletion(ccs);
 	WriteAsynch( ( HANDLE ) writeSocket, eos );
+
+	return length;
 #else
 
-	send( writeSocket, data, length, 0 );
+	return send( writeSocket, data, length, 0 );
 #endif
 }
 

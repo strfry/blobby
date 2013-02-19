@@ -41,7 +41,7 @@ extern "C"
 #include "FileRead.h"
 
 /* implementation */
-DuelMatch* ScriptedInputSource::mMatch = 0;
+const DuelMatch* ScriptedInputSource::mMatch = 0;
 ScriptedInputSource* ScriptedInputSource::mCurrentSource = 0;
 
 struct pos_x;
@@ -70,7 +70,7 @@ struct ScriptedInputSource::coordinate {
 		template<class U>
 		coordinate(U u);
 		
-		static float convert(float f); 
+		static float convert(float f);
 };
 
 // functions for coodinate transformation
@@ -171,7 +171,7 @@ ScriptedInputSource::ScriptedInputSource(const std::string& filename,
 		except.luaerror = lua_tostring(mState, -1);
 		lua_pop(mState, 1);
 		lua_close(mState);
-		throw except;
+		BOOST_THROW_EXCEPTION(except);
 	}
 	
 	
@@ -195,14 +195,17 @@ ScriptedInputSource::ScriptedInputSource(const std::string& filename,
 		except.luaerror = error_message;
 		lua_pop(mState, 1);
 		lua_close(mState);
-		throw except;
+		BOOST_THROW_EXCEPTION(except);
 	}
 	
 	// record which of the optional functions are available
 	lua_getglobal(mState, "OnBounce");
 	mOnBounce = lua_isfunction(mState, -1);
 	
-	if(!mOnBounce)		std::cerr << "Lua Warning: Missing function OnBounce" << std::endl; 
+	if(!mOnBounce)
+	{
+		std::cerr << "Lua Warning: Missing function OnBounce" << std::endl;
+	}
 	
 	lua_pop(mState, lua_gettop(mState));
 	
@@ -221,16 +224,16 @@ ScriptedInputSource::~ScriptedInputSource()
 	lua_close(mState);
 }
 
-PlayerInput ScriptedInputSource::getInput()
+PlayerInput ScriptedInputSource::getNextInput()
 {
 	bool serving = false;
 	// reset input
-	mLeft = false; 
-	mRight = false; 
+	mLeft = false;
+	mRight = false;
 	mJump = false;
 
 	mCurrentSource = this;
-	mMatch = DuelMatch::getMainGame();
+	mMatch = getMatch();
 	if (mMatch == 0)
 	{
 		return PlayerInput();
@@ -252,8 +255,8 @@ PlayerInput ScriptedInputSource::getInput()
 			mCurDelay++;
 	}
 	
-	if ( mLastBallSpeed != DuelMatch::getMainGame()->getBallVelocity().x ) {
-		mLastBallSpeed = DuelMatch::getMainGame()->getBallVelocity().x;
+	if ( mLastBallSpeed != getMatch()->getBallVelocity().x ) {
+		mLastBallSpeed = getMatch()->getBallVelocity().x;
 		// reaction time after bounce
 		mCurDelay += rand() % (mMaxDelay+1);
 	}

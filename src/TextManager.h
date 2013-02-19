@@ -92,6 +92,7 @@ class TextManager : public ObjectCounter<TextManager>
 			NET_DISCONNECT,
 			NET_CON_FAILED,
 			NET_SERVER_FULL,
+			NET_STAY_ON_SERVER,
 			
 			// options 
 			OP_INPUT_OP,
@@ -144,6 +145,7 @@ class TextManager : public ObjectCounter<TextManager>
 			OP_WEAK,
 			OP_MEDIUM,
 			OP_STRONG,
+			OP_RULES,
 			
 			UPDATE_NOTIFICATION,
 			
