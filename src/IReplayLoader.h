@@ -42,6 +42,12 @@ struct SavepointIndex
 
 	}
 
+	SavepointIndex& operator++()
+	{
+		++index;
+		return *this;
+	}
+
 	bool operator==(SavepointIndex other) const
 	{
 		return index == other.index;

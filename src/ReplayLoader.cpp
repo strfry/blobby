@@ -204,6 +204,7 @@ class ReplayLoader_V2X: public IReplayLoader
 		// 		we can save this parameter in ReplayPlayer
 		virtual SavepointIndex getSavePoint(int targetPosition, int& savepoint) const
 		{
+			static unsigned int cached_last;
 			// desired index can't be lower that this value,
 			// cause additional savepoints could shift it only right
 			unsigned int index = targetPosition / REPLAY_SAVEPOINT_PERIOD;
@@ -211,7 +212,10 @@ class ReplayLoader_V2X: public IReplayLoader
 			if(index >= mSavePointsCount)
 				return SavepointIndex::NO_SAVEPOINT;
 
-			savepoint = mSavePoints[index].step;
+			if(cached_last > index && mSavePoints[cached_last].step <= targetPosition)
+			{
+				index = cached_last;
+			}
 
 			// watch right from initial index,
 			// cause best savepoint could be there.
@@ -235,6 +239,7 @@ class ReplayLoader_V2X: public IReplayLoader
 				savepoint = nextPos;
 			} while (true);
 
+			cached_last = index;
 			return SavepointIndex(index);
 		}
 
