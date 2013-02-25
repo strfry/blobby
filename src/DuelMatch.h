@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Vector.h"
 #include "InputSource.h"
 #include "PlayerIdentity.h"
-
 #include "BlobbyDebug.h"
 
 class InputSource;
