@@ -48,6 +48,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "FileSystem.h"
 #include "PacketLogger.h"
 #include "../BlobbyDebug.h"
+#include "MemoryReport.h"
 
 // platform specific
 #ifndef WIN32
@@ -176,7 +177,7 @@ int main(int argc, char** argv)
 
 	packet_ptr packet;
 	PacketLogger plogger;
-	
+
 	plogger.setHumanReadableType(ID_NEW_INCOMING_CONNECTION, "ID_NEW_INCOMING_CONNECTION");
 	plogger.setHumanReadableType(ID_CONNECTION_LOST, 		 "ID_CONNECTION_LOST");
 	plogger.setHumanReadableType(ID_DISCONNECTION_NOTIFICATION, "ID_DISCONNECTION_NOTIFICATION");
@@ -191,6 +192,12 @@ int main(int argc, char** argv)
 	plogger.setHumanReadableType(ID_RECEIVED_STATIC_DATA, 	"ID_RECEIVED_STATIC_DATA");
 	//plogger.setHumanReadableType("ID_PONG", ID_PONG);
 	//plogger.setHumanReadableType("ID_PONG", ID_PONG);
+
+	MemoryReport DEBUG_initial_memory_consumption = MemoryReport::createReport();
+	{
+		std::fstream f(std::string("logs/startup.txt").c_str(), std::fstream::out );
+		DEBUG_initial_memory_consumption.print(f);
+	}
 
 //	std::fstream packet_log("logs/packets.txt", std::fstream::out);
 //	packet_log << "#time\torigen\tid\tcontent\n";
@@ -426,7 +433,9 @@ int main(int argc, char** argv)
 			f << " physics broadcasts: " << SWLS_PhysicStateBroadcasts << "\n";
 			f << " active games: " << gamelist.size() << "\n";
 			f << " active players: " << playermap.size() << "\n";
-			report(f);
+			MemoryReport rep = MemoryReport::createReport();
+			rep.subtract(DEBUG_initial_memory_consumption);
+			rep.print(f);
 		}
 
 		for (GameList::iterator iter = gamelist.begin(); gamelist.end() != iter; ++iter)
@@ -465,7 +474,6 @@ int main(int argc, char** argv)
 	{
 		std::cout << "AN UNKNOWN EXCEPTION OCCURED\n";
 	}
-	
 }
 
 // -----------------------------------------------------------------------------------------
