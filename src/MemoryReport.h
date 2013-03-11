@@ -9,6 +9,7 @@ class MemoryReport
 		MemoryReport();
 		MemoryReport(const MemoryReport& other);
 		~MemoryReport();
+		MemoryReport& operator=(const MemoryReport& other);
 
 		void subtract(const MemoryReport& other);
 

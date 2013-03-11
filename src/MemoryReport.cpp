@@ -23,6 +23,12 @@ MemoryReport::~MemoryReport()
 
 }
 
+MemoryReport& MemoryReport::operator=(const MemoryReport& other)
+{
+	mImpl->map = other.mImpl->map;
+	return *this;
+}
+
 int MemoryReport::getInstanceCount(const std::type_info& type) const
 {
 	return mImpl->map[type.name()].alive;
