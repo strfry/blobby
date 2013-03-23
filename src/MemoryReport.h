@@ -14,6 +14,7 @@ class MemoryReport
 		void subtract(const MemoryReport& other);
 
 		int getInstanceCount(const std::type_info& type) const;
+		int getInstanceCount(const std::string& type) const;
 		void print(std::ostream& stream) const;
 
 		static MemoryReport createReport();

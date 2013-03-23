@@ -34,6 +34,12 @@ int MemoryReport::getInstanceCount(const std::type_info& type) const
 	return mImpl->map[type.name()].alive;
 }
 
+int MemoryReport::getInstanceCount(const std::string& type) const
+{
+	return mImpl->map[type].alive;
+}
+
+
 void MemoryReport::subtract(const MemoryReport& other)
 {
 	for(std::map<std::string, CountingReport>::iterator i = mImpl->map.begin(), j = other.mImpl->map.begin(); i != mImpl->map.end() && j != other.mImpl->map.end(); ++i, ++j)
