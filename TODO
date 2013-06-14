@@ -31,3 +31,10 @@ data:
 REQUIREMENTS FOR 1.0 RELEASE:
  fully functional online replays with versioning support and possibility to extend capabilities in the future
  
+ 
+lag compensation:
+- record local input and apply for un-lagging
+- check for other code parts which have to do un-lagging
+- review mouse input lag hack
+- remove old lag system
+- many tests, check that no undesired side effects happen!

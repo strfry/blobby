@@ -43,11 +43,11 @@ public:
 	/// \param servername Name of server
 	/// \param port Target port
 	NetworkGameState(const std::string& servername, Uint16 port);
-	
+
 	virtual ~NetworkGameState();
 	virtual void step();
 	virtual const char* getStateName() const;
-	
+
 private:
 	enum
 	{
@@ -65,15 +65,15 @@ private:
 	// server info
 	std::string mServerAddress;
 	uint16_t mPort;
-	
+
 	// these are pointers to mLeftPlayer or mRightPlayer respectively, so we don't need a smart pointer here
 	PlayerIdentity* mLocalPlayer;
 	PlayerIdentity* mRemotePlayer;
-	
+
 	bool mUseRemoteColor;
 
 	boost::scoped_ptr<InputSource> mLocalInput;
-	
+
 	bool mSaveReplay;
 	bool mWaitingForReplay;
 	std::string mFilename;
@@ -85,6 +85,7 @@ private:
 
 	boost::scoped_ptr<DuelMatch> mFakeMatch; 	// This hack is necessary to let MouseInputDevice
 												// access the necessary game variables
+	unsigned int mGameStepsCounter;
 
 	// Chat Vars
 	std::vector<std::string> mChatlog;

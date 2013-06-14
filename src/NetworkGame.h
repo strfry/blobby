@@ -49,7 +49,7 @@ class NetworkGame : public ObjectCounter<NetworkGame>
 		NetworkGame(RakServer& server,
 				PlayerID leftPlayer, PlayerID rightPlayer,
 				std::string leftPlayerName, std::string rightPlayerName,
-				Color leftColor, Color rightColor, 
+				Color leftColor, Color rightColor,
 				PlayerSide switchedSide,
 				std::string rules);
 
@@ -79,6 +79,8 @@ class NetworkGame : public ObjectCounter<NetworkGame>
 		DuelMatch* mMatch;
 		boost::shared_ptr<InputSource> mLeftInput;
 		boost::shared_ptr<InputSource> mRightInput;
+		unsigned int mLeftLastStep;
+		unsigned int mRightLastStep;
 		PlayerSide mWinningPlayer;
 
 		boost::scoped_ptr<ReplayRecorder> mRecorder;

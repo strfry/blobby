@@ -62,7 +62,7 @@ NetworkGame::NetworkGame(RakServer& server,
 	mLeftPlayer = leftPlayer;
 	mRightPlayer = rightPlayer;
 	mSwitchedSide = switchedSide;
-	
+
 	mWinningPlayer = NO_PLAYER;
 
 	mPausing = false;
@@ -83,12 +83,12 @@ NetworkGame::NetworkGame(RakServer& server,
 		checksum = file.calcChecksum(0);
 		mRulesLength = file.length();
 		mRulesString = file.readRawBytes(mRulesLength);
-	} 
+	}
 	 catch (FileLoadException& ex)
 	{
-		std::cerr << "could not sent rules file to client: " << ex.what() << "\n"; 
+		std::cerr << "could not sent rules file to client: " << ex.what() << "\n";
 	}
-	
+
 	// writing rules checksum
 	RakNet::BitStream stream;
 	stream.Write((unsigned char)ID_RULES_CHECKSUM);
@@ -172,14 +172,13 @@ bool NetworkGame::step()
 			case ID_INPUT_UPDATE:
 			{
 				PlayerInput newInput;
-				int ival;
+				int stepcount;
 				RakNet::BitStream stream((char*)packet->data,
 						packet->length, false);
 
-				// ignore ID_INPUT_UPDATE and ID_TIMESTAMP
+				// ignore ID_INPUT_UPDATE
 				stream.IgnoreBytes(1);
-				stream.IgnoreBytes(1);
-				stream.Read(ival);
+				stream.Read(stepcount);
 				stream.Read(newInput.left);
 				stream.Read(newInput.right);
 				stream.Read(newInput.up);
@@ -189,12 +188,14 @@ bool NetworkGame::step()
 					if (mSwitchedSide == LEFT_PLAYER)
 						newInput.swap();
 					mLeftInput->setInput(newInput);
+					mLeftLastStep = stepcount;
 				}
-				if (packet->playerId == mRightPlayer)
+				 else if (packet->playerId == mRightPlayer)
 				{
 					if (mSwitchedSide == RIGHT_PLAYER)
 						newInput.swap();
 					mRightInput->setInput(newInput);
+					mRightLastStep = stepcount;
 				}
 				break;
 			}
@@ -260,7 +261,7 @@ bool NetworkGame::step()
 				bool needRules;
 				stream->Read(needRules);
 				mRulesSent[mLeftPlayer == packet->playerId ? LEFT_PLAYER : RIGHT_PLAYER] = true;
-				
+
 				if (needRules)
 				{
 					stream = boost::make_shared<RakNet::BitStream>();
@@ -268,15 +269,15 @@ bool NetworkGame::step()
 					stream->Write(mRulesLength);
 					stream->Write(mRulesString.get(), mRulesLength);
 					assert( stream->GetData()[0] == ID_RULES );
-					
+
 					mServer.Send(stream.get(), HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->playerId, false);
 				}
-				
+
 				if (isGameStarted())
 				{
 					// buffer for playernames
 					char name[16];
-					
+
 					// writing data into leftStream
 					RakNet::BitStream leftStream;
 					leftStream.Write((unsigned char)ID_GAME_READY);
@@ -284,7 +285,7 @@ bool NetworkGame::step()
 					strncpy(name, mMatch->getPlayer(LEFT_PLAYER).getName().c_str(), sizeof(name));
 					leftStream.Write(name, sizeof(name));
 					leftStream.Write(mMatch->getPlayer(RIGHT_PLAYER).getStaticColor().toInt());
-					
+
 					// writing data into rightStream
 					RakNet::BitStream rightStream;
 					rightStream.Write((unsigned char)ID_GAME_READY);
@@ -292,23 +293,23 @@ bool NetworkGame::step()
 					strncpy(name, mMatch->getPlayer(LEFT_PLAYER).getName().c_str(), sizeof(name));
 					rightStream.Write(name, sizeof(name));
 					rightStream.Write(mMatch->getPlayer(LEFT_PLAYER).getStaticColor().toInt());
-					
+
 					mServer.Send(&leftStream, HIGH_PRIORITY, RELIABLE_ORDERED, 0,
 						     mLeftPlayer, false);
 					mServer.Send(&rightStream, HIGH_PRIORITY, RELIABLE_ORDERED, 0,
 						     mRightPlayer, false);
 				}
-				
+
 				break;
 			}
-			
+
 			default:
 				printf("unknown packet %d received\n",
 					int(packet->data[0]));
 				break;
 		}
 	}
-	
+
 	if (!isGameStarted())
 		return active;
 
@@ -448,15 +449,14 @@ void NetworkGame::broadcastPhysicState()
 {
 	RakNet::BitStream stream;
 	stream.Write((unsigned char)ID_PHYSIC_UPDATE);
-	stream.Write((unsigned char)ID_TIMESTAMP);
-	stream.Write(RakNet::GetTime());
+	stream.Write( mLeftLastStep );
 	DuelMatchState ms = mMatch->getState();
 
 	boost::shared_ptr<GenericOut> out = createGenericWriter( &stream );
 
 	if (mSwitchedSide == LEFT_PLAYER)
 		ms.swapSides();
-	
+
 	out->generic<DuelMatchState> (ms);
 
 	mServer.Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0,
@@ -466,11 +466,10 @@ void NetworkGame::broadcastPhysicState()
 	ms = mMatch->getState();
 	stream.Reset();
 	stream.Write((unsigned char)ID_PHYSIC_UPDATE);
-	stream.Write((unsigned char)ID_TIMESTAMP);
-	stream.Write(RakNet::GetTime());
+	stream.Write( mRightLastStep );
 
 	out = createGenericWriter( &stream );
-	
+
 	if (mSwitchedSide == RIGHT_PLAYER)
 		ms.swapSides();
 

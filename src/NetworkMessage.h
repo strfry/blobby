@@ -63,7 +63,6 @@ enum MessageType
 // 		It contains the current input state as three booleans.
 // 	Structure:
 // 		ID_INPUT_UPDATE
-// 		ID_TIMESTAMP
 // 		timestamp (int)
 // 		left keypress (bool)
 // 		right keypress (bool)
@@ -76,7 +75,6 @@ enum MessageType
 // 		be overwritten.
 // 	Structure:
 // 		ID_PHYSIC_UPDATE
-// 		ID_TIMESTAMP
 // 		timestamp (int)
 //		packet_number (unsigned char)
 // 		Physic data (analysed by PhysicWorld)
@@ -239,9 +237,9 @@ struct ServerInfo : public ObjectCounter<ServerInfo>
 	ServerInfo(const std::string& playername);
 
 	void writeToBitstream(RakNet::BitStream& stream);
-	
+
 	void setWaitingPlayer(const std::string& name);
-	
+
 	/// \todo maybe we should define ServerInfo a little bit more
 	///			as e.g., hostname can be left uninitialised on server
 	/// we combine to functionsalities here: server information and server addresses.
@@ -252,7 +250,7 @@ struct ServerInfo : public ObjectCounter<ServerInfo>
 	char name[32];
 	char waitingplayer[64];
 	char description[192];
-	
+
 	static const size_t BLOBBY_SERVER_PRESENT_PACKET_SIZE;
 };
 
