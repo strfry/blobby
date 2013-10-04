@@ -61,12 +61,13 @@ PlayerInput MouseInputDevice::transferInput(const InputSource* source)
 	PlayerInput input = PlayerInput();
 	
 	int mMouseXPos;
-	bool warp = SDL_GetAppState() & SDL_APPINPUTFOCUS;
+	bool warp = true; //SDL_GetAppState() & SDL_APPINPUTFOCUS;
 	int mouseState = SDL_GetMouseState(&mMouseXPos, NULL);
 
+	/*
 	if (warp)
 		SDL_WarpMouse(mMouseXPos, 310);
-	
+	*/
 	if (mouseState == 0)
 		mDelay = false;
 
@@ -75,12 +76,15 @@ PlayerInput MouseInputDevice::transferInput(const InputSource* source)
 
 	const int playerOffset = mPlayer == RIGHT_PLAYER ? 200 : -200;
 	mMouseXPos = mMouseXPos < 201 ? 201 : mMouseXPos;
+
+	/*
 	if (mMouseXPos <= 201 && warp)
 		SDL_WarpMouse(201, 310);
 
 	mMouseXPos = mMouseXPos > 600 ? 600 : mMouseXPos;
 	if (mMouseXPos >= 600 && warp)
 		SDL_WarpMouse(600, 310);
+	*/
 		
 	// here we load the current position of the player.
 	float blobpos = match->getBlobPosition(mPlayer).x;
@@ -125,6 +129,7 @@ PlayerInput MouseInputDevice::transferInput(const InputSource* source)
 // 		KEYBOARD INPUT
 // -------------------------------------------------------------------------------------------------
 
+/*
 KeyboardInputDevice::KeyboardInputDevice(SDLKey leftKey, SDLKey rightKey, SDLKey jumpKey)
 	: InputDevice()
 {
@@ -135,9 +140,10 @@ KeyboardInputDevice::KeyboardInputDevice(SDLKey leftKey, SDLKey rightKey, SDLKey
 
 PlayerInput KeyboardInputDevice::transferInput(const InputSource* input)
 {
-	Uint8* keyState = SDL_GetKeyState(0);	
+	Uint8* keyState = SDL_GetKeyboardState(0);	
 	return PlayerInput(keyState[mLeftKey], keyState[mRightKey], keyState[mJumpKey]);
 }
+*/
 
 // -------------------------------------------------------------------------------------------------
 // 		JOYSTICK INPUT

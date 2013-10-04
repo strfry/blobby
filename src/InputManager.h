@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #pragma once
 
-#include <SDL/SDL.h>
+#include <SDL2/SDL.h>
 
 #include "InputSource.h"
 #include "InputDevice.h"
@@ -29,11 +29,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 /*! \class InputKeyMap
 	\brief mapping of keynames to SDLKey s
 */
+
+/*
 struct InputKeyMap
 {
 	const char *keyname;
 	SDLKey key;
 };
+*/
 
 /// \brief class for managing input
 class InputManager : public ObjectCounter<InputManager>
@@ -70,14 +73,14 @@ class InputManager : public ObjectCounter<InputManager>
 		bool unclick() const;
 		
 		// config conversion methods
-		std::string keyToString(const SDL_keysym& key) const;
-		SDLKey stringToKey(const std::string& keyname) const;
+		//std::string keyToString(const SDL_keysym& key) const;
+		//SDLKey stringToKey(const std::string& keyname) const;
 	
 	private:
 		static InputManager* mSingleton;
 		
 		// Keyboard
-		static InputKeyMap mKeyMap[];	// Type for String <-convert-> SDLKey
+		//static InputKeyMap mKeyMap[];	// Type for String <-convert-> SDLKey
 
 		// GUI storage (because we need event based input for the GUI)
 		bool mUp;
@@ -96,7 +99,7 @@ class InputManager : public ObjectCounter<InputManager>
 		int mMouseY;
 		int mLastClickTime;
 		
-		SDL_keysym mLastInputKey;
+		//SDL_keysym mLastInputKey;
 		int mLastMouseButton; 
 		std::string mLastJoyAction;
 

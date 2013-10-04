@@ -71,11 +71,14 @@ find_package(PhysFS REQUIRED)
 find_package(SDL REQUIRED)
 find_package(OpenGL)
 
+
+INCLUDE(FindPkgConfig)
+PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)
+
 include_directories(
 	${Boost_INCLUDE_DIR} ${PHYSFS_INCLUDE_DIR}
-	${SDL_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR}
+	${OPENGL_INCLUDE_DIR} ${SDL2_INCLUDE_DIRS}
 )
-
 if (OPENGL_FOUND)
 	add_definitions(-DHAVE_LIBGL)
 endif (OPENGL_FOUND)
@@ -87,12 +90,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 add_executable(blobby ${blobby_SRC})
-target_link_libraries(blobby lua raknet blobnet tinyxml ${RAKNET_LIBRARIES} ${PHYSFS_LIBRARY} ${SDL_LIBRARY} ${OPENGL_LIBRARIES})
-
-if (UNIX)
-	add_executable(blobby-server ${blobby-server_SRC})
-	target_link_libraries(blobby-server lua raknet tinyxml ${RAKNET_LIBRARIES} ${PHYSFS_LIBRARY} ${SDL_LIBRARY})
-endif (UNIX)
+target_link_libraries(blobby lua raknet blobnet tinyxml ${RAKNET_LIBRARIES} ${PHYSFS_LIBRARY} ${OPENGL_LIBRARIES}  ${SDL_LIBRARY} ${SDL2_LIBRARIES})
 
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
 	set_target_properties(blobby PROPERTIES LINK_FLAGS "-mwindows") # disable the console window
@@ -101,5 +99,5 @@ endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 if (WIN32)
 	install(TARGETS blobby DESTINATION .)
 elseif (UNIX)
-	install(TARGETS blobby blobby-server DESTINATION bin)
+	install(TARGETS blobby DESTINATION bin)
 endif (WIN32)

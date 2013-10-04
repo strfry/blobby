@@ -122,6 +122,7 @@ void setupPHYSFS()
 		#endif
 	#endif
 }
+
 #undef main
 extern "C"
 int main(int argc, char* argv[])
@@ -130,7 +131,6 @@ int main(int argc, char* argv[])
 	setupPHYSFS();
 
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK);
-	SDL_EnableUNICODE(1);
 	atexit(SDL_Quit);
 	srand(SDL_GetTicks());
 	// Default is OpenGL and false

@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #pragma once
 
 #include <map>
-#include <SDL/SDL_events.h>
+#include <SDL2/SDL_events.h>
 #include "Global.h"
 #include "InputSource.h"
 #include <boost/circular_buffer.hpp>
@@ -106,6 +106,7 @@ class MouseInputDevice : public InputDevice
 /*! \class KeyboardInputDevice
 	\brief Ingame keyboard input
 */
+/*
 class KeyboardInputDevice : public InputDevice
 {
 	private:
@@ -117,6 +118,7 @@ class KeyboardInputDevice : public InputDevice
 		KeyboardInputDevice(SDLKey leftKey, SDLKey rightKey, SDLKey jumpKey);
 		virtual PlayerInput transferInput(const InputSource* ips);
 };
+*/
 
 /*! \class JoystickInputDevice
 	\brief Ingame Joystick input

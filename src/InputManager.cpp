@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <cassert>
 #include <iostream>
 
-#include <SDL/SDL.h>
+#include <SDL2/SDL.h>
 
 #include "UserConfig.h"
 #include "IMGUI.h"
@@ -48,7 +48,7 @@ InputManager::InputManager()
 	mRunning = true;
 
 	/// \todo init properly?
-	mLastInputKey.sym = SDLK_UNKNOWN;
+//	mLastInputKey.sym = SDLK_UNKNOWN;
 	mLastClickTime = 0;
 }
 
@@ -60,7 +60,7 @@ InputManager::~InputManager()
 InputDevice* InputManager::beginGame(PlayerSide side) const
 {
 	// Move Mouse to default position
-	SDL_WarpMouse(400, 300);
+//	SDL_WarpMouse(400, 300);
 
 	std::string prefix;
 	if (side == LEFT_PLAYER)
@@ -82,13 +82,14 @@ InputDevice* InputManager::beginGame(PlayerSide side) const
 		return new MouseInputDevice(side, jumpbutton);
 	}
 	// load config for keyboard
+/*
 	else if (device == "keyboard")
 	{
 		SDLKey lkey = stringToKey(config.getString(prefix + "keyboard_left"));
 		SDLKey rkey = stringToKey(config.getString(prefix + "keyboard_right"));
 		SDLKey jkey = stringToKey(config.getString(prefix + "keyboard_jump"));
 		return new KeyboardInputDevice(lkey, rkey, jkey);
-	}
+	}*/
 	// load config for joystick
 	else if (device == "joystick")
 	{
@@ -129,7 +130,7 @@ void InputManager::updateInput()
 	mUnclick = false;
 	mLastMouseButton = -1;
 	/// \todo init properly
-	mLastInputKey.sym = SDLK_UNKNOWN;
+//	mLastInputKey.sym = SDLK_UNKNOWN;
 	mLastJoyAction = "";
 	// Init GUI Events for buffered Input
 
@@ -147,7 +148,7 @@ void InputManager::updateInput()
 				break;
 				
 			case SDL_KEYDOWN:
-				mLastInputKey = event.key.keysym;
+				//mLastInputKey = event.key.keysym;
 				switch (event.key.keysym.sym)
 				{
 					case SDLK_UP:
@@ -194,7 +195,7 @@ void InputManager::updateInput()
 						
 						mLastClickTime = SDL_GetTicks();
 						break;
-						
+				/*		
 					case SDL_BUTTON_WHEELUP:
 						mMouseWheelUp = true;
 						break;
@@ -202,7 +203,7 @@ void InputManager::updateInput()
 					case SDL_BUTTON_WHEELDOWN:
 						mMouseWheelDown = true;
 						break;
-						
+				*/		
 				}
 				break;
 				
@@ -329,7 +330,7 @@ bool InputManager::running() const
 }
 
 // declaration of the keymap
-InputKeyMap InputManager::mKeyMap[] = {
+/*InputKeyMap InputManager::mKeyMap[] = {
 	{ "",SDLK_UNKNOWN },
 	{ "",SDLK_FIRST },
 	{ "backspace",SDLK_BACKSPACE },
@@ -374,7 +375,7 @@ InputKeyMap InputManager::mKeyMap[] = {
 	/* 
 	   Skip uppercase letters
 	 */
-	{ "[",SDLK_LEFTBRACKET },
+	/*{ "[",SDLK_LEFTBRACKET },
 	{ "backslash",SDLK_BACKSLASH },
 	{ "]",SDLK_RIGHTBRACKET },
 	{ "^",SDLK_CARET },
@@ -410,7 +411,7 @@ InputKeyMap InputManager::mKeyMap[] = {
 	/* End of ASCII mapped keysyms */
 
 	/* International keyboard syms */
-	{ "world0",SDLK_WORLD_0 },
+	/*{ "world0",SDLK_WORLD_0 },
 	{ "world1",SDLK_WORLD_1 },
 	{ "world2",SDLK_WORLD_2 },
 	{ "world3",SDLK_WORLD_3 },
@@ -508,7 +509,7 @@ InputKeyMap InputManager::mKeyMap[] = {
 	{ "world95",SDLK_WORLD_95 },
 
 	/* Numeric keypad */
-	{ "keypad0",SDLK_KP0 },
+	/*{ "keypad0",SDLK_KP0 },
 	{ "keypad1",SDLK_KP1 },
 	{ "keypad2",SDLK_KP2 },
 	{ "keypad3",SDLK_KP3 },
@@ -527,7 +528,7 @@ InputKeyMap InputManager::mKeyMap[] = {
 	{ "keypad",SDLK_KP_EQUALS },
 
 	/* Arrows + Home/End pad */
-	{ "up",SDLK_UP },
+	/*{ "up",SDLK_UP },
 	{ "down",SDLK_DOWN },
 	{ "right",SDLK_RIGHT },
 	{ "left",SDLK_LEFT },
@@ -538,7 +539,7 @@ InputKeyMap InputManager::mKeyMap[] = {
 	{ "pagedown",SDLK_PAGEDOWN },
 
 	/* Function keys */
-	{ "f1",SDLK_F1 },
+	/*{ "f1",SDLK_F1 },
 	{ "f2",SDLK_F2 },
 	{ "f3",SDLK_F3 },
 	{ "f4",SDLK_F4 },
@@ -555,7 +556,7 @@ InputKeyMap InputManager::mKeyMap[] = {
 	{ "f15",SDLK_F15 },
 
 	/* Key state modifier keys */
-	{ "numlock",SDLK_NUMLOCK },
+	/*{ "numlock",SDLK_NUMLOCK },
 	{ "capslock",SDLK_CAPSLOCK },
 	{ "scrollock",SDLK_SCROLLOCK },
 	{ "rightshift",SDLK_RSHIFT },
@@ -569,21 +570,21 @@ InputKeyMap InputManager::mKeyMap[] = {
 	{ "leftwin",SDLK_LSUPER },
 	{ "rightwin",SDLK_RSUPER },
 	{ "mode",SDLK_MODE },		/* "Alt Gr" key */
-	{ "compose",SDLK_COMPOSE },	/* Multi-key compose key */
+	/*{ "compose",SDLK_COMPOSE },	/* Multi-key compose key */
 
 	/* Miscellaneous function keys */
-	{ "help",SDLK_HELP },
+	/*{ "help",SDLK_HELP },
 	{ "print",SDLK_PRINT },
 	{ "sysreq",SDLK_SYSREQ },
 	{ "break",SDLK_BREAK },
 	{ "menu",SDLK_MENU },
 	{ "power",SDLK_POWER },	/* Power Macintosh power key */
-	{ "euro",SDLK_EURO },		/* Some european keyboards */
-	{ "undo",SDLK_UNDO },		/* Atari keyboard has Undo */
-	{NULL}			// end of the keymap
-};
+	/*{ "euro",SDLK_EURO },		/* Some european keyboards */
+	/*{ "undo",SDLK_UNDO },		/* Atari keyboard has Undo */
+	/*{NULL}			// end of the keymap
+};*/
 
-
+/*
 std::string InputManager::keyToString (const SDL_keysym& key) const
 {
 	// use direct unicode translation when we did not
@@ -639,7 +640,8 @@ std::string InputManager::keyToString (const SDL_keysym& key) const
 	}
 	return "";
 }
-
+*/
+/*
 SDLKey InputManager::stringToKey (const std::string& keyname) const
 {
 	int i = 0;
@@ -652,19 +654,19 @@ SDLKey InputManager::stringToKey (const std::string& keyname) const
 	}
 	return SDLK_UNKNOWN; // stringinformation = ""
 }
-
+*/
 std::string InputManager::getLastTextKey()
-{
+{/*
 	if (mLastInputKey.sym != SDLK_UNKNOWN)
 		return keyToString(mLastInputKey);
-	else 
+	else */
 		return "";
 }
 
 std::string InputManager::getLastActionKey()
 {
 	/// \todo this is a hack we cannot prevent until SDL 1.3 is out
-	int i = 0;
+	/*int i = 0;
 	while (mKeyMap[i].keyname != NULL)
 	{
 		if (mKeyMap[i].key == mLastInputKey.sym)
@@ -672,7 +674,7 @@ std::string InputManager::getLastActionKey()
 			return mKeyMap[i].keyname;
 		}
 		++i;
-	}
+	}*/
 	return "";
 }
 
