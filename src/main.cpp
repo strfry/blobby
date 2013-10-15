@@ -255,7 +255,7 @@ int main(int argc, char* argv[])
 			{
 				rmanager->draw();
 				IMGUI::getSingleton().end();
-				//BloodManager::getSingleton().step();
+				BloodManager::getSingleton().step();
 				rmanager->refresh();
 			}
 			scontroller.update();
