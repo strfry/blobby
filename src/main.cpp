@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <sstream>
 #include <iostream>
 
-#include <SDL/SDL.h>
+#include <SDL2/SDL.h>
 
 #include "config.h"
 
@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
 		gameConfig.loadFile("config.xml");
 
 		TextManager::createTextManager(gameConfig.getString("language"));
-
+/*
 		if(gameConfig.getString("device") == "SDL")
 			rmanager = RenderManager::createRenderManagerSDL();
 		else if (gameConfig.getString("device") == "GP2X")
@@ -185,7 +185,8 @@ int main(int argc, char* argv[])
 			std::cerr << "Falling back to OpenGL" << std::endl;
 			rmanager = RenderManager::createRenderManagerGL2D();
 		}
-
+*/
+			rmanager = RenderManager::createRenderManagerSDL();
 		// fullscreen?
 		if(gameConfig.getString("fullscreen") == "true")
 			rmanager->init(800, 600, true);
@@ -254,7 +255,7 @@ int main(int argc, char* argv[])
 			{
 				rmanager->draw();
 				IMGUI::getSingleton().end();
-				BloodManager::getSingleton().step();
+				//BloodManager::getSingleton().step();
 				rmanager->refresh();
 			}
 			scontroller.update();

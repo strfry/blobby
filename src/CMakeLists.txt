@@ -41,8 +41,8 @@ set (blobby_SRC ${common_SRC}
 	InputManager.cpp InputManager.h
 	LocalInputSource.cpp LocalInputSource.h
 	RenderManager.cpp RenderManager.h
-	RenderManagerGL2D.cpp RenderManagerGL2D.h
-	RenderManagerGP2X.cpp RenderManagerGP2X.h
+#	RenderManagerGL2D.cpp RenderManagerGL2D.h
+#	RenderManagerGP2X.cpp RenderManagerGP2X.h
 	RenderManagerSDL.cpp RenderManagerSDL.h
 	ScriptedInputSource.cpp ScriptedInputSource.h	
 	BotAPICalculations.cpp BotAPICalculations.h
@@ -77,7 +77,7 @@ PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)
 
 include_directories(
 	${Boost_INCLUDE_DIR} ${PHYSFS_INCLUDE_DIR}
-	${OPENGL_INCLUDE_DIR} ${SDL2_INCLUDE_DIRS}
+	${OPENGL_INCLUDE_DIR} ${SDL2_INCLUDE_DIRS} 
 )
 if (OPENGL_FOUND)
 	add_definitions(-DHAVE_LIBGL)
@@ -90,7 +90,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 add_executable(blobby ${blobby_SRC})
-target_link_libraries(blobby lua raknet blobnet tinyxml ${RAKNET_LIBRARIES} ${PHYSFS_LIBRARY} ${OPENGL_LIBRARIES}  ${SDL_LIBRARY} ${SDL2_LIBRARIES})
+target_link_libraries(blobby lua raknet blobnet tinyxml ${RAKNET_LIBRARIES} ${PHYSFS_LIBRARY} ${OPENGL_LIBRARIES} ${SDL2_LIBRARIES})
 
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
 	set_target_properties(blobby PROPERTIES LINK_FLAGS "-mwindows") # disable the console window

@@ -202,7 +202,7 @@ void GraphicOptionsState::save()
 		mOptionConfig.setBool("fullscreen", mFullscreen);
 		mOptionConfig.setString("device", mRenderer);
 		if (mRenderer == "OpenGL")
-			RenderManager::createRenderManagerGL2D()->init(800, 600, mFullscreen);
+			;//RenderManager::createRenderManagerGL2D()->init(800, 600, mFullscreen);
 		else
 			RenderManager::createRenderManagerSDL()->init(800, 600, mFullscreen);
 		RenderManager::getSingleton().setBackground(

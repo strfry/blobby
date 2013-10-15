@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #pragma once
 
-#include <SDL/SDL.h>
+#include <SDL2/SDL.h>
 #include <vector>
 
 #include "RenderManager.h"
@@ -62,42 +62,44 @@ class RenderManagerSDL : public RenderManager
 		virtual void drawParticle(const Vector2& pos, int player);
 
 	private:
-		struct DynamicColoredSurface
+		struct DynamicColoredTexture
 		{
 			// constructors
 			// start surface is expected to have color 0xffffff
-			DynamicColoredSurface() : mSDLsf(0), mColor(255, 255, 255) {};
-			explicit DynamicColoredSurface(SDL_Surface* sf) : mSDLsf(sf), mColor(255, 255, 255) {};
+			DynamicColoredTexture() : mSDLsf(0), mColor(255, 255, 255) {};
+			explicit DynamicColoredTexture(SDL_Texture* sf) : mSDLsf(sf), mColor(255, 255, 255) {};
 			
-			DynamicColoredSurface(SDL_Surface* sf, Color c) : mSDLsf(sf), mColor(c) {};
+			DynamicColoredTexture(SDL_Texture* sf, Color c) : mSDLsf(sf), mColor(c) {};
 			
-			SDL_Surface* mSDLsf;
+			SDL_Texture* mSDLsf;
 			Color mColor;
 		};
 		
 		
-		SDL_Surface* mBackground;
-		SDL_Surface* mBallShadow;
+		SDL_Texture* mBackground;
+		SDL_Texture* mBallShadow;
+		SDL_Texture* mMarker[2];
 		SDL_Surface* mScroll;
 		
-		std::vector<SDL_Surface*> mBall;
+		std::vector<SDL_Texture*> mBall;
 		std::vector<SDL_Surface*> mStandardBlob;
 		std::vector<SDL_Surface*> mStandardBlobShadow;
 		SDL_Surface*			  mStandardBlobBlood;
-		std::vector<DynamicColoredSurface> mLeftBlob;
-		std::vector<DynamicColoredSurface> mLeftBlobShadow;
+		std::vector<DynamicColoredTexture> mLeftBlob;
+		std::vector<DynamicColoredTexture> mLeftBlobShadow;
 		SDL_Surface*			  mLeftBlobBlood;
-		std::vector<DynamicColoredSurface> mRightBlob;
-		std::vector<DynamicColoredSurface> mRightBlobShadow;
+
+		std::vector<DynamicColoredTexture> mRightBlob;
+		std::vector<DynamicColoredTexture> mRightBlobShadow;
 		SDL_Surface*			  mRightBlobBlood;
 
-		std::vector<SDL_Surface*> mFont;
-		std::vector<SDL_Surface*> mHighlightFont;
-		std::vector<SDL_Surface*> mSmallFont;
-		std::vector<SDL_Surface*> mHighlightSmallFont;
+		std::vector<SDL_Texture*> mFont;
+		std::vector<SDL_Texture*> mHighlightFont;
 		
-		SDL_Surface *mOverlaySurface;
+		SDL_Texture *mOverlayTexture;
 		SDL_Surface *mScreen;
+
+		SDL_Renderer* mRenderer;
 
 		Vector2 mBallPosition;
 		float mBallRotation;
@@ -115,8 +117,6 @@ class RenderManagerSDL : public RenderManager
 
 		std::string mLeftPlayerName;
 		std::string mRightPlayerName;
-		SDL_Surface* mLeftPlayerNameTexture;
-		SDL_Surface* mRightPlayerNameTexture;
 		
 		std::string mTime;
 		
@@ -125,7 +125,7 @@ class RenderManagerSDL : public RenderManager
 
 		// colors a surface
 		// the returned SDL_Surface* is already converted into DisplayFormat
-		DynamicColoredSurface colorSurface(SDL_Surface *surface, Color color);
+		SDL_Surface* colorSurface(SDL_Surface *surface, Color color);
 		
 		void drawTextImpl(const std::string& text, Vector2 position, unsigned int flags, SDL_Surface* screen);
 		void colorizeBlobs(int player);
