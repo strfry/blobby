@@ -31,7 +31,7 @@ SDL_Surface* RenderManagerSDL::colorSurface(SDL_Surface *surface, Color color)
 	SDL_Surface *newSurface = SDL_CreateRGBSurface(
 			0,
 			surface->w, surface->h, 32,
-			0x00FF0000, 0x0000FF00, 
+			0x00FF0000, 0x0000FF00,
 			0x000000FF, 0xFF000000);
 
 	// Copy old image to new surface
@@ -126,16 +126,16 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 	SDL_Surface* tmpSurface;
 
 	// Create a 1x1 black surface which will be scaled to draw an overlay
-	tmpSurface = SDL_CreateRGBSurface(0, 1, 1, 32, 
-		0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+	tmpSurface = SDL_CreateRGBSurface(0, 1, 1, 32,
+			0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 	SDL_FillRect(tmpSurface, NULL, SDL_MapRGB(tmpSurface->format, 0, 0, 0));
 
 	mOverlayTexture = SDL_CreateTextureFromSurface(mRenderer, tmpSurface);
 	SDL_FreeSurface(tmpSurface);
 
 	// Create marker texture for mouse and ball
-	tmpSurface = SDL_CreateRGBSurface(0, 5, 5, 32, 
-		0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+	tmpSurface = SDL_CreateRGBSurface(0, 5, 5, 32,
+			0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 	SDL_FillRect(tmpSurface, NULL, SDL_MapRGB(tmpSurface->format, 255, 255, 255));
 	mMarker[0] = SDL_CreateTextureFromSurface(mRenderer, tmpSurface);
 	SDL_FillRect(tmpSurface, NULL, SDL_MapRGB(tmpSurface->format, 0, 0, 0));
@@ -159,7 +159,7 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 		sprintf(filename, "gfx/ball%02d.bmp", i);
 		tmpSurface = loadSurface(filename);
 		SDL_SetColorKey(tmpSurface, SDL_TRUE,
-			SDL_MapRGB(tmpSurface->format, 0, 0, 0));
+				SDL_MapRGB(tmpSurface->format, 0, 0, 0));
 
 		SDL_Texture *ballTexture = SDL_CreateTextureFromSurface(mRenderer, tmpSurface);
 		SDL_FreeSurface(tmpSurface);
@@ -169,7 +169,7 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 	// Load ball shadow
 	tmpSurface = loadSurface("gfx/schball.bmp");
 	SDL_SetColorKey(tmpSurface, SDL_TRUE,
-		SDL_MapRGB(tmpSurface->format, 0, 0, 0));
+			SDL_MapRGB(tmpSurface->format, 0, 0, 0));
 
 	SDL_SetSurfaceAlphaMod(tmpSurface, 127);
 	mBallShadow = SDL_CreateTextureFromSurface(mRenderer, tmpSurface);
@@ -193,7 +193,7 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 			SDL_Color* pixel = &(((SDL_Color*)formatedBlobImage->pixels)[j]);
 			if (!(pixel->r | pixel->g | pixel->b))
 			{
-				pixel->a = 0;	
+				pixel->a = 0;
 			}
 		}
 
@@ -212,9 +212,9 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 			SDL_Color* pixel = &(((SDL_Color*)formatedBlobShadowImage->pixels)[j]);
 			if (!(pixel->r | pixel->g | pixel->b))
 			{
-				pixel->a = 0;	
+				pixel->a = 0;
 			} else {
-				pixel->a = 127;	
+				pixel->a = 127;
 			}
 		}
 
@@ -278,9 +278,9 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 		mHighlightFont.push_back(SDL_CreateTextureFromSurface(mRenderer, tempFont2));
 		SDL_FreeSurface(tempFont);
 		SDL_FreeSurface(tempFont2);
-	}		
+	}
 
-	// Load blood surface	
+	// Load blood surface
 	SDL_Surface* blobStandardBlood = loadSurface("gfx/blood.bmp");
 	SDL_Surface* formatedBlobStandardBlood = SDL_ConvertSurfaceFormat(blobStandardBlood, SDL_PIXELFORMAT_ARGB8888, 0);
 	SDL_FreeSurface(blobStandardBlood);
@@ -291,9 +291,9 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 		SDL_Color* pixel = &(((SDL_Color*)formatedBlobStandardBlood->pixels)[j]);
 		if (!(pixel->r | pixel->g | pixel->b))
 		{
-			pixel->a = 0;	
+			pixel->a = 0;
 		} else {
-			pixel->a = 255;	
+			pixel->a = 255;
 		}
 	}
 
