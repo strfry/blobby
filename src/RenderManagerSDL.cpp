@@ -28,14 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 SDL_Surface* RenderManagerSDL::colorSurface(SDL_Surface *surface, Color color)
 {
 	// Create new surface
-	SDL_Surface *newSurface = SDL_CreateRGBSurface(
-			0,
-			surface->w, surface->h, 32,
-			0x00FF0000, 0x0000FF00,
-			0x000000FF, 0xFF000000);
-
-	// Copy old image to new surface
-	SDL_BlitSurface(surface, 0, newSurface, 0);
+	SDL_Surface *newSurface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ABGR8888, 0);
 
 	SDL_LockSurface(newSurface);
 	for (int p = 0; p < newSurface->w * newSurface->h; ++p)
@@ -183,7 +176,7 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 		char filename[64];
 		sprintf(filename, "gfx/blobbym%d.bmp", i);
 		SDL_Surface* blobImage = loadSurface(filename);
-		SDL_Surface* formatedBlobImage = SDL_ConvertSurfaceFormat(blobImage, SDL_PIXELFORMAT_ARGB8888, 0);
+		SDL_Surface* formatedBlobImage = SDL_ConvertSurfaceFormat(blobImage, SDL_PIXELFORMAT_ABGR8888, 0);
 		SDL_FreeSurface(blobImage);
 
 		SDL_SetColorKey(formatedBlobImage, SDL_TRUE,
@@ -202,7 +195,7 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 		// Load blobby shadow surface
 		sprintf(filename, "gfx/sch1%d.bmp", i);
 		SDL_Surface* blobShadow = loadSurface(filename);
-		SDL_Surface* formatedBlobShadowImage = SDL_ConvertSurfaceFormat(blobShadow, SDL_PIXELFORMAT_ARGB8888, 0);
+		SDL_Surface* formatedBlobShadowImage = SDL_ConvertSurfaceFormat(blobShadow, SDL_PIXELFORMAT_ABGR8888, 0);
 		SDL_FreeSurface(blobShadow);
 
 		SDL_SetSurfaceAlphaMod(formatedBlobShadowImage, 127);
@@ -222,7 +215,7 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 
 		// Prepare blobby textures
 		SDL_Texture* leftBlobTex = SDL_CreateTexture(mRenderer,
-				SDL_PIXELFORMAT_ARGB8888,
+				SDL_PIXELFORMAT_ABGR8888,
 				SDL_TEXTUREACCESS_STREAMING,
 				formatedBlobImage->w, formatedBlobImage->h);
 		SDL_SetTextureBlendMode(leftBlobTex, SDL_BLENDMODE_BLEND);
@@ -233,7 +226,7 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 				Color(255, 0, 0)));
 
 		SDL_Texture* rightBlobTex = SDL_CreateTexture(mRenderer,
-				SDL_PIXELFORMAT_ARGB8888,
+				SDL_PIXELFORMAT_ABGR8888,
 				SDL_TEXTUREACCESS_STREAMING,
 				formatedBlobImage->w, formatedBlobImage->h);
 		SDL_SetTextureBlendMode(rightBlobTex, SDL_BLENDMODE_BLEND);
@@ -255,7 +248,7 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 		SDL_UpdateTexture(leftBlobShadowTex, NULL, formatedBlobShadowImage->pixels, formatedBlobShadowImage->pitch);
 
 		SDL_Texture* rightBlobShadowTex = SDL_CreateTexture(mRenderer,
-				SDL_PIXELFORMAT_ARGB8888,
+				SDL_PIXELFORMAT_ABGR8888,
 				SDL_TEXTUREACCESS_STREAMING,
 				formatedBlobShadowImage->w, formatedBlobShadowImage->h);
 		SDL_SetTextureBlendMode(rightBlobShadowTex, SDL_BLENDMODE_BLEND);
@@ -282,7 +275,7 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 
 	// Load blood surface
 	SDL_Surface* blobStandardBlood = loadSurface("gfx/blood.bmp");
-	SDL_Surface* formatedBlobStandardBlood = SDL_ConvertSurfaceFormat(blobStandardBlood, SDL_PIXELFORMAT_ARGB8888, 0);
+	SDL_Surface* formatedBlobStandardBlood = SDL_ConvertSurfaceFormat(blobStandardBlood, SDL_PIXELFORMAT_ABGR8888, 0);
 	SDL_FreeSurface(blobStandardBlood);
 
 	SDL_SetColorKey(formatedBlobStandardBlood, SDL_TRUE, SDL_MapRGB(formatedBlobStandardBlood->format, 0, 0, 0));
@@ -301,7 +294,7 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 
 	// Create streamed textures for blood
 	SDL_Texture* leftBlobBlood = SDL_CreateTexture(mRenderer,
-			SDL_PIXELFORMAT_ARGB8888,
+			SDL_PIXELFORMAT_ABGR8888,
 			SDL_TEXTUREACCESS_STREAMING,
 			formatedBlobStandardBlood->w, formatedBlobStandardBlood->h);
 	SDL_SetTextureBlendMode(leftBlobBlood, SDL_BLENDMODE_BLEND);
@@ -311,7 +304,7 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 	SDL_UpdateTexture(leftBlobBlood, NULL, formatedBlobStandardBlood->pixels, formatedBlobStandardBlood->pitch);
 
 	SDL_Texture* rightBlobBlood = SDL_CreateTexture(mRenderer,
-			SDL_PIXELFORMAT_ARGB8888,
+			SDL_PIXELFORMAT_ABGR8888,
 			SDL_TEXTUREACCESS_STREAMING,
 			formatedBlobStandardBlood->w, formatedBlobStandardBlood->h);
 	SDL_SetTextureBlendMode(rightBlobBlood, SDL_BLENDMODE_BLEND);
@@ -707,7 +700,7 @@ void RenderManagerSDL::drawOverlay(float opacity, Vector2 pos1, Vector2 pos2, Co
 }
 
 void RenderManagerSDL::drawBlob(const Vector2& pos, const Color& col)
-{/*
+{
 	SDL_Rect position;
 	position.x = lround(pos.x);
 	position.y = lround(pos.y);
@@ -729,14 +722,16 @@ void RenderManagerSDL::drawBlob(const Vector2& pos, const Color& col)
 
 	if(toDraw == 1)
 	{
-		SDL_BlitSurface(mRightBlob[mRightBlobAnimationState].mSDLsf, 0, mScreen, &position);
+		SDL_QueryTexture(mRightBlob[mRightBlobAnimationState].mSDLsf, NULL, NULL, &position.w, &position.h);
+		SDL_RenderCopy(mRenderer, mRightBlob[mRightBlobAnimationState].mSDLsf, 0, &position);
 		toDraw = 0;
 	}
 	else
 	{
-		SDL_BlitSurface(mLeftBlob[mLeftBlobAnimationState].mSDLsf, 0, mScreen, &position);
+		SDL_QueryTexture(mLeftBlob[mRightBlobAnimationState].mSDLsf, NULL, NULL, &position.w, &position.h);
+		SDL_RenderCopy(mRenderer, mLeftBlob[mRightBlobAnimationState].mSDLsf, 0, &position);
 		toDraw = 1;
-	}*/
+	}
 }
 
 void RenderManagerSDL::drawParticle(const Vector2& pos, int player)
