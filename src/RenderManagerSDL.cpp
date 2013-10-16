@@ -319,16 +319,6 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 			rightBlobBlood,
 			Color(255, 0, 0));
 	SDL_UpdateTexture(rightBlobBlood, NULL, formatedBlobStandardBlood->pixels, formatedBlobStandardBlood->pitch);
-
-
-
-
-
-
-
-
-	//mScroll = loadSurface("gfx/scrollbar.bmp");
-
 }
 
 void RenderManagerSDL::deinit()
@@ -359,7 +349,7 @@ void RenderManagerSDL::deinit()
 	SDL_DestroyTexture(mLeftBlobBlood.mSDLsf);
 	SDL_DestroyTexture(mRightBlobBlood.mSDLsf);
 
-/*	SDL_FreeSurface(mScroll);
+/*
 	SDL_FreeSurface(mLeftPlayerNameTexture);
 	SDL_FreeSurface(mRightPlayerNameTexture);
 
@@ -627,10 +617,10 @@ void RenderManagerSDL::setTime(const std::string& t)
 
 void RenderManagerSDL::drawText(const std::string& text, Vector2 position, unsigned int flags)
 {
-	drawTextImpl(text, position, flags, mScreen);
+	drawTextImpl(text, position, flags);
 }
 
-void RenderManagerSDL::drawTextImpl(const std::string& text, Vector2 position, unsigned int flags, SDL_Surface* screen)
+void RenderManagerSDL::drawTextImpl(const std::string& text, Vector2 position, unsigned int flags)
 {
 	int FontSize = (flags & TF_SMALL_FONT ? FONT_WIDTH_SMALL : FONT_WIDTH_NORMAL);
 	int length = 0;
@@ -645,13 +635,18 @@ void RenderManagerSDL::drawTextImpl(const std::string& text, Vector2 position, u
 		charRect.x = lround(position.x) + length;
 		charRect.y = lround(position.y);
 
-		int w, h;
 		if (flags & TF_SMALL_FONT)
-		{/*
+		{
+			charRect.w = 8;
+			charRect.h = 8;
 			if (flags & TF_HIGHLIGHT)
-				SDL_BlitSurface( mHighlightSmallFont[index], 0, screen, &charPosition );
+			{
+				SDL_RenderCopy(mRenderer, mHighlightFont[index], NULL, &charRect);
+			}
 			else
-				SDL_BlitSurface( mSmallFont[index], 0, screen, &charPosition );*/
+			{
+				SDL_RenderCopy(mRenderer,mFont[index], NULL, &charRect);
+			}
 		}
 		else
 		{

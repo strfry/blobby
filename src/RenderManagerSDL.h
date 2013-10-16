@@ -80,7 +80,6 @@ class RenderManagerSDL : public RenderManager
 		SDL_Texture* mBackground;
 		SDL_Texture* mBallShadow;
 		SDL_Texture* mMarker[2];
-		SDL_Surface* mScroll;
 		
 		std::vector<SDL_Texture*> mBall;
 		std::vector<SDL_Surface*> mStandardBlob;
@@ -128,7 +127,7 @@ class RenderManagerSDL : public RenderManager
 		// the returned SDL_Surface* is already converted into DisplayFormat
 		SDL_Surface* colorSurface(SDL_Surface *surface, Color color);
 		
-		void drawTextImpl(const std::string& text, Vector2 position, unsigned int flags, SDL_Surface* screen);
+		void drawTextImpl(const std::string& text, Vector2 position, unsigned int flags);
 		void colorizeBlobs(int player);
 };
 

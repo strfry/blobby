@@ -4,6 +4,7 @@ add_subdirectory(raknet)
 add_subdirectory(blobnet)
 
 add_definitions(-DTIXML_USE_STL)
+set(CMAKE_CXX_FLAGS "-Wall")
 include_directories(.)
 
 set(common_SRC	
