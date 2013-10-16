@@ -342,11 +342,6 @@ void RenderManagerSDL::deinit()
 	SDL_DestroyTexture(mLeftBlobBlood.mSDLsf);
 	SDL_DestroyTexture(mRightBlobBlood.mSDLsf);
 
-/*
-	SDL_FreeSurface(mLeftPlayerNameTexture);
-	SDL_FreeSurface(mRightPlayerNameTexture);
-
-*/
 	for (unsigned int i = 0; i < mFont.size(); ++i)
 	{
 		SDL_DestroyTexture(mFont[i]);
@@ -491,8 +486,9 @@ void RenderManagerSDL::setBlobColor(int player, Color color)
 		handledBlobBlood = &mRightBlobBlood;
 	}
 
-	SDL_Surface* tempSurface3 = colorSurface(mStandardBlobBlood, mBlobColor[player]);
-	SDL_UpdateTexture(handledBlobBlood->mSDLsf, NULL, tempSurface3->pixels, tempSurface3->pitch);
+	SDL_Surface* tempSurface = colorSurface(mStandardBlobBlood, mBlobColor[player]);
+	SDL_UpdateTexture(handledBlobBlood->mSDLsf, NULL, tempSurface->pixels, tempSurface->pitch);
+	SDL_FreeSurface(tempSurface);
 }
 
 
@@ -519,9 +515,11 @@ void RenderManagerSDL::colorizeBlobs(int player)
 	{
 		SDL_Surface* tempSurface = colorSurface(mStandardBlob[frame], mBlobColor[player]);
 		SDL_UpdateTexture((*handledBlob)[frame].mSDLsf, NULL, tempSurface->pixels, tempSurface->pitch);
+		SDL_FreeSurface(tempSurface);
 
 		SDL_Surface* tempSurface2 = colorSurface(mStandardBlobShadow[frame], mBlobColor[player]);
 		SDL_UpdateTexture((*handledBlobShadow)[frame].mSDLsf, NULL, tempSurface2->pixels, tempSurface2->pitch);
+		SDL_FreeSurface(tempSurface2);
 
 		(*handledBlob)[frame].mColor = mBlobColor[player];
 	}
@@ -573,33 +571,6 @@ void RenderManagerSDL::setPlayernames(std::string leftName, std::string rightNam
 {
 	mLeftPlayerName = leftName;
 	mRightPlayerName = rightName;
-/*
-	int tl = mLeftPlayerName.size() * FONT_WIDTH_NORMAL;
-	std::cout << "2" << std::endl;
-	SDL_FreeSurface(mLeftPlayerNameTexture);
-	std::cout << "3" << std::endl;
-	SDL_Surface* surface = createEmptySurface(tl, 24);
-	std::cout << "4" << std::endl;
-	SDL_SetSurfaceAlphaMod(surface, 255);
-	std::cout << "5" << std::endl;
-	SDL_SetColorKey(surface, SDL_TRUE,
-			SDL_MapRGB(surface->format, 0, 0, 0));
-	std::cout << "6" << std::endl;
-	drawTextImpl(mLeftPlayerName, Vector2(0,0), TF_NORMAL, surface);
-
-	mLeftPlayerNameTexture = surface;//SDL_DisplayFormatAlpha(surface);
-	//SDL_FreeSurface(surface);
-
-	tl = mRightPlayerName.size() * FONT_WIDTH_NORMAL;
-	SDL_FreeSurface(mRightPlayerNameTexture);
-	surface = createEmptySurface(tl, 24);
-	SDL_SetSurfaceAlphaMod(surface, 255);
-	SDL_SetColorKey(surface, SDL_TRUE,
-			SDL_MapRGB(surface->format, 0, 0, 0));
-	drawTextImpl(mRightPlayerName, Vector2(0,0), TF_NORMAL, surface);
-
-	mRightPlayerNameTexture = surface;//SDL_DisplayFormatAlpha(surface);*/
-	//SDL_FreeSurface(surface);
 }
 
 void RenderManagerSDL::setTime(const std::string& t)
