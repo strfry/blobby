@@ -227,13 +227,13 @@ void RenderManagerGL2D::init(int xResolution, int yResolution, bool fullscreen)
 		xResolution, yResolution,
 		screenFlags);
 
-	// Create gl context
-	mGlContext = SDL_GL_CreateContext(mWindow);
-
 	// Set icon
 	SDL_Surface* icon = SDL_LoadBMP("data/Icon.bmp");
 	SDL_SetWindowIcon(mWindow, icon);
-	//SDL_FreeSurface(icon);
+	SDL_FreeSurface(icon);
+
+	// Create gl context
+	mGlContext = SDL_GL_CreateContext(mWindow);
 
 	SDL_ShowCursor(0);
 	glDisable(GL_MULTISAMPLE);
@@ -348,6 +348,7 @@ void RenderManagerGL2D::deinit()
 	glDeleteTextures(1, &mParticle);
 
 	SDL_GL_DeleteContext(mGlContext);
+	SDL_DestroyWindow(mWindow);
 }
 
 void RenderManagerGL2D::draw()
@@ -624,10 +625,8 @@ void RenderManagerGL2D::drawImage(const std::string& filename, Vector2 position)
 	glDisable(GL_BLEND);
 
 	BufferedImage* imageBuffer = mImageMap[filename];
-	std::cout << filename << std::endl;
 	if (!imageBuffer)
 	{
-		std::cout << filename << std::endl;
 		imageBuffer = new BufferedImage;
 		SDL_Surface* newSurface = loadSurface(filename);
 		imageBuffer->w = getNextPOT(newSurface->w);

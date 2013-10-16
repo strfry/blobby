@@ -60,11 +60,11 @@ class RenderManagerGL2D : public RenderManager
 		virtual bool setBackground(const std::string& filename);
 		virtual void setBlobColor(int player, Color color);
 		virtual void showShadow(bool shadow);
-		
+
 		virtual void setBall(const Vector2& position, float rotation);
 		virtual void setBlob(int player, const Vector2& position,
 				float animationState);
-			
+
 		virtual void setScore(int leftScore, int rightScore,
 				   bool leftWarning, bool rightWarning);
 
@@ -79,7 +79,6 @@ class RenderManagerGL2D : public RenderManager
 		virtual void drawParticle(const Vector2& pos, int player);
 		virtual void endDrawParticles();
 
-		
 	private:
 		// Make sure this object is created before any opengl call
 		SDL_GLContext mGlContext;
@@ -89,7 +88,7 @@ class RenderManagerGL2D : public RenderManager
 			float indices[8];
 			float w, h ;
 			GLuint texture;
-			
+
 			Texture( GLuint tex, int x, int y, int w, int h, int tw, int th );
 		};
 
@@ -104,7 +103,7 @@ class RenderManagerGL2D : public RenderManager
 		std::vector<Texture> mHighlightFont;
 		GLuint mParticle;
 		GLuint mScroll;
-		
+
 		std::list<Vector2> mLastBallStates;
 
 		Vector2 mBallPosition;
@@ -132,11 +131,11 @@ class RenderManagerGL2D : public RenderManager
 		void drawQuad(float x, float y, const Texture& tex);
 		GLuint loadTexture(SDL_Surface* surface, bool specular);
 		int getNextPOT(int npot);
-		
+
 		void glEnable(unsigned int flag);
 		void glDisable(unsigned int flag);
 		void glBindTexture(GLuint texture);
-		
+
 		GLuint mCurrentTexture;
 		std::set<unsigned int> mCurrentFlags;
 };
