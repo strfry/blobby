@@ -250,9 +250,8 @@ void RenderManagerGL2D::init(int xResolution, int yResolution, bool fullscreen)
 	bgBufImage->glHandle = loadTexture(bgSurface, false);
 	mBackground = bgBufImage->glHandle;
 	mImageMap["background"] = bgBufImage;
-/*
+
 	mBallShadow = loadTexture(loadSurface("gfx/schball.bmp"), false);
-	mScroll = loadTexture(loadSurface("gfx/scrollbar.bmp"), false);
 
 	for (int i = 1; i <= 16; ++i)
 	{
@@ -279,70 +278,42 @@ void RenderManagerGL2D::init(int xResolution, int yResolution, bool fullscreen)
 	// create text base textures
 	SDL_Surface* textbase = createEmptySurface(2048, 32);
 	SDL_Surface* hltextbase = createEmptySurface(2048, 32);
-	SDL_Surface* smalltextbase = createEmptySurface(1024, 16);
-	SDL_Surface* hlsmalltextbase = createEmptySurface(1024, 16);
+
 	int x = 0;
 	int sx = 0;
 
 	for (int i = 0; i <= 53; ++i)
 	{
-		char filename[64], filename2[64];
+		char filename[64];
 		sprintf(filename, "gfx/font%02d.bmp", i);
-		//sprintf(filename2, "gfx/font_small/font%02d.bmp", i);
 		SDL_Surface* fontSurface = loadSurface(filename);
-		//SDL_Surface* fontSurface2 = loadSurface(filename2);
 
 		SDL_Surface* highlight = highlightSurface(fontSurface, 60);
-		//SDL_Surface* highlight2 = highlightSurface(fontSurface2, 60);
-		SDL_FreeSurface(fontSurface);
-		//SDL_FreeSurface(fontSurface2);
-
-		fontSurface = loadSurface(filename);
-		//fontSurface2 = loadSurface(filename2);
 
 		SDL_Rect r = {(Uint16)x, 0, (Uint16)fontSurface->w, (Uint16)fontSurface->h};
 		SDL_BlitSurface(fontSurface, 0, textbase, &r);
 		SDL_BlitSurface(highlight, 0, hltextbase, &r);
 		r.x = sx;
 		r.y = 0;
-		//r.w = fontSurface2->w;
-		//r.h = fontSurface2->h;
-		//SDL_BlitSurface(fontSurface2, 0, smalltextbase, &r);
-		//SDL_BlitSurface(highlight2, 0, hlsmalltextbase, &r);
-		//GLuint ballImage = loadTexture(sf, false);
-		//mBall.push_back(ballImage);
 		Texture s = Texture(0, x, 0, fontSurface->w, fontSurface->h, 2048, 32);
 		mFont.push_back(s);
 		mHighlightFont.push_back(s);
 
-		//s = Texture(0, sx, 0, fontSurface2->w, fontSurface2->h, 1024, 16);
-
-		//mFont.push_back(newFont);
-		//mHighlightFont.push_back(loadTexture(highlight, false));
-		mSmallFont.push_back( s );
-		mHighlightSmallFont.push_back( s );
-
 		x += fontSurface->w;
-		//sx += fontSurface2->w;
 
 		SDL_FreeSurface(fontSurface);
-		//SDL_FreeSurface(fontSurface2);
 	}
 
 	GLuint texture =  loadTexture(textbase, false);
 	GLuint hltexture =  loadTexture(hltextbase, false);
-	GLuint smalltexture =  loadTexture(smalltextbase, false);
-	GLuint hlsmalltexture =  loadTexture(hlsmalltextbase, false);
 	for (unsigned int i = 0; i < mFont.size(); ++i)
 	{
 		mFont[i].texture = texture;
 		mHighlightFont[i].texture = hltexture;
-		mSmallFont[i].texture = smalltexture;
-		mHighlightSmallFont[i].texture = hlsmalltexture;
 	}
 
 	mParticle = loadTexture(loadSurface("gfx/blood.bmp"), false);
-*/
+
 	glViewport(0, 0, xResolution, yResolution);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -366,9 +337,6 @@ void RenderManagerGL2D::deinit()
 	glDeleteTextures(mBlobShadow.size(), &mBlobShadow[0]);
 	glDeleteTextures(1/*mFont.size()*/, &mFont[0].texture);
 	glDeleteTextures(/*mHighlightFont.size()*/1, &mHighlightFont[0].texture);
-	glDeleteTextures(/*mSmallFont.size()*/1, &mSmallFont[0].texture);
-	glDeleteTextures(/*mHighlightSmallFont.size()*/1, &mHighlightSmallFont[0].texture);
-	glDeleteTextures(1, &mScroll);
 
 	for (std::map<std::string, BufferedImage*>::iterator iter = mImageMap.begin();
 		iter != mImageMap.end(); ++iter)
@@ -513,7 +481,7 @@ void RenderManagerGL2D::draw()
 }
 
 bool RenderManagerGL2D::setBackground(const std::string& filename)
-{/*
+{
 	try
 	{
 		SDL_Surface* newSurface = loadSurface(filename);
@@ -529,7 +497,7 @@ bool RenderManagerGL2D::setBackground(const std::string& filename)
 	catch (FileLoadException)
 	{
 		return false;
-	}*/
+	}
 	return true;
 }
 
@@ -597,7 +565,7 @@ void RenderManagerGL2D::setTime(const std::string& t)
 }
 
 void RenderManagerGL2D::drawText(const std::string& text, Vector2 position, unsigned int flags)
-{/*
+{
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_ALPHA_TEST);
 	glDisable(GL_BLEND);
@@ -618,9 +586,25 @@ void RenderManagerGL2D::drawText(const std::string& text, Vector2 position, unsi
 		if (flags & TF_SMALL_FONT)
 		{
 			if (flags & TF_HIGHLIGHT)
-				drawQuad(x, y, mHighlightSmallFont[index]);
+			{
+				int charWidth = mHighlightFont[index].w;
+				int charHeight = mHighlightFont[index].h;
+				mHighlightFont[index].w = 8;
+				mHighlightFont[index].h = 8;
+				drawQuad(x, y, mHighlightFont[index]);
+				mHighlightFont[index].w = charWidth;
+				mHighlightFont[index].h = charHeight;
+			}
 			else
-				drawQuad(x, y, mSmallFont[index]);
+			{
+				int charWidth = mFont[index].w;
+				int charHeight = mFont[index].h;
+				mFont[index].w = 8;
+				mFont[index].h = 8;
+				drawQuad(x, y, mFont[index]);
+				mFont[index].w = charWidth;
+				mFont[index].h = charHeight;
+			}
 		}
 		else
 		{
@@ -630,7 +614,7 @@ void RenderManagerGL2D::drawText(const std::string& text, Vector2 position, unsi
 				drawQuad(x, y, mFont[index]);
 		}
 		index = getNextFontIndex(string);
-	}*/
+	}
 }
 
 void RenderManagerGL2D::drawImage(const std::string& filename, Vector2 position)
@@ -661,7 +645,7 @@ void RenderManagerGL2D::drawImage(const std::string& filename, Vector2 position)
 }
 
 void RenderManagerGL2D::drawOverlay(float opacity, Vector2 pos1, Vector2 pos2, Color col)
-{/*
+{
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_ALPHA_TEST);
@@ -674,11 +658,11 @@ void RenderManagerGL2D::drawOverlay(float opacity, Vector2 pos1, Vector2 pos2, C
 		glVertex2f(pos1.x, pos2.y);
 		glVertex2f(pos2.x, pos2.y);
 		glVertex2f(pos2.x, pos1.y);
-	glEnd();*/
+	glEnd();
 }
 
 void RenderManagerGL2D::drawBlob(const Vector2& pos, const Color& col)
-{/*
+{
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_ALPHA_TEST);
 	glDisable(GL_BLEND);
@@ -695,7 +679,7 @@ void RenderManagerGL2D::drawBlob(const Vector2& pos, const Color& col)
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBindTexture(mBlobSpecular[0]);
 	drawQuad(pos.x, pos.y, 128.0, 128.0);
-	glDisable(GL_BLEND);*/
+	glDisable(GL_BLEND);
 }
 
 void RenderManagerGL2D::startDrawParticles()
@@ -713,7 +697,7 @@ void RenderManagerGL2D::drawParticle(const Vector2& pos, int player)
 {
 	//glLoadIdentity();
 	//glTranslatef(pos.x, pos.y, 0.6);
-/*
+
 	if (player == LEFT_PLAYER)
 		glColor3ubv(mLeftBlobColor.val);
 	if (player == RIGHT_PLAYER)
@@ -730,7 +714,7 @@ void RenderManagerGL2D::drawParticle(const Vector2& pos, int player)
 	glTexCoord2f(1.0, 1.0);
 	glVertex2f(pos.x + w / 2.0, pos.y + h / 2.0);
 	glTexCoord2f(0.0, 1.0);
-	glVertex2f(pos.x - w / 2.0, pos.y + h / 2.0);*/
+	glVertex2f(pos.x - w / 2.0, pos.y + h / 2.0);
 }
 
 void RenderManagerGL2D::endDrawParticles()

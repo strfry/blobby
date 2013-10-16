@@ -97,10 +97,10 @@ SDL_Surface* RenderManager::loadSurface(std::string filename)
 
 SDL_Surface* RenderManager::createEmptySurface(unsigned int width, unsigned int height)
 {
-	SDL_Surface* newSurface;// = SDL_CreateRGBSurface(
-//		SDL_SWSURFACE | SDL_SRCALPHA | SDL_SRCCOLORKEY,
-//		width, height, 32,
-//		0x000000FF, 0x0000FF00, 0x00FF0000, 0x00000000);
+	SDL_Surface* newSurface = SDL_CreateRGBSurface(
+		0,
+		width, height, 32,
+		0x000000FF, 0x0000FF00, 0x00FF0000, 0x00000000);
 	
 	return newSurface;
 }

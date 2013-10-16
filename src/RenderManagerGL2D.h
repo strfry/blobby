@@ -102,8 +102,6 @@ class RenderManagerGL2D : public RenderManager
 		std::vector<GLuint> mBlobShadow;
 		std::vector<Texture> mFont;
 		std::vector<Texture> mHighlightFont;
-		std::vector<Texture> mSmallFont;
-		std::vector<Texture> mHighlightSmallFont;
 		GLuint mParticle;
 		GLuint mScroll;
 		
