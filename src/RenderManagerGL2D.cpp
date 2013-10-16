@@ -105,7 +105,7 @@ GLuint RenderManagerGL2D::loadTexture(SDL_Surface *surface, bool specular)
 	targetRect.x = (paddedX - oldX) / 2;
 	targetRect.y = (paddedY - oldY) / 2;
 
-	SDL_SetColorKey(textureSurface, SDL_SRCCOLORKEY,
+	SDL_SetColorKey(textureSurface, SDL_TRUE,
 			SDL_MapRGB(textureSurface->format, 0, 0, 0));
 	convertedTexture =
 		SDL_CreateRGBSurface(SDL_SWSURFACE,
@@ -209,26 +209,40 @@ void RenderManagerGL2D::init(int xResolution, int yResolution, bool fullscreen)
 {
 	glDisable(GL_DEPTH_TEST);
 	mCurrentFlags.insert(GL_MULTISAMPLE);
-
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
-	Uint32 screenFlags = SDL_OPENGL;
+	// Set modesetting
+	Uint32 screenFlags = SDL_WINDOW_OPENGL;
 	if (fullscreen)
-		screenFlags |= SDL_FULLSCREEN;
+		screenFlags |= SDL_WINDOW_FULLSCREEN;
 
-	SDL_WM_SetCaption(AppTitle, "");
-	SDL_WM_SetIcon(SDL_LoadBMP("data/Icon.bmp"), NULL);
-	SDL_SetVideoMode(xResolution, yResolution, 0, screenFlags);
+	// Create window
+	mWindow = SDL_CreateWindow(AppTitle,
+		SDL_WINDOWPOS_UNDEFINED,
+		SDL_WINDOWPOS_UNDEFINED,
+		xResolution, yResolution,
+		screenFlags);
+
+	// Create gl context
+	mGlContext = SDL_GL_CreateContext(mWindow);
+
+	// Set icon
+	SDL_Surface* icon = SDL_LoadBMP("data/Icon.bmp");
+	SDL_SetWindowIcon(mWindow, icon);
+	//SDL_FreeSurface(icon);
+
 	SDL_ShowCursor(0);
 	glDisable(GL_MULTISAMPLE);
 
 	mLeftBlobColor = Color(255, 0, 0);
 	mRightBlobColor = Color(0, 255, 0);
+	glEnable(GL_TEXTURE_2D);
 
+	// Load background
 	SDL_Surface* bgSurface = loadSurface("backgrounds/strand2.bmp");
 	BufferedImage* bgBufImage = new BufferedImage;
 	bgBufImage->w = getNextPOT(bgSurface->w);
@@ -236,7 +250,7 @@ void RenderManagerGL2D::init(int xResolution, int yResolution, bool fullscreen)
 	bgBufImage->glHandle = loadTexture(bgSurface, false);
 	mBackground = bgBufImage->glHandle;
 	mImageMap["background"] = bgBufImage;
-
+/*
 	mBallShadow = loadTexture(loadSurface("gfx/schball.bmp"), false);
 	mScroll = loadTexture(loadSurface("gfx/scrollbar.bmp"), false);
 
@@ -274,34 +288,34 @@ void RenderManagerGL2D::init(int xResolution, int yResolution, bool fullscreen)
 	{
 		char filename[64], filename2[64];
 		sprintf(filename, "gfx/font%02d.bmp", i);
-		sprintf(filename2, "gfx/font_small/font%02d.bmp", i);
+		//sprintf(filename2, "gfx/font_small/font%02d.bmp", i);
 		SDL_Surface* fontSurface = loadSurface(filename);
-		SDL_Surface* fontSurface2 = loadSurface(filename2);
+		//SDL_Surface* fontSurface2 = loadSurface(filename2);
 
 		SDL_Surface* highlight = highlightSurface(fontSurface, 60);
-		SDL_Surface* highlight2 = highlightSurface(fontSurface2, 60);
+		//SDL_Surface* highlight2 = highlightSurface(fontSurface2, 60);
 		SDL_FreeSurface(fontSurface);
-		SDL_FreeSurface(fontSurface2);
+		//SDL_FreeSurface(fontSurface2);
 
 		fontSurface = loadSurface(filename);
-		fontSurface2 = loadSurface(filename2);
+		//fontSurface2 = loadSurface(filename2);
 
 		SDL_Rect r = {(Uint16)x, 0, (Uint16)fontSurface->w, (Uint16)fontSurface->h};
 		SDL_BlitSurface(fontSurface, 0, textbase, &r);
 		SDL_BlitSurface(highlight, 0, hltextbase, &r);
 		r.x = sx;
 		r.y = 0;
-		r.w = fontSurface2->w;
-		r.h = fontSurface2->h;
-		SDL_BlitSurface(fontSurface2, 0, smalltextbase, &r);
-		SDL_BlitSurface(highlight2, 0, hlsmalltextbase, &r);
+		//r.w = fontSurface2->w;
+		//r.h = fontSurface2->h;
+		//SDL_BlitSurface(fontSurface2, 0, smalltextbase, &r);
+		//SDL_BlitSurface(highlight2, 0, hlsmalltextbase, &r);
 		//GLuint ballImage = loadTexture(sf, false);
 		//mBall.push_back(ballImage);
 		Texture s = Texture(0, x, 0, fontSurface->w, fontSurface->h, 2048, 32);
 		mFont.push_back(s);
 		mHighlightFont.push_back(s);
 
-		s = Texture(0, sx, 0, fontSurface2->w, fontSurface2->h, 1024, 16);
+		//s = Texture(0, sx, 0, fontSurface2->w, fontSurface2->h, 1024, 16);
 
 		//mFont.push_back(newFont);
 		//mHighlightFont.push_back(loadTexture(highlight, false));
@@ -309,10 +323,10 @@ void RenderManagerGL2D::init(int xResolution, int yResolution, bool fullscreen)
 		mHighlightSmallFont.push_back( s );
 
 		x += fontSurface->w;
-		sx += fontSurface2->w;
+		//sx += fontSurface2->w;
 
 		SDL_FreeSurface(fontSurface);
-		SDL_FreeSurface(fontSurface2);
+		//SDL_FreeSurface(fontSurface2);
 	}
 
 	GLuint texture =  loadTexture(textbase, false);
@@ -328,7 +342,7 @@ void RenderManagerGL2D::init(int xResolution, int yResolution, bool fullscreen)
 	}
 
 	mParticle = loadTexture(loadSurface("gfx/blood.bmp"), false);
-
+*/
 	glViewport(0, 0, xResolution, yResolution);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -364,6 +378,8 @@ void RenderManagerGL2D::deinit()
 	}
 
 	glDeleteTextures(1, &mParticle);
+
+	SDL_GL_DeleteContext(mGlContext);
 }
 
 void RenderManagerGL2D::draw()
@@ -497,7 +513,7 @@ void RenderManagerGL2D::draw()
 }
 
 bool RenderManagerGL2D::setBackground(const std::string& filename)
-{
+{/*
 	try
 	{
 		SDL_Surface* newSurface = loadSurface(filename);
@@ -513,7 +529,7 @@ bool RenderManagerGL2D::setBackground(const std::string& filename)
 	catch (FileLoadException)
 	{
 		return false;
-	}
+	}*/
 	return true;
 }
 
@@ -581,7 +597,7 @@ void RenderManagerGL2D::setTime(const std::string& t)
 }
 
 void RenderManagerGL2D::drawText(const std::string& text, Vector2 position, unsigned int flags)
-{
+{/*
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_ALPHA_TEST);
 	glDisable(GL_BLEND);
@@ -614,7 +630,7 @@ void RenderManagerGL2D::drawText(const std::string& text, Vector2 position, unsi
 				drawQuad(x, y, mFont[index]);
 		}
 		index = getNextFontIndex(string);
-	}
+	}*/
 }
 
 void RenderManagerGL2D::drawImage(const std::string& filename, Vector2 position)
@@ -624,8 +640,10 @@ void RenderManagerGL2D::drawImage(const std::string& filename, Vector2 position)
 	glDisable(GL_BLEND);
 
 	BufferedImage* imageBuffer = mImageMap[filename];
+	std::cout << filename << std::endl;
 	if (!imageBuffer)
 	{
+		std::cout << filename << std::endl;
 		imageBuffer = new BufferedImage;
 		SDL_Surface* newSurface = loadSurface(filename);
 		imageBuffer->w = getNextPOT(newSurface->w);
@@ -643,7 +661,7 @@ void RenderManagerGL2D::drawImage(const std::string& filename, Vector2 position)
 }
 
 void RenderManagerGL2D::drawOverlay(float opacity, Vector2 pos1, Vector2 pos2, Color col)
-{
+{/*
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_ALPHA_TEST);
@@ -656,11 +674,11 @@ void RenderManagerGL2D::drawOverlay(float opacity, Vector2 pos1, Vector2 pos2, C
 		glVertex2f(pos1.x, pos2.y);
 		glVertex2f(pos2.x, pos2.y);
 		glVertex2f(pos2.x, pos1.y);
-	glEnd();
+	glEnd();*/
 }
 
 void RenderManagerGL2D::drawBlob(const Vector2& pos, const Color& col)
-{
+{/*
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_ALPHA_TEST);
 	glDisable(GL_BLEND);
@@ -677,7 +695,7 @@ void RenderManagerGL2D::drawBlob(const Vector2& pos, const Color& col)
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBindTexture(mBlobSpecular[0]);
 	drawQuad(pos.x, pos.y, 128.0, 128.0);
-	glDisable(GL_BLEND);
+	glDisable(GL_BLEND);*/
 }
 
 void RenderManagerGL2D::startDrawParticles()
@@ -695,7 +713,7 @@ void RenderManagerGL2D::drawParticle(const Vector2& pos, int player)
 {
 	//glLoadIdentity();
 	//glTranslatef(pos.x, pos.y, 0.6);
-
+/*
 	if (player == LEFT_PLAYER)
 		glColor3ubv(mLeftBlobColor.val);
 	if (player == RIGHT_PLAYER)
@@ -712,7 +730,7 @@ void RenderManagerGL2D::drawParticle(const Vector2& pos, int player)
 	glTexCoord2f(1.0, 1.0);
 	glVertex2f(pos.x + w / 2.0, pos.y + h / 2.0);
 	glTexCoord2f(0.0, 1.0);
-	glVertex2f(pos.x - w / 2.0, pos.y + h / 2.0);
+	glVertex2f(pos.x - w / 2.0, pos.y + h / 2.0);*/
 }
 
 void RenderManagerGL2D::endDrawParticles()
@@ -723,7 +741,7 @@ void RenderManagerGL2D::endDrawParticles()
 void RenderManagerGL2D::refresh()
 {
 	//std::cout << debugStateChanges << "\n";
-	SDL_GL_SwapBuffers();
+	SDL_GL_SwapWindow(mWindow);
 	debugStateChanges = 0;
 	//std::cerr << debugBindTextureCount << "\n";
 	debugBindTextureCount = 0;

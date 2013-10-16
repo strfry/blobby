@@ -165,8 +165,8 @@ void MainMenuState::step()
 
 	imgui.doCursor();
 	imgui.doImage(GEN_ID, Vector2(400.0, 300.0), "background");
-	imgui.doOverlay(GEN_ID, Vector2(0.0, 0.0), Vector2(800.0, 600.0));
-	imgui.doImage(GEN_ID, Vector2(250.0, 210.0), "gfx/titel.bmp");
+	//imgui.doOverlay(GEN_ID, Vector2(0.0, 0.0), Vector2(800.0, 600.0));
+	imgui.doImage(GEN_ID, Vector2(250.0, 210.0), "gfx/titel.bmp");/*
 	if (imgui.doButton(GEN_ID, Vector2(434, 350.0), TextManager::MNU_LABEL_ONLINE))
 	{
 		deleteCurrentState();
@@ -222,7 +222,7 @@ void MainMenuState::step()
 		deleteCurrentState();
 		SDL_Quit();
 		exit(0);
-	}
+	}*/
 }
 
 const char* MainMenuState::getStateName() const

@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #if HAVE_LIBGL
 
-#include <SDL/SDL.h>
+#include <SDL2/SDL.h>
 
 
 #if defined(WIN32)
@@ -78,8 +78,12 @@ class RenderManagerGL2D : public RenderManager
 		virtual void startDrawParticles();
 		virtual void drawParticle(const Vector2& pos, int player);
 		virtual void endDrawParticles();
-	private:
+
 		
+	private:
+		// Make sure this object is created before any opengl call
+		SDL_GLContext mGlContext;
+
 		struct Texture
 		{
 			float indices[8];

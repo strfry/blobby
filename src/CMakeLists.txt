@@ -42,7 +42,7 @@ set (blobby_SRC ${common_SRC}
 	InputManager.cpp InputManager.h
 	LocalInputSource.cpp LocalInputSource.h
 	RenderManager.cpp RenderManager.h
-#	RenderManagerGL2D.cpp RenderManagerGL2D.h
+	RenderManagerGL2D.cpp RenderManagerGL2D.h
 #	RenderManagerGP2X.cpp RenderManagerGP2X.h
 	RenderManagerSDL.cpp RenderManagerSDL.h
 	ScriptedInputSource.cpp ScriptedInputSource.h	
