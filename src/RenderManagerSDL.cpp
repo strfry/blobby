@@ -422,17 +422,20 @@ void RenderManagerSDL::draw()
 }
 
 bool RenderManagerSDL::setBackground(const std::string& filename)
-{/*
+{
 	try
 	{
-		SDL_Surface *tempBackground = loadSurface(filename);
-		SDL_FreeSurface(mBackground);
-		delete mImageMap["background"];
+		SDL_Surface *tempBackgroundSurface = loadSurface(filename);
+		SDL_Texture *tempBackgroundTexture = SDL_CreateTextureFromSurface(mRenderer, tempBackgroundSurface);
+		BufferedImage* oldBackground = mImageMap["background"];
+		SDL_DestroyTexture(oldBackground->sdlImage);
+		delete oldBackground;
+
 		BufferedImage* newImage = new BufferedImage;
-		newImage->w = tempBackground->w;
-		newImage->h = tempBackground->h;
-		newImage->sdlImage = tempBackground; //SDL_DisplayFormat(tempBackground);
-		//SDL_FreeSurface(tempBackground);
+		newImage->w = tempBackgroundSurface->w;
+		newImage->h = tempBackgroundSurface->h;
+		newImage->sdlImage = tempBackgroundTexture;
+		SDL_FreeSurface(tempBackgroundSurface);
 		mBackground = newImage->sdlImage;
 		mImageMap["background"] = newImage;
 	}
@@ -440,7 +443,7 @@ bool RenderManagerSDL::setBackground(const std::string& filename)
 	{
 		return false;
 	}
-	return true;*/
+	return true;
 }
 
 void RenderManagerSDL::setBlobColor(int player, Color color)
