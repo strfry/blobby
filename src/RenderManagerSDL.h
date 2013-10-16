@@ -84,14 +84,14 @@ class RenderManagerSDL : public RenderManager
 		std::vector<SDL_Texture*> mBall;
 		std::vector<SDL_Surface*> mStandardBlob;
 		std::vector<SDL_Surface*> mStandardBlobShadow;
-		SDL_Surface*			  mStandardBlobBlood;
+		SDL_Surface* mStandardBlobBlood;
 		std::vector<DynamicColoredTexture> mLeftBlob;
 		std::vector<DynamicColoredTexture> mLeftBlobShadow;
-		SDL_Surface*			  mLeftBlobBlood;
+		DynamicColoredTexture mLeftBlobBlood;
 
 		std::vector<DynamicColoredTexture> mRightBlob;
 		std::vector<DynamicColoredTexture> mRightBlobShadow;
-		SDL_Surface*			  mRightBlobBlood;
+		DynamicColoredTexture mRightBlobBlood;
 
 		std::vector<SDL_Texture*> mFont;
 		std::vector<SDL_Texture*> mHighlightFont;
