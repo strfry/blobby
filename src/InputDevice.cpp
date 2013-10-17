@@ -129,8 +129,8 @@ PlayerInput MouseInputDevice::transferInput(const InputSource* source)
 // 		KEYBOARD INPUT
 // -------------------------------------------------------------------------------------------------
 
-/*
-KeyboardInputDevice::KeyboardInputDevice(SDLKey leftKey, SDLKey rightKey, SDLKey jumpKey)
+
+KeyboardInputDevice::KeyboardInputDevice(SDL_Scancode leftKey, SDL_Scancode rightKey, SDL_Scancode jumpKey)
 	: InputDevice()
 {
 	mLeftKey = leftKey;
@@ -140,10 +140,10 @@ KeyboardInputDevice::KeyboardInputDevice(SDLKey leftKey, SDLKey rightKey, SDLKey
 
 PlayerInput KeyboardInputDevice::transferInput(const InputSource* input)
 {
-	Uint8* keyState = SDL_GetKeyboardState(0);	
+	const Uint8* keyState = SDL_GetKeyboardState(0);	
 	return PlayerInput(keyState[mLeftKey], keyState[mRightKey], keyState[mJumpKey]);
 }
-*/
+
 
 // -------------------------------------------------------------------------------------------------
 // 		JOYSTICK INPUT

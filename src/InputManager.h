@@ -74,7 +74,7 @@ class InputManager : public ObjectCounter<InputManager>
 		
 		// config conversion methods
 		//std::string keyToString(const SDL_keysym& key) const;
-		//SDLKey stringToKey(const std::string& keyname) const;
+		SDL_Scancode stringToKey(const std::string& keyname) const;
 	
 	private:
 		static InputManager* mSingleton;

@@ -106,19 +106,18 @@ class MouseInputDevice : public InputDevice
 /*! \class KeyboardInputDevice
 	\brief Ingame keyboard input
 */
-/*
 class KeyboardInputDevice : public InputDevice
 {
 	private:
-		SDLKey mLeftKey;
-		SDLKey mRightKey;
-		SDLKey mJumpKey;
+		SDL_Scancode mLeftKey;
+		SDL_Scancode mRightKey;
+		SDL_Scancode mJumpKey;
 	public:
 		virtual ~KeyboardInputDevice(){};
-		KeyboardInputDevice(SDLKey leftKey, SDLKey rightKey, SDLKey jumpKey);
+		KeyboardInputDevice(SDL_Scancode leftKey, SDL_Scancode rightKey, SDL_Scancode jumpKey);
 		virtual PlayerInput transferInput(const InputSource* ips);
 };
-*/
+
 
 /*! \class JoystickInputDevice
 	\brief Ingame Joystick input

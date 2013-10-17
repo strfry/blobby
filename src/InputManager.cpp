@@ -82,14 +82,14 @@ InputDevice* InputManager::beginGame(PlayerSide side) const
 		return new MouseInputDevice(side, jumpbutton);
 	}
 	// load config for keyboard
-/*
+
 	else if (device == "keyboard")
 	{
-		SDLKey lkey = stringToKey(config.getString(prefix + "keyboard_left"));
-		SDLKey rkey = stringToKey(config.getString(prefix + "keyboard_right"));
-		SDLKey jkey = stringToKey(config.getString(prefix + "keyboard_jump"));
+		SDL_Scancode lkey = stringToKey(config.getString(prefix + "keyboard_left"));
+		SDL_Scancode rkey = stringToKey(config.getString(prefix + "keyboard_right"));
+		SDL_Scancode jkey = stringToKey(config.getString(prefix + "keyboard_jump"));
 		return new KeyboardInputDevice(lkey, rkey, jkey);
-	}*/
+	}
 	// load config for joystick
 	else if (device == "joystick")
 	{
@@ -181,6 +181,11 @@ void InputManager::updateInput()
 						break;
 				}
 				break;
+
+			case SDL_TEXTINPUT:
+				std::cout << event.text.text << std::endl;
+				break;
+
 			case SDL_MOUSEBUTTONDOWN:
 				mLastMouseButton = event.button.button;
 				switch (event.button.button)
@@ -642,20 +647,12 @@ std::string InputManager::keyToString (const SDL_keysym& key) const
 	return "";
 }
 */
-/*
-SDLKey InputManager::stringToKey (const std::string& keyname) const
+
+SDL_Scancode InputManager::stringToKey (const std::string& keyname) const
 {
-	int i = 0;
-	while (mKeyMap[i].keyname != NULL)
-	{
-		if (keyname == mKeyMap[i].keyname)
-			return mKeyMap[i].key;
-		
-		i++;
-	}
-	return SDLK_UNKNOWN; // stringinformation = ""
+	return SDL_GetScancodeFromName(keyname.c_str());
 }
-*/
+
 std::string InputManager::getLastTextKey()
 {/*
 	if (mLastInputKey.sym != SDLK_UNKNOWN)

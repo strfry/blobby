@@ -44,7 +44,7 @@ boost::shared_ptr<InputSource> InputSourceFactory::createInputSource( boost::sha
 		else 
 		{
 			return boost::make_shared<ScriptedInputSource>("scripts/" + config->getString(prefix + "_script_name"), 
-																side, config->getInteger(prefix + "_script_strength"));
+					side, config->getInteger(prefix + "_script_strength"));
 		}
 	} catch (std::exception& e)
 	{
