@@ -117,7 +117,7 @@ InputManager* InputManager::createInputManager()
 }
 
 void InputManager::updateInput()
-{	
+{
 	mUp = false;
 	mDown = false;
 	mLeft = false;
@@ -195,18 +195,19 @@ void InputManager::updateInput()
 						
 						mLastClickTime = SDL_GetTicks();
 						break;
-				/*		
-					case SDL_BUTTON_WHEELUP:
-						mMouseWheelUp = true;
-						break;
-						
-					case SDL_BUTTON_WHEELDOWN:
-						mMouseWheelDown = true;
-						break;
-				*/		
 				}
 				break;
-				
+
+			case SDL_MOUSEWHEEL:
+				if (event.wheel.y < 0) {
+					mMouseWheelDown = true;
+				}
+				else
+				{
+					mMouseWheelUp = true;
+				}
+				break;
+
 			case SDL_MOUSEBUTTONUP:
 				mUnclick = true;
 				break;
