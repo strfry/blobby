@@ -21,9 +21,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "State.h"
 #include "NetworkMessage.h"
+#include "InputSource.h"
 
 #include <vector>
 #include <boost/scoped_ptr.hpp>
+#include <boost/circular_buffer.hpp>
 
 class RakClient;
 class RakServer;
@@ -85,7 +87,9 @@ private:
 
 	boost::scoped_ptr<DuelMatch> mFakeMatch; 	// This hack is necessary to let MouseInputDevice
 												// access the necessary game variables
+
 	unsigned int mGameStepsCounter;
+	boost::circular_buffer<PlayerInput> mCachedOwnInput;
 
 	// Chat Vars
 	std::vector<std::string> mChatlog;

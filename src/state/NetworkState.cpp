@@ -107,6 +107,13 @@ NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port):
 	mSelectedChatmessage = 0;
 	mChatCursorPosition = 0;
 	mChattext = "";
+
+	// init lag compensation
+	mCachedOwnInput.set_capacity(75);		// up to 1 sec normal gamespeed time should be enough
+	for(unsigned int i = 0; i < 75; ++i)
+	{
+		mCachedOwnInput.push_back( PlayerInput() );
+	}
 }
 
 NetworkGameState::~NetworkGameState()
@@ -157,10 +164,18 @@ void NetworkGameState::step()
 
 				// difference between current step and last step
 				int deltaT = mGameStepsCounter - laststep;
-				for(int i = 0; i < deltaT; ++i)
+				// backup current input data
+				PlayerInput own = mLocalInput->getInput();
+				// simulate deltaT/2 timesteps (we assume symmetric packet delay)
+				for(int i = 0; i < deltaT / 2; ++i)
 				{
+					mLocalInput->setInput(mCachedOwnInput[deltaT - i]);
+
 					mFakeMatch->step();
 				}
+
+				// restore current input
+				mLocalInput->setInput(own);
 				break;
 			}
 			case ID_WIN_NOTIFICATION:
@@ -683,6 +698,9 @@ void NetworkGameState::step()
 			stream.Write(input.right);
 			stream.Write(input.up);
 			mClient->Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0);
+
+			// cache input for lag compensation
+			mCachedOwnInput.push_back( input );
 			break;
 		}
 		case PLAYER_WON:
