@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -71,14 +72,13 @@ class InputManager : public ObjectCounter<InputManager>
 		bool mouseWheelUp() const;
 		bool mouseWheelDown() const;
 		bool unclick() const;
-		
+
 		// config conversion methods
 		//std::string keyToString(const SDL_keysym& key) const;
-		SDL_Scancode stringToKey(const std::string& keyname) const;
-	
+
 	private:
 		static InputManager* mSingleton;
-		
+
 		// Keyboard
 		//static InputKeyMap mKeyMap[];	// Type for String <-convert-> SDLKey
 
@@ -94,17 +94,19 @@ class InputManager : public ObjectCounter<InputManager>
 		bool mMouseWheelUp;
 		bool mMouseWheelDown;
 		bool mUnclick;
-		
+
 		int mMouseX;
 		int mMouseY;
 		int mLastClickTime;
-		
-		//SDL_keysym mLastInputKey;
-		int mLastMouseButton; 
+
+		SDL_Keycode mLastActionKey;
+		char* mLastTextKey;
+
+		int mLastMouseButton;
 		std::string mLastJoyAction;
 
 		bool mRunning;
-		
+
 		InputManager();
-		
+
 };

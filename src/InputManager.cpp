@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "UserConfig.h"
 #include "IMGUI.h"
-//#include "SoundManager.h" // this is temponary commented out. check this.
 #include "utf8.h"
 
 /* implementation */
@@ -65,16 +64,16 @@ InputDevice* InputManager::beginGame(PlayerSide side) const
 	std::string prefix;
 	if (side == LEFT_PLAYER)
 		prefix = "left_blobby_";
-	
+
 	if (side == RIGHT_PLAYER)
 		prefix = "right_blobby_";
-	
+
 	UserConfig config;
 	///  \todo we need only read only access here!
 	config.loadFile("inputconfig.xml");
 	// determine which device is to be used
 	std::string device = config.getString(prefix + "device");
-	
+
 	// load config for mouse
 	if (device == "mouse")
 	{
@@ -85,9 +84,9 @@ InputDevice* InputManager::beginGame(PlayerSide side) const
 
 	else if (device == "keyboard")
 	{
-		SDL_Scancode lkey = stringToKey(config.getString(prefix + "keyboard_left"));
-		SDL_Scancode rkey = stringToKey(config.getString(prefix + "keyboard_right"));
-		SDL_Scancode jkey = stringToKey(config.getString(prefix + "keyboard_jump"));
+		SDL_Keycode lkey = SDL_GetKeyFromName((config.getString(prefix + "keyboard_left")).c_str());
+		SDL_Keycode rkey = SDL_GetKeyFromName((config.getString(prefix + "keyboard_right")).c_str());
+		SDL_Keycode jkey = SDL_GetKeyFromName((config.getString(prefix + "keyboard_jump")).c_str());
 		return new KeyboardInputDevice(lkey, rkey, jkey);
 	}
 	// load config for joystick
@@ -99,9 +98,9 @@ InputDevice* InputManager::beginGame(PlayerSide side) const
 		return new JoystickInputDevice(laction, raction,
 								jaction);
 	}
-	else 
+	else
 		std::cerr << "Error: unknown input device: " << device << std::endl;
-		
+
 	return 0;
 }
 
@@ -129,11 +128,12 @@ void InputManager::updateInput()
 	mMouseWheelDown = false;
 	mUnclick = false;
 	mLastMouseButton = -1;
-	/// \todo init properly
-//	mLastInputKey.sym = SDLK_UNKNOWN;
+
+	mLastActionKey = SDLK_UNKNOWN;
+	mLastTextKey = 0;
+
 	mLastJoyAction = "";
 	// Init GUI Events for buffered Input
-
 	SDL_PumpEvents();
 	SDL_Event event;
 	SDL_JoystickUpdate();
@@ -146,44 +146,44 @@ void InputManager::updateInput()
 			case SDL_QUIT:
 				mRunning = false;
 				break;
-				
+
 			case SDL_KEYDOWN:
-				//mLastInputKey = event.key.keysym;
+				mLastActionKey = event.key.keysym.sym;
 				switch (event.key.keysym.sym)
 				{
 					case SDLK_UP:
 						mUp = true;
 						break;
-						
+
 					case SDLK_DOWN:
 						mDown = true;
 						break;
-						
+
 					case SDLK_LEFT:
 						mLeft = true;
 						break;
-						
+
 					case SDLK_RIGHT:
 						mRight = true;
 						break;
-						
+
 					case SDLK_RETURN:
 					case SDLK_SPACE:
 						mSelect = true;
 						break;
-						
+
 					case SDLK_ESCAPE:
 					//case SDLK_BACKSPACE:
 						mExit = true;
 						break;
-						
+
 					default:
 						break;
 				}
 				break;
 
 			case SDL_TEXTINPUT:
-				std::cout << event.text.text << std::endl;
+				mLastTextKey = event.text.text;
 				break;
 
 			case SDL_MOUSEBUTTONDOWN:
@@ -192,12 +192,12 @@ void InputManager::updateInput()
 				{
 					case SDL_BUTTON_LEFT:
 						mClick = true;
-						
+
 						if(SDL_GetTicks() - mLastClickTime < DOUBLE_CLICK_TIME )
 						{
 							mDoubleClick = true;
 						}
-						
+
 						mLastClickTime = SDL_GetTicks();
 						break;
 				}
@@ -231,10 +231,10 @@ void InputManager::updateInput()
 					int axis = 0;
 					if (event.jaxis.value > 0)
 						axis = event.jaxis.axis + 1;
-					
+
 					if (event.jaxis.value < 0)
 						axis = -(event.jaxis.axis + 1);
-					
+
 					JoystickAction joyAction(event.jaxis.which, JoystickAction::AXIS, axis);
 					mLastJoyAction = joyAction.toString();
 				}
@@ -277,7 +277,7 @@ bool InputManager::down() const
 {
 	return mDown;
 }
-     
+
 bool InputManager::left() const
 {
 	return mLeft;
@@ -378,7 +378,7 @@ bool InputManager::running() const
 	{ "?",SDLK_QUESTION },
 	{ "@",SDLK_AT },
 
-	/* 
+	/*
 	   Skip uppercase letters
 	 */
 	/*{ "[",SDLK_LEFTBRACKET },
@@ -648,21 +648,20 @@ std::string InputManager::keyToString (const SDL_keysym& key) const
 }
 */
 
-SDL_Scancode InputManager::stringToKey (const std::string& keyname) const
-{
-	return SDL_GetScancodeFromName(keyname.c_str());
-}
-
 std::string InputManager::getLastTextKey()
-{/*
-	if (mLastInputKey.sym != SDLK_UNKNOWN)
-		return keyToString(mLastInputKey);
-	else */
+{
+	if (mLastTextKey != 0)
+	{
+	std::cout << "HALLO" << std::endl;
+		return std::string(mLastTextKey);
+	}
+	else
 		return "";
 }
 
 std::string InputManager::getLastActionKey()
 {
+	return SDL_GetKeyName(mLastActionKey);
 	/// \todo this is a hack we cannot prevent until SDL 1.3 is out
 	/*int i = 0;
 	while (mKeyMap[i].keyname != NULL)
@@ -673,7 +672,7 @@ std::string InputManager::getLastActionKey()
 		}
 		++i;
 	}*/
-	return "";
+	//return "";
 }
 
 std::string InputManager::getLastJoyAction() const

@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* includes */
 #include <iostream>
-#include <cstdio>
 #include <sstream>
 
 #include "DuelMatch.h"
@@ -131,7 +130,7 @@ PlayerInput MouseInputDevice::transferInput(const InputSource* source)
 // -------------------------------------------------------------------------------------------------
 
 
-KeyboardInputDevice::KeyboardInputDevice(SDL_Scancode leftKey, SDL_Scancode rightKey, SDL_Scancode jumpKey)
+KeyboardInputDevice::KeyboardInputDevice(SDL_Keycode leftKey, SDL_Keycode rightKey, SDL_Keycode jumpKey)
 	: InputDevice()
 {
 	mLeftKey = leftKey;
@@ -141,9 +140,9 @@ KeyboardInputDevice::KeyboardInputDevice(SDL_Scancode leftKey, SDL_Scancode righ
 
 PlayerInput KeyboardInputDevice::transferInput(const InputSource* input)
 {
-	Uint8* keyState = SDL_GetKeyboardState(0);
 	const Uint8* keyState = SDL_GetKeyboardState(0);
-	return PlayerInput(keyState[mLeftKey], keyState[mRightKey], keyState[mJumpKey]);
+
+	return PlayerInput(keyState[SDL_GetScancodeFromKey(mLeftKey)], keyState[SDL_GetScancodeFromKey(mRightKey)], keyState[SDL_GetScancodeFromKey(mJumpKey)]);
 }
 
 
@@ -209,12 +208,12 @@ JoystickAction::JoystickAction(std::string string)
 		if (strstr(str, "button"))
 		{
 			type = BUTTON;
-			if (std::sscanf(str, "joy_%d_button_%d", &joyid, &number) < 2)
+			if (sscanf(str, "joy_%d_button_%d", &joyid, &number) < 2)
 				throw string;
 		}
 		else if (strstr(str, "axis"))
 		{
-			if (std::sscanf(str, "joy_%d_axis_%d", &joyid, &number) < 2)
+			if (sscanf(str, "joy_%d_axis_%d", &joyid, &number) < 2)
 				throw string;
 		}
 

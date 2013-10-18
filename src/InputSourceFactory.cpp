@@ -37,13 +37,13 @@ boost::shared_ptr<InputSource> InputSourceFactory::createInputSource( boost::sha
 	{
 		// these operations may throw, i.e., when the script is not found (should not happen)
 		//  or has errors
-		if (config->getBool(prefix + "_player_human")) 
+		if (config->getBool(prefix + "_player_human"))
 		{
 			return boost::make_shared<LocalInputSource>(side);
-		} 
-		else 
+		}
+		else
 		{
-			return boost::make_shared<ScriptedInputSource>("scripts/" + config->getString(prefix + "_script_name"), 
+			return boost::make_shared<ScriptedInputSource>("scripts/" + config->getString(prefix + "_script_name"),
 					side, config->getInteger(prefix + "_script_strength"));
 		}
 	} catch (std::exception& e)
