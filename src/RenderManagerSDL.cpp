@@ -238,7 +238,7 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 
 		// Prepare blobby shadow textures
 		SDL_Texture* leftBlobShadowTex = SDL_CreateTexture(mRenderer,
-				SDL_PIXELFORMAT_ARGB8888,
+				SDL_PIXELFORMAT_ABGR8888,
 				SDL_TEXTUREACCESS_STREAMING,
 				formatedBlobShadowImage->w, formatedBlobShadowImage->h);
 		SDL_SetTextureBlendMode(leftBlobShadowTex, SDL_BLENDMODE_BLEND);

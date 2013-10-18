@@ -73,6 +73,8 @@ class InputManager : public ObjectCounter<InputManager>
 		bool mouseWheelDown() const;
 		bool unclick() const;
 
+		bool windowFocus() const;
+
 		// config conversion methods
 		//std::string keyToString(const SDL_keysym& key) const;
 
@@ -94,6 +96,8 @@ class InputManager : public ObjectCounter<InputManager>
 		bool mMouseWheelUp;
 		bool mMouseWheelDown;
 		bool mUnclick;
+
+		bool mWindowFocus;
 
 		int mMouseX;
 		int mMouseY;

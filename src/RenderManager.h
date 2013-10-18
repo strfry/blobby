@@ -193,7 +193,9 @@ class RenderManager : public ObjectCounter<RenderManager>
 		
 		// This function may be useful for displaying framerates
 		void setTitle(const std::string& title);
-	
+
+		// Returns the window
+		SDL_Window* getWindow();
 	protected:
 		RenderManager();
 		// Returns -1 on EOF

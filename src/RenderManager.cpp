@@ -253,6 +253,10 @@ void RenderManager::setTitle(const std::string& title)
 	SDL_SetWindowTitle(mWindow, title.c_str());
 }
 
+SDL_Window* RenderManager::getWindow() {
+	return mWindow;
+}
+
 Color RenderManager::getOscillationColor() const
 {
 	float time = float(SDL_GetTicks()) / 1000.0;

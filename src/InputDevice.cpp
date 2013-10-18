@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* header include */
 #include "InputDevice.h"
+#include "InputManager.h"
 
 /* includes */
 #include <iostream>
@@ -61,13 +62,14 @@ PlayerInput MouseInputDevice::transferInput(const InputSource* source)
 	PlayerInput input = PlayerInput();
 
 	int mMouseXPos;
-	bool warp = true; //SDL_GetAppState() & SDL_APPINPUTFOCUS;
+
+	SDL_Window* window = RenderManager::getSingleton().getWindow();
+	bool warp = InputManager::getSingleton()->windowFocus(); //SDL_GetAppState() & SDL_APPINPUTFOCUS;
 	int mouseState = SDL_GetMouseState(&mMouseXPos, NULL);
 
-	/*
 	if (warp)
-		SDL_WarpMouse(mMouseXPos, 310);
-	*/
+		SDL_WarpMouseInWindow(window, mMouseXPos, 310);
+
 	if (mouseState == 0)
 		mDelay = false;
 
@@ -77,14 +79,12 @@ PlayerInput MouseInputDevice::transferInput(const InputSource* source)
 	const int playerOffset = mPlayer == RIGHT_PLAYER ? 200 : -200;
 	mMouseXPos = mMouseXPos < 201 ? 201 : mMouseXPos;
 
-	/*
 	if (mMouseXPos <= 201 && warp)
-		SDL_WarpMouse(201, 310);
+		SDL_WarpMouseInWindow(window, 201, 310);
 
 	mMouseXPos = mMouseXPos > 600 ? 600 : mMouseXPos;
 	if (mMouseXPos >= 600 && warp)
-		SDL_WarpMouse(600, 310);
-	*/
+		SDL_WarpMouseInWindow(window, 600, 310);
 
 	// here we load the current position of the player.
 	float blobpos = match->getBlobPosition(mPlayer).x;
@@ -123,7 +123,6 @@ PlayerInput MouseInputDevice::transferInput(const InputSource* source)
 
 	return input;
 }
-
 
 // -------------------------------------------------------------------------------------------------
 // 		KEYBOARD INPUT

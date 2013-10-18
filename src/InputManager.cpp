@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* header include */
 #include "InputManager.h"
+#include "RenderManager.h"
 
 /* includes */
 #include <cassert>
@@ -45,6 +46,7 @@ InputManager::InputManager()
 	assert (mSingleton == 0);
 	mSingleton = this;
 	mRunning = true;
+	mWindowFocus = true;
 
 	/// \todo init properly?
 //	mLastInputKey.sym = SDLK_UNKNOWN;
@@ -58,8 +60,10 @@ InputManager::~InputManager()
 
 InputDevice* InputManager::beginGame(PlayerSide side) const
 {
+	SDL_Window* window = RenderManager::getSingleton().getWindow();
+
 	// Move Mouse to default position
-//	SDL_WarpMouse(400, 300);
+	SDL_WarpMouseInWindow(window, 400, 300);
 
 	std::string prefix;
 	if (side == LEFT_PLAYER)
@@ -241,6 +245,19 @@ void InputManager::updateInput()
 				break;
 			}
 
+			case SDL_WINDOWEVENT:
+
+				switch (event.window.event)
+				{
+					case SDL_WINDOWEVENT_FOCUS_LOST:
+						mWindowFocus = false;
+						break;
+
+					case SDL_WINDOWEVENT_FOCUS_GAINED:
+						mWindowFocus = true;
+						break;
+				}
+
 	/* This handles the special buttons on the GP2X, this will
 	 * have to be renewed with the next GP2X release.
 	/// even if we reintroduce this behaviour, we should move this code
@@ -330,6 +347,11 @@ bool InputManager::unclick() const
 	return mUnclick;
 }
 
+bool InputManager::windowFocus() const
+{
+	return mWindowFocus;
+}
+
 bool InputManager::running() const
 {
 	return mRunning;
@@ -339,7 +361,6 @@ std::string InputManager::getLastTextKey()
 {
 	if (mLastTextKey != 0)
 	{
-	std::cout << "HALLO" << std::endl;
 		return std::string(mLastTextKey);
 	}
 	else
