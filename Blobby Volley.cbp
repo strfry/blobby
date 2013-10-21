@@ -35,7 +35,7 @@
 			<Add directory="./src" />
 		</Compiler>
 		<Linker>
-			<Add library="SDL" />
+			<Add library="SDL2" />
 			<Add library="wsock32" />
 			<Add library="physfs" />
 			<Add library="OpenGL32" />
@@ -105,8 +105,6 @@
 		<Unit filename="src/RenderManager.h" />
 		<Unit filename="src/RenderManagerGL2D.cpp" />
 		<Unit filename="src/RenderManagerGL2D.h" />
-		<Unit filename="src/RenderManagerGP2X.cpp" />
-		<Unit filename="src/RenderManagerGP2X.h" />
 		<Unit filename="src/RenderManagerNull.cpp" />
 		<Unit filename="src/RenderManagerNull.h" />
 		<Unit filename="src/RenderManagerSDL.cpp" />
