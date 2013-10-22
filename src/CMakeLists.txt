@@ -61,6 +61,7 @@ set (blobby_SRC ${common_SRC}
 	state/NetworkSearchState.cpp state/NetworkSearchState.h
 	state/ReplayState.cpp state/ReplayState.h
 	state/ReplaySelectionState.cpp state/ReplaySelectionState.h
+	state/LobbyState.cpp state/LobbyState.h
 	)
 	
 set (blobby-server_SRC ${common_SRC}
