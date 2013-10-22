@@ -86,17 +86,6 @@ void ReliabilityLayer::Reset( void )
 }
 
 //-------------------------------------------------------------------------------------------------------
-// Sets up encryption
-//-------------------------------------------------------------------------------------------------------
-void ReliabilityLayer::SetEncryptionKey( const unsigned char* key )
-{
-	if ( key )
-		encryptor.SetKey( key );
-	else
-		encryptor.UnsetKey();
-}
-
-//-------------------------------------------------------------------------------------------------------
 // Assign a socket for the reliability layer to use for writing
 //-------------------------------------------------------------------------------------------------------
 #pragma warning( disable : 4100 ) // warning C4100: <variable name> : unreferenced formal parameter
@@ -137,7 +126,7 @@ void ReliabilityLayer::InitializeVariables( void )
 	packetNumber = 0;
 	// lastPacketSendTime=retransmittedFrames=sentPackets=sentFrames=receivedPacketsCount=bytesSent=bytesReceived=0;
 	SetLostPacketResendDelay( 1000 );
-	deadConnection = cheater = false;
+	deadConnection = false;
 	lastAckTime = 0;
 	blockWindowIncreaseUntilTime = 0;
 	// Windowing
@@ -337,17 +326,6 @@ bool ReliabilityLayer::HandleSocketReceiveFromConnectedPlayer( const char *buffe
 	// bytesReceived+=length + UDP_HEADER_SIZE;
 
 	UpdateThreadedMemory();
-
-	// decode this whole chunk if the decoder is defined.
-	if ( encryptor.IsKeySet() )
-	{
-		if ( encryptor.Decrypt( ( unsigned char* ) buffer, length, ( unsigned char* ) buffer, &length ) == false )
-		{
-			statistics.bitsWithBadCRCReceived += length * 8;
-			statistics.packetsWithBadCRCReceived++;
-			return false;
-		}
-	}
 
 	statistics.bitsReceived += length * 8;
 	statistics.packetsReceived++;
@@ -949,9 +927,6 @@ bool ReliabilityLayer::Send( char *data, int numberOfBitsToSend, PacketPriority 
 
 	int maxDataSize = MTUSize - UDP_HEADER_SIZE - headerLength;
 
-	if ( encryptor.IsKeySet() )
-		maxDataSize -= 16; // Extra data for the encryptor
-
 	bool splitPacket = numberOfBytesToSend > maxDataSize;
 
 	// If a split packet, we might have to upgrade the reliability
@@ -1160,43 +1135,13 @@ void ReliabilityLayer::SendBitStream( SOCKET s, PlayerID playerId, RakNet::BitSt
 	}
 #endif
 
-
-	// Encode the whole bitstream if the encoder is defined.
-
-	if ( encryptor.IsKeySet() )
-	{
-		length = bitStream->GetNumberOfBytesUsed();
-		oldLength = length;
-
-		encryptor.Encrypt( ( unsigned char* ) bitStream->GetData(), length, ( unsigned char* ) bitStream->GetData(), &length );
-		statistics.encryptionBitsSent = ( length - oldLength ) * 8;
-
-		assert( ( length % 16 ) == 0 );
-	}
-
-	else
-	{
-		length = bitStream->GetNumberOfBytesUsed();
-	}
-
-#ifdef __USE_IO_COMPLETION_PORTS
-	if ( readWriteSocket == INVALID_SOCKET )
-	{
-		assert( 0 );
-		return ;
-	}
-
-	statistics.packetsSent++;
-	statistics.totalBitsSent += length * 8;
-	SocketLayer::Instance()->Write( readWriteSocket, ( const char* ) bitStream->GetData(), length );
-#else
+	length = bitStream->GetNumberOfBytesUsed();
 
 	statistics.packetsSent++;
 	statistics.totalBitsSent += length * 8;
 	//printf("total bits=%i length=%i\n", BITS_TO_BYTES(statistics.totalBitsSent), length);
 
 	SocketLayer::Instance()->SendTo( s, ( char* ) bitStream->GetData(), length, playerId.binaryAddress, playerId.port );
-#endif // __USE_IO_COMPLETION_PORTS
 
 	// lastPacketSendTime=time;
 }
@@ -1258,9 +1203,6 @@ void ReliabilityLayer::GenerateFrame( RakNet::BitStream *output, int MTUSize, bo
 	bool anyPacketsLost = false;
 
 	maxDataBitSize = MTUSize - UDP_HEADER_SIZE;
-
-	if ( encryptor.IsKeySet() )
-		maxDataBitSize -= 16; // Extra data for the encryptor
 
 	maxDataBitSize <<= 3;
 
@@ -2085,36 +2027,6 @@ InternalPacket* ReliabilityLayer::CreateInternalPacketFromBitStream( RakNet::Bit
 }
 
 //-------------------------------------------------------------------------------------------------------
-// Get the SHA1 code
-//-------------------------------------------------------------------------------------------------------
-void ReliabilityLayer::GetSHA1( unsigned char * const buffer, unsigned int
-				nbytes, char code[ SHA1_LENGTH ] )
-{
-	CSHA1 sha1;
-
-	sha1.Reset();
-	sha1.Update( ( unsigned char* ) buffer, nbytes );
-	sha1.Final();
-	memcpy( code, sha1.GetHash(), SHA1_LENGTH );
-}
-
-//-------------------------------------------------------------------------------------------------------
-// Check the SHA1 code
-//-------------------------------------------------------------------------------------------------------
-bool ReliabilityLayer::CheckSHA1( char code[ SHA1_LENGTH ], unsigned char *
-				  const buffer, unsigned int nbytes )
-{
-	char code2[ SHA1_LENGTH ];
-	GetSHA1( buffer, nbytes, code2 );
-
-	for ( int i = 0; i < SHA1_LENGTH; i++ )
-		if ( code[ i ] != code2[ i ] )
-			return false;
-
-	return true;
-}
-
-//-------------------------------------------------------------------------------------------------------
 // Search the specified list for sequenced packets on the specified ordering
 // stream, optionally skipping those with splitPacketId, and delete them
 //-------------------------------------------------------------------------------------------------------
@@ -2208,9 +2120,6 @@ void ReliabilityLayer::SplitPacket( InternalPacket *internalPacket, int MTUSize 
 	InternalPacket **internalPacketArray;
 
 	maxDataSize = MTUSize - UDP_HEADER_SIZE;
-
-	if ( encryptor.IsKeySet() )
-		maxDataSize -= 16; // Extra data for the encryptor
 
 #ifdef _DEBUG
 	// Make sure we need to split the packet to begin with
@@ -2662,14 +2571,6 @@ void ReliabilityLayer::InsertPacketIntoResendQueue( InternalPacket *internalPack
 	}
 
 	//reliabilityLayerMutexes[resendQueue_MUTEX].Unlock();
-}
-
-//-------------------------------------------------------------------------------------------------------
-// If Read returns -1 and this returns true then a modified packet was detected
-//-------------------------------------------------------------------------------------------------------
-bool ReliabilityLayer::IsCheater( void ) const
-{
-	return cheater;
 }
 
 //-------------------------------------------------------------------------------------------------------

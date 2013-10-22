@@ -39,9 +39,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "tinyxml/tinyxml.h"
 
 #include "NetworkState.h"
+#include "LobbyState.h"
 #include "TextManager.h"
 #include "IMGUI.h"
-#include "RakNetPacket.h"
 #include "IUserConfigReader.h"
 #include "FileWrite.h"
 #include "FileRead.h"
@@ -83,7 +83,7 @@ void NetworkSearchState::step()
 		bool skip = false;
 		bool skip_iter = false;
 
-		while ((packet = receivePacket(*iter)) && !skip)
+		while ((packet = (*iter)->Receive()) && !skip)
 		{
 			switch(packet->data[0])
 			{
@@ -170,7 +170,7 @@ void NetworkSearchState::step()
 		if (skip_iter)
 			break;
 	}
-	while (packet = receivePacket(mPingClient.get()))
+	while (packet = mPingClient->Receive())
 	{
 		switch (packet->data[0])
 		{
@@ -319,7 +319,7 @@ void NetworkSearchState::step()
 	{
 		ServerInfo server = mScannedServers[mSelectedServer];
 		deleteCurrentState();
-		setCurrentState(new NetworkGameState(server.hostname, server.port));
+		setCurrentState(new LobbyState(server));
 	}
 	if (imgui.doButton(GEN_ID, Vector2(480, 530), TextManager::LBL_CANCEL))
 	{

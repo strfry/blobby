@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,33 +20,30 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #pragma once
 
-#include <boost/shared_ptr.hpp>
-#include "raknet/RakPeer.h"
+#include "State.h"
 
-class Packet;
+#include <vector>
+#include <string>
 
-typedef boost::shared_ptr<Packet> packet_ptr;
+#include <boost/scoped_ptr.hpp>
 
-struct deleter
+#include "raknet/RakClient.h"
+
+#include "NetworkMessage.h"
+
+class LobbyState : public State
 {
-	RakPeer* peer;
-	void operator()(Packet* p)
-	{
-		peer->DeallocatePacket(p);
-	}
+	public:
+		LobbyState(ServerInfo info);
+		virtual ~LobbyState();
+
+		virtual void step();
+		virtual const char* getStateName() const;
+
+	private:
+		boost::scoped_ptr<RakClient> mClient;
+		ServerInfo mInfo;
+		int mSelectedPlayer;
+		std::vector<std::string> mConnectedPlayers;
 };
 
-inline packet_ptr receivePacket(RakPeer* peer)
-{
-	deleter del;
-	del.peer = peer;
-	Packet* pptr = peer->Receive();
-	if(pptr)
-	{
-		return packet_ptr(pptr, del);
-	} 
-	else 
-	{
-		return packet_ptr();
-	}	
-}
