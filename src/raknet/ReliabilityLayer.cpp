@@ -41,6 +41,8 @@
 #include <stdlib.h>
 #endif
 
+#include <cstring>
+
 // Defined in rand.cpp
 extern void seedMT( unsigned int seed );
 extern inline unsigned int randomMT( void );
@@ -70,10 +72,6 @@ ReliabilityLayer::ReliabilityLayer() : updateBitStream( MAXIMUM_MTU_SIZE )   // 
 ReliabilityLayer::~ReliabilityLayer()
 {
 	FreeMemory( true ); // Free all memory immediately
-#ifdef __USE_IO_COMPLETION_PORTS
-	if ( readWriteSocket != INVALID_SOCKET )
-		closesocket( readWriteSocket );
-#endif
 }
 
 //-------------------------------------------------------------------------------------------------------
@@ -137,7 +135,7 @@ void ReliabilityLayer::InitializeVariables( void )
 	packetNumber = 0;
 	// lastPacketSendTime=retransmittedFrames=sentPackets=sentFrames=receivedPacketsCount=bytesSent=bytesReceived=0;
 	SetLostPacketResendDelay( 1000 );
-	deadConnection = cheater = false;
+	deadConnection = false;
 	lastAckTime = 0;
 	blockWindowIncreaseUntilTime = 0;
 	// Windowing
@@ -156,7 +154,6 @@ void ReliabilityLayer::FreeMemory( bool freeAllImmediately )
 {
 	if ( freeAllImmediately )
 	{
-		FreeThreadedMemory();
 		FreeThreadSafeMemory();
 	}
 	else
@@ -164,10 +161,6 @@ void ReliabilityLayer::FreeMemory( bool freeAllImmediately )
 		FreeThreadSafeMemory();
 		freeThreadedMemoryOnNextUpdate = true;
 	}
-}
-
-void ReliabilityLayer::FreeThreadedMemory( void )
-{
 }
 
 void ReliabilityLayer::FreeThreadSafeMemory( void )
@@ -200,20 +193,13 @@ void ReliabilityLayer::FreeThreadSafeMemory( void )
 	unsigned i;
 	InternalPacket *internalPacket;
 
-	for ( i = 0; i < splitPacketList.size(); i++ )
+	for ( unsigned i = 0; i < splitPacketList.size(); i++ )
 	{
 		delete [] splitPacketList[ i ]->data;
 		internalPacketPool.ReleasePointer( splitPacketList[ i ] );
 	}
 
 	splitPacketList.clear();
-	//reliabilityLayerMutexes[splitPacketList_MUTEX].Unlock();
-	// }
-
-
-	// if (bytesSent > 0 || bytesReceived > 0)
-	// {
-	//reliabilityLayerMutexes[outputQueue_MUTEX].Lock();
 
 	while ( outputQueue.size() > 0 )
 	{
@@ -223,14 +209,9 @@ void ReliabilityLayer::FreeThreadSafeMemory( void )
 	}
 
 	outputQueue.clearAndForceAllocation( 512 );
-	//reliabilityLayerMutexes[outputQueue_MUTEX].Unlock();
-	// }
 
-	// if (bytesSent > 0 || bytesReceived > 0)
-	// {
-	//reliabilityLayerMutexes[orderingList_MUTEX].Lock();
 
-	for ( i = 0; i < orderingList.size(); i++ )
+	for ( unsigned i = 0; i < orderingList.size(); i++ )
 	{
 		if ( orderingList[ i ] )
 		{
@@ -251,25 +232,12 @@ void ReliabilityLayer::FreeThreadSafeMemory( void )
 	}
 
 	orderingList.clear();
-	//reliabilityLayerMutexes[orderingList_MUTEX].Unlock();
-	// }
-
-	// if (bytesSent > 0 || bytesReceived > 0)
-	// {
-	//reliabilityLayerMutexes[acknowledgementQueue_MUTEX].Lock();
 
 	while ( acknowledgementQueue.size() > 0 )
 		internalPacketPool.ReleasePointer( acknowledgementQueue.pop() );
 
 	acknowledgementQueue.clearAndForceAllocation( 64 );
 
-	//reliabilityLayerMutexes[acknowledgementQueue_MUTEX].Unlock();
-	// }
-
-
-	// if (bytesSent > 0 || bytesReceived > 0)
-	// {
-	//reliabilityLayerMutexes[resendQueue_MUTEX].Lock();
 	while ( resendQueue.size() )
 	{
 		// The resend Queue can have NULL pointer holes.  This is so we can deallocate blocks without having to compress the array
@@ -283,11 +251,9 @@ void ReliabilityLayer::FreeThreadSafeMemory( void )
 	}
 
 	resendQueue.clearAndForceAllocation( DEFAULT_RECEIVED_PACKETS_SIZE );
-	//reliabilityLayerMutexes[resendQueue_MUTEX].Unlock();
-	// }
 
 	unsigned j;
-	for ( i = 0; i < NUMBER_OF_PRIORITIES; i++ )
+	for ( unsigned i = 0; i < NUMBER_OF_PRIORITIES; i++ )
 	{
 		j = 0;
 		for ( ; j < sendPacketSet[ i ].size(); j++ )
@@ -883,7 +849,6 @@ bool ReliabilityLayer::Send( char *data, int numberOfBitsToSend, PacketPriority 
 	assert( numberOfBitsToSend > 0 );
 #endif
 	
-#ifdef __USE_IO_COMPLETION_PORTS
 	
 	if ( readWriteSocket == INVALID_SOCKET )
 		return false;
@@ -1034,15 +999,6 @@ bool ReliabilityLayer::Send( char *data, int numberOfBitsToSend, PacketPriority 
 //-------------------------------------------------------------------------------------------------------
 void ReliabilityLayer::Update( SOCKET s, PlayerID playerId, int MTUSize, unsigned int time )
 {
-#ifdef __USE_IO_COMPLETION_PORTS
-
-	if ( readWriteSocket == INVALID_SOCKET )
-		return;
-
-	if (deadConnection)
-		return;
-
-#endif
 	// unsigned resendQueueSize;
 	bool reliableDataSent;
 	
@@ -1196,7 +1152,6 @@ void ReliabilityLayer::SendBitStream( SOCKET s, PlayerID playerId, RakNet::BitSt
 	//printf("total bits=%i length=%i\n", BITS_TO_BYTES(statistics.totalBitsSent), length);
 
 	SocketLayer::Instance()->SendTo( s, ( char* ) bitStream->GetData(), length, playerId.binaryAddress, playerId.port );
-#endif // __USE_IO_COMPLETION_PORTS
 	
 	// lastPacketSendTime=time;
 }
@@ -2667,14 +2622,6 @@ void ReliabilityLayer::InsertPacketIntoResendQueue( InternalPacket *internalPack
 }
 
 //-------------------------------------------------------------------------------------------------------
-// If Read returns -1 and this returns true then a modified packet was detected
-//-------------------------------------------------------------------------------------------------------
-bool ReliabilityLayer::IsCheater( void ) const
-{
-	return cheater;
-}
-
-//-------------------------------------------------------------------------------------------------------
 //  Were you ever unable to deliver a packet despite retries?
 //-------------------------------------------------------------------------------------------------------
 bool ReliabilityLayer::IsDeadConnection( void ) const
@@ -2782,6 +2729,5 @@ void ReliabilityLayer::UpdateThreadedMemory(void)
 	if ( freeThreadedMemoryOnNextUpdate )
 	{
 		freeThreadedMemoryOnNextUpdate = false;
-		FreeThreadedMemory();
 	}
 }

@@ -1,7 +1,7 @@
 /* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
 /**
 * @file
-* @brief SocketLayer class implementation 
+* @brief SocketLayer class implementation
  * Copyright (c) 2003, Rakkarsoft LLC and Kevin Jenkins
  * All rights reserved.
  *
@@ -41,11 +41,6 @@ typedef int socklen_t;
 #include <fcntl.h>
 #endif
 
-#include "ExtendedOverlappedPool.h"
-#ifdef __USE_IO_COMPLETION_PORTS
-#include "AsynchronousFileIO.h"
-#endif
-
 int SocketLayer::socketLayerInstanceCount = 0;
 
 SocketLayer SocketLayer::I;
@@ -56,34 +51,9 @@ extern void __stdcall ProcessNetworkPacket( unsigned int binaryAddress, unsigned
 extern void ProcessNetworkPacket( unsigned int binaryAddress, unsigned short port, const char *data, int length, RakPeer *rakPeer );
 #endif
 
-#ifdef _WIN32
-extern void __stdcall ProcessPortUnreachable( unsigned int binaryAddress, unsigned short port, RakPeer *rakPeer );
-#else
-extern void ProcessPortUnreachable( unsigned int binaryAddress, unsigned short port, RakPeer *rakPeer );
-#endif
-
 #ifdef _DEBUG
 #include <cstdio>
 #endif
-
-/*
-#ifdef _DEBUG
-void Error(const char* message)
-{
-#ifdef WIN32
-	DWORD dwIOError = GetLastError();
-	LPVOID messageBuffer;
-	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL, dwIOError, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT),  // Default language
-		( LPTSTR ) &messageBuffer, 0, NULL);
-	printf("%s:Error code - %d\n%s", message, dwIOError, messageBuffer);
-	LocalFree(messageBuffer);
-#else
-	printf("%s", message);
-#endif
-}
-#endif
-*/
 
 SocketLayer::SocketLayer()
 {
@@ -93,14 +63,14 @@ SocketLayer::SocketLayer()
 #ifdef _WIN32
 		WSADATA winsockInfo;
 
-		// Initiate use of the Winsock DLL (Up to Verion 2.2) 
+		// Initiate use of the Winsock DLL (Up to Verion 2.2)
 		if (WSAStartup(MAKEWORD(2, 2), &winsockInfo ) != 0)
 		{
 			LOG("SocketLayer", "WSAStartup failed")
 		}
 #endif
 	}
-	
+
 	// increase usecount
 	socketLayerInstanceCount++;
 }
@@ -114,7 +84,7 @@ SocketLayer::~SocketLayer()
 		WSACleanup();
 #endif
 	}
-	
+
 	// decrease usecount
 	socketLayerInstanceCount--;
 }
@@ -143,14 +113,7 @@ SOCKET SocketLayer::CreateBoundSocket( unsigned short port, bool blockingSocket,
 	sockaddr_in listenerSocketAddress;
 	int ret;
 
-#ifdef __USE_IO_COMPLETION_PORTS
-
-	if ( blockingSocket == false )
-		listenSocket = WSASocket( AF_INET, SOCK_DGRAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED );
-	else
-#endif
-
-		listenSocket = socket( AF_INET, SOCK_DGRAM, 0 );
+	listenSocket = socket( AF_INET, SOCK_DGRAM, 0 );
 
 	if ( listenSocket == INVALID_SOCKET )
 	{
@@ -205,7 +168,7 @@ SOCKET SocketLayer::CreateBoundSocket( unsigned short port, bool blockingSocket,
 	else
 	{
 		listenerSocketAddress.sin_addr.s_addr = INADDR_ANY;
-	}	
+	}
 
 	// bind our name to the socket
 	ret = bind( listenSocket, ( struct sockaddr * ) & listenerSocketAddress, sizeof( struct sockaddr ) );
@@ -243,57 +206,7 @@ int SocketLayer::Write( SOCKET writeSocket, const char* data, int length )
 #ifdef _DEBUG
 	assert( writeSocket != INVALID_SOCKET );
 #endif
-#ifdef __USE_IO_COMPLETION_PORTS
-
-	ExtendedOverlappedStruct* eos = ExtendedOverlappedPool::Instance()->GetPointer();
-	memset( &( eos->overlapped ), 0, sizeof( OVERLAPPED ) );
-	memcpy( eos->data, data, length );
-	eos->length = length;
-
-	//AsynchronousFileIO::Instance()->PostWriteCompletion(ccs);
-	WriteAsynch( ( HANDLE ) writeSocket, eos );
-
-	return length;
-#else
-
 	return send( writeSocket, data, length, 0 );
-#endif
-}
-
-// Start an asynchronous read using the specified socket.
-#pragma warning( disable : 4100 ) // warning C4100: <variable name> : unreferenced formal parameter
-bool SocketLayer::AssociateSocketWithCompletionPortAndRead( SOCKET readSocket, unsigned int binaryAddress, unsigned short port, RakPeer *rakPeer )
-{
-#ifdef __USE_IO_COMPLETION_PORTS
-	assert( readSocket != INVALID_SOCKET );
-
-	ClientContextStruct* ccs = new ClientContextStruct;
-	ccs->handle = ( HANDLE ) readSocket;
-
-	ExtendedOverlappedStruct* eos = ExtendedOverlappedPool::Instance()->GetPointer();
-	memset( &( eos->overlapped ), 0, sizeof( OVERLAPPED ) );
-	eos->binaryAddress = binaryAddress;
-	eos->port = port;
-	eos->rakPeer = rakPeer;
-	eos->length = MAXIMUM_MTU_SIZE;
-
-	bool b = AsynchronousFileIO::Instance()->AssociateSocketWithCompletionPort( readSocket, ( DWORD ) ccs );
-
-	if ( !b )
-	{
-		ExtendedOverlappedPool::Instance()->ReleasePointer( eos );
-		delete ccs;
-		return false;
-	}
-
-	BOOL success = ReadAsynch( ( HANDLE ) readSocket, eos );
-
-	if ( success == FALSE )
-		return false;
-
-#endif
-
-	return true;
 }
 
 int SocketLayer::RecvFrom( SOCKET s, RakPeer *rakPeer, int *errorCode )
@@ -360,7 +273,8 @@ int SocketLayer::RecvFrom( SOCKET s, RakPeer *rakPeer, int *errorCode )
 		}
 		if ( dwIOError == WSAECONNRESET )
 		{
-			ProcessPortUnreachable(sa.sin_addr.s_addr, portnum, rakPeer);
+			// ProcessPortUnreachable(sa.sin_addr.s_addr, portnum, rakPeer);
+			// this function no longer exists, as the old implementation did nothing
 			// *errorCode = dwIOError;
 			return SOCKET_ERROR;
 		}

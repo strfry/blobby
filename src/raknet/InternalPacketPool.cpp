@@ -1,7 +1,7 @@
 /* -*- mode: c++; c-file-style: raknet; tab-always-indent: nil; -*- */
 /**
- * @file 
- * @brief Internal Packet Pool Implementation  
+ * @file
+ * @brief Internal Packet Pool Implementation
  *
  * Copyright (c) 2003, Rakkarsoft LLC and Kevin Jenkins
  * All rights reserved.
@@ -36,9 +36,8 @@ InternalPacketPool::InternalPacketPool()
 #ifdef _DEBUG
 	packetsReleased = 0;
 #endif
-	
-	unsigned i;
-	for (i=0; i < 64; i++)
+
+	for (unsigned i = 0; i < 64; i++)
 		pool.push(new InternalPacket);
 }
 
@@ -48,17 +47,15 @@ InternalPacketPool::~InternalPacketPool()
 	// If this assert hits then not all packets given through GetPointer have been returned to ReleasePointer
 	assert( packetsReleased == 0 );
 #endif
-	
+
 	ClearPool();
 }
 
 void InternalPacketPool::ClearPool( void )
 {
-	InternalPacket * p;
-	
 	while ( !pool.empty() )
 	{
-		p = pool.top();
+		InternalPacket* p = pool.top();
 		pool.pop();
 		delete p;
 	}
@@ -69,7 +66,7 @@ InternalPacket* InternalPacketPool::GetPointer( void )
 #ifdef _DEBUG
 	packetsReleased++;
 #endif
-	
+
 	InternalPacket *p = 0;
 
 	if ( !pool.empty() )
@@ -77,10 +74,10 @@ InternalPacket* InternalPacketPool::GetPointer( void )
 		p = pool.top();
 		pool.pop();
 	}
-	
+
 	if ( p )
 		return p;
-		
+
 	p = new InternalPacket;
 #ifdef _DEBUG
 	p->data=0;
@@ -98,9 +95,9 @@ void InternalPacketPool::ReleasePointer( InternalPacket *p )
 #endif
 		return ;
 	}
-	
+
 #ifdef _DEBUG
-	packetsReleased--;	
+	packetsReleased--;
 #endif
 #ifdef _DEBUG
 	p->data=0;
