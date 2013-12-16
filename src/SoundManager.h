@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,9 +18,14 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
+/**
+ * @file SoundManager.h
+ * @brief Contains a class which loads and plays sound
+ */
+
 #pragma once
 
-#include <SDL/SDL.h>
+#include <SDL2/SDL.h>
 #include <string>
 #include <map>
 #include <list>
@@ -32,7 +38,7 @@ struct Sound : public ObjectCounter<Sound>
 	{
 		data = 0;
 	}
-	
+
 	Uint8* data;
 	Uint32 length;
 	int position;
@@ -49,7 +55,7 @@ class SoundManager : public ObjectCounter<SoundManager>
 	public:
 		static SoundManager* createSoundManager();
 		static SoundManager& getSingleton();
-		
+
 		bool init();
 		void deinit();
 		bool playSound(const std::string& filename, float volume);
@@ -60,7 +66,9 @@ class SoundManager : public ObjectCounter<SoundManager>
 		~SoundManager();
 
 		static SoundManager* mSingleton;
-		
+
+		SDL_AudioDeviceID mAudioDevice;
+
 		/// This maps filenames to sound buffers, which are always in
 		/// target format
 		std::map<std::string, Sound*> mSound;
@@ -70,6 +78,6 @@ class SoundManager : public ObjectCounter<SoundManager>
 		float mVolume;
 		bool mMute;
 
-		Sound* loadSound(const std::string& filename);	
+		Sound* loadSound(const std::string& filename);
 		static void playCallback(void* singleton, Uint8* stream, int length);
 };

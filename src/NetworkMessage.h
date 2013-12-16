@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,10 +21,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #pragma once
 
 #include <string>
+#include <iosfwd>
 #include <stdint.h>
 
 #include "raknet/PacketEnumerations.h"
 #include "raknet/NetworkTypes.h"
+#include "raknet/BitStream.h"
 #include "BlobbyDebug.h"
 
 enum MessageType
@@ -37,7 +40,7 @@ enum MessageType
 	ID_BALL_GROUND_COLLISION,
 	ID_BALL_PLAYER_COLLISION,
 	ID_GAME_READY,
-	ID_ENTER_GAME,
+	ID_ENTER_SERVER,
 	ID_PAUSE,
 	ID_UNPAUSE,
 	ID_BLOBBY_SERVER_PRESENT,
@@ -47,7 +50,9 @@ enum MessageType
 	ID_CHAT_MESSAGE,
 	ID_UPDATE_SCORE,
 	ID_RULES_CHECKSUM,
-	ID_RULES
+	ID_RULES,
+	ID_SERVER_STATUS,
+	ID_CHALLENGE
 };
 
 // General Information:
@@ -134,16 +139,17 @@ enum MessageType
 // 		opponent name (char[16])
 //		opponent color (int)
 //
-// ID_ENTER_GAME
+// ID_ENTER_SERVER
 // 	Description:
 // 		Message sent from client to server after connecting to it.
 // 		The side attribute tells the server on which side the client
 // 		wants to play. The name attribute reports to players name,
-// 		truncated to 16 characters.
+// 		truncated to 16 characters. Color is the network color.
 // 	Structure:
-// 		ID_ENTER_GAME
+// 		ID_ENTER_SERVER
 // 		side (PlayerSide)
 // 		name (char[16])
+//		color (int)
 //
 // ID_PAUSE
 // 	Description:
@@ -219,21 +225,41 @@ enum MessageType
 // 		Sent from client to server to request a rules file
 // 		Sent from server to client to transmit the rules file
 // 		Game is starting only after transmitting a rules file
-// 	Structure (from client ro server):
+// 	Structure (from client to server):
 // 		ID_RULES
 //		needRules (bool)
-// 	Structure (from server ro client):
+// 	Structure (from server to client):
 // 		ID_RULES
 //		size (int)
 //		data
 //
+// ID_SERVER_STATUS
+// 	Description:
+//		Sent from server to waiting clients with information about the
+//		current server status
+//	Structure:
+//		ID_SERVER_STATUS
+//		vector<string> playernames
+//
+// ID_CHALLENGE
+// 	Description:
+//		Sent when the client wants to start a game. If desired opponent is set, the server looks for that
+//		opponent and matches these players.
+//		Sent from the server when another player wants to start a game with this client.
+//	Structure:
+//		ID_CHALLENGE
+//		PlayerID opponent
+//
 
-class UserConfig;
+
+class IUserConfigReader;
 
 struct ServerInfo : public ObjectCounter<ServerInfo>
 {
+	// read server info from a bit stream, additionally, the server address and port are needed
 	ServerInfo(RakNet::BitStream& stream, const char* ip, uint16_t port);
-	ServerInfo(const UserConfig& config);
+	// read server info from a user config object
+	ServerInfo(const IUserConfigReader& config);
 	ServerInfo(const std::string& playername);
 
 	void writeToBitstream(RakNet::BitStream& stream);
@@ -248,11 +274,11 @@ struct ServerInfo : public ObjectCounter<ServerInfo>
 	uint16_t port;
 	char hostname[64];
 	char name[32];
-	char waitingplayer[64];
+	int waitingplayers;
 	char description[192];
 
 	static const size_t BLOBBY_SERVER_PRESENT_PACKET_SIZE;
 };
 
 bool operator == (const ServerInfo& lval, const ServerInfo& rval);
-
+std::ostream& operator<<(std::ostream& stream, const ServerInfo& val);

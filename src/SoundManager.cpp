@@ -35,13 +35,13 @@ Sound* SoundManager::loadSound(const std::string& filename)
 {
 	FileRead file(filename);
 	int fileLength = file.length();
-	
+
 	// safe file data into a shared_array to ensure it is deleten properly
 	// in case of exceptions
 	boost::shared_array<char> fileBuffer = file.readRawBytes( fileLength );
-	
+
 	SDL_RWops* rwops = SDL_RWFromMem(fileBuffer.get(), fileLength);
-	
+
 	// we don't need the file handle anymore
 	file.close();
 
@@ -73,7 +73,7 @@ Sound* SoundManager::loadSound(const std::string& filename)
 			newSoundSpec.format, newSoundSpec.channels, newSoundSpec.freq,
 			mAudioSpec.format, mAudioSpec.channels, mAudioSpec.freq))
 				BOOST_THROW_EXCEPTION ( FileLoadException(filename) );
-		conversionStructure.buf = 
+		conversionStructure.buf =
 			new Uint8[newSoundLength * conversionStructure.len_mult];
 		memcpy(conversionStructure.buf, newSoundBuffer, newSoundLength);
 		conversionStructure.len = newSoundLength;
@@ -85,17 +85,16 @@ Sound* SoundManager::loadSound(const std::string& filename)
 		Sound *newSound = new Sound;
 		newSound->data = conversionStructure.buf;
 		newSound->length = Uint32(conversionStructure.len_cvt);
-		newSound->position = 0;	
+		newSound->position = 0;
 		return newSound;
 	}
 }
-
 
 bool SoundManager::playSound(const std::string& filename, float volume)
 {
 	if (!mInitialised)
 		return false;
-		
+
 	// everything is fine, so we return true
 	// but we don't need to play the sound
 	if( mMute )
@@ -109,11 +108,11 @@ bool SoundManager::playSound(const std::string& filename, float volume)
 			mSound[filename] = soundBuffer;
 		}
 		Sound soundInstance = Sound(*soundBuffer);
-		soundInstance.volume = 
+		soundInstance.volume =
 			volume > 0.0 ? (volume < 1.0 ? volume : 1.0) : 0.0;
-		SDL_LockAudio();
+		SDL_LockAudioDevice(mAudioDevice);
 		mPlayingSound.push_back(soundInstance);
-		SDL_UnlockAudio();
+		SDL_UnlockAudioDevice(mAudioDevice);
 	}
 	catch (const FileLoadException& exception)
 	{
@@ -133,37 +132,41 @@ bool SoundManager::init()
 	desiredSpec.callback = playCallback;
 	desiredSpec.userdata = mSingleton;
 
-	
-	if (SDL_OpenAudio(&desiredSpec, &mAudioSpec))
+	mAudioDevice = SDL_OpenAudioDevice(NULL, 0, &desiredSpec, &mAudioSpec, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
+
+	if (desiredSpec.format != mAudioSpec.format)
 	{
-		std::cerr << "Warning: Couldn't open audio Device!"
-			<< std::endl;
+		std::cerr << "Warning: Can't create device with desired audio spec!" << std::endl;
+		std::cerr << "Reason: " << SDL_GetError() << std::endl;
+	}
+
+	if (mAudioDevice == 0)
+	{
+		std::cerr << "Warning: Couldn't open audio Device!" << std::endl;
 		std::cerr << "Reason: " << SDL_GetError() << std::endl;
 		return false;
 	}
-	SDL_PauseAudio(0);
+
+	SDL_PauseAudioDevice(mAudioDevice, 0);
 	mInitialised = true;
 	mVolume = 1.0;
 	return true;
 }
 
 void SoundManager::playCallback(void* singleton, Uint8* stream, int length)
-{	
-	std::list<Sound>& playingSound = 
-		((SoundManager*)singleton)->mPlayingSound;
-	int volume = int(SDL_MIX_MAXVOLUME * 
-		((SoundManager*)singleton)->mVolume);
-	for (std::list<Sound>::iterator iter = playingSound.begin();
-		       iter != playingSound.end(); ++iter)
+{
+	SDL_memset(stream, 0, length);
+	std::list<Sound>& playingSound = ((SoundManager*)singleton)->mPlayingSound;
+	int volume = int(SDL_MIX_MAXVOLUME * ((SoundManager*)singleton)->mVolume);
+
+	for (auto iter = playingSound.begin(); iter != playingSound.end(); ++iter)
 	{
-		int bytesLeft = iter->length
-			- iter->position;
+		int bytesLeft = iter->length - iter->position;
 		if (bytesLeft < length)
 		{
-			SDL_MixAudio(stream, iter->data + iter->position,
-				bytesLeft, int(volume * iter->volume));
-			std::list<Sound>::iterator eraseIter = iter;
-			std::list<Sound>::iterator nextIter = ++iter;
+			SDL_MixAudio(stream, iter->data + iter->position, bytesLeft, int(volume * iter->volume));
+			auto eraseIter = iter;
+			auto nextIter = ++iter;
 			playingSound.erase(eraseIter);
 			iter = nextIter;
 			// prevents increment of past-end-interator
@@ -172,8 +175,7 @@ void SoundManager::playCallback(void* singleton, Uint8* stream, int length)
 		}
 		else
 		{
-			SDL_MixAudio(stream, iter->data + iter->position,
-				length, int(volume * iter->volume));
+			SDL_MixAudioFormat(stream, iter->data + iter->position, mSingleton->mAudioSpec.format, length, int(volume * iter->volume));
 			iter->position += length;
 		}
 	}
@@ -193,7 +195,8 @@ void SoundManager::deinit()
 			delete iter->second;
 		}
 	}
-	SDL_CloseAudio();
+	SDL_UnlockAudioDevice(mAudioDevice);
+	SDL_CloseAudioDevice(mAudioDevice);
 	mInitialised = false;
 }
 
@@ -207,6 +210,7 @@ SoundManager::SoundManager()
 	mMute = false;
 	mSingleton = this;
 	mInitialised = false;
+	mAudioDevice = 0;
 }
 
 SoundManager::~SoundManager()
@@ -231,21 +235,27 @@ void SoundManager::setVolume(float volume)
 
 void SoundManager::setMute(bool mute)
 {
+	// don't do anything if mute is set.
+	// this prevents the crash under xp when mute is set to false, as the second call to SDL_PauseAudio(false)
+	// never returns in that case.
+	if( mute == mMute )
+		return;
+
 	static bool locked = false;
 	if (mute)
 	{
 		if (!locked)  //locking audio twice leads to a bug(??)
 		{
 			locked = true;
-			SDL_LockAudio();
+			SDL_LockAudioDevice(mAudioDevice);
 		}
 	}
 	else
 	{
 		mPlayingSound.clear();
-		SDL_UnlockAudio();
+		SDL_UnlockAudioDevice(mAudioDevice);
 		locked = false;
 	}
 	mMute = mute;
-	SDL_PauseAudio((int)mute);
+	SDL_PauseAudioDevice(mAudioDevice, (int)mute);
 }

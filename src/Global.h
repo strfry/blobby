@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -21,7 +22,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <string>
 #include <exception>
-#include <SDL/SDL_stdinc.h>
+#include <SDL2/SDL_stdinc.h>
+#include <cstring>
 
 // I hope the GP2X is the only combination of these systems
 #if defined(__linux__) && defined(__arm__)
@@ -37,15 +39,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 const int BLOBBY_PORT = 1234;
 
 const int BLOBBY_VERSION_MAJOR = 0;
-const int BLOBBY_VERSION_MINOR = 101;
+const int BLOBBY_VERSION_MINOR = 102;
 
-const char AppTitle[] = "Blobby Volley 2 Version 1.0 RC3";
+const char AppTitle[] = "Blobby Volley 2 Version 1.0 RC4";
 
 const float ROUND_START_SOUND_VOLUME = 0.2;
 const float BALL_HIT_PLAYER_SOUND_VOLUME = 0.4;
 
 // max. 1 ms additional latency, but much improved performance
 const int RAKNET_THREAD_SLEEP_TIME = 1;
+
+const std::string DEFAULT_RULES_FILE = "default.lua";
 
 enum PlayerSide
 {
@@ -76,16 +80,16 @@ struct Color
 	, g(green)
 	, b(blue)
 	{}
-	
+
 	/// \sa toInt()
 	Color(unsigned int col)
 	: r(col&0xff)
 	, g((col>>8)&0xff)
-	, b((col>>16)&0xff) 
+	, b((col>>16)&0xff)
 	{
-		
+
 	}
-	
+
 	Color() {}
 
 	union
@@ -98,12 +102,12 @@ struct Color
 		};
 		Uint8 val[3];
 	};
-	
+
 	bool operator == (Color rval) const
 	{
-		return !memcmp(val, rval.val, 3);
+		return !std::memcmp(val, rval.val, 3);
 	}
-	
+
 	bool operator != (Color rval) const
 	{
 		return !(*this == rval);

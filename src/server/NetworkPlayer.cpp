@@ -27,23 +27,22 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // initialise NetworkPlayer. Set NetworkID to 0.0.0.0:0, so we are sure no player
 // will ever have this.
-NetworkPlayer::NetworkPlayer() : mID(), mIdentity(), mDesiredSide(NO_PLAYER)
+NetworkPlayer::NetworkPlayer() : mID(), mIdentity()
 {
 	mID.binaryAddress = 0;
 	mID.port = 0;
 }
 
 NetworkPlayer::NetworkPlayer(PlayerID id, const std::string& name, Color color, PlayerSide side)
-:mID(id), mIdentity(name, color, false), mDesiredSide(side)
+:mID(id), mIdentity(name, color, false, side)
 {
-	
+
 }
 
 NetworkPlayer::NetworkPlayer(PlayerID id, RakNet::BitStream stream) : mID(id)
 {
 	int playerSide;
 	stream.Read(playerSide);
-	mDesiredSide = (PlayerSide)playerSide;
 
 	// Read the Playername
 	char charName[16];
@@ -51,17 +50,17 @@ NetworkPlayer::NetworkPlayer(PlayerID id, RakNet::BitStream stream) : mID(id)
 
 	// ensures that charName is null terminated
 	charName[sizeof(charName)-1] = '\0';
-	
+
 	// read colour data
 	int color;
 	stream.Read(color);
-	
-	mIdentity = PlayerIdentity(charName, color, false); 
+
+	mIdentity = PlayerIdentity(charName, color, false, (PlayerSide)playerSide);
 }
 
 bool NetworkPlayer::valid() const
 {
-	return mDesiredSide != NO_PLAYER;
+	return mID.port != 0;
 }
 
 const PlayerID& NetworkPlayer::getID() const
@@ -80,10 +79,20 @@ Color NetworkPlayer::getColor() const
 
 PlayerSide NetworkPlayer::getDesiredSide() const
 {
-	return mDesiredSide;
+	return mIdentity.getPreferredSide();
+}
+
+PlayerIdentity NetworkPlayer::getIdentity() const
+{
+	return mIdentity;
 }
 
 const boost::shared_ptr<NetworkGame>& NetworkPlayer::getGame() const
 {
 	return mGame;
+}
+
+void NetworkPlayer::setGame(boost::shared_ptr<NetworkGame> game)
+{
+	mGame = game;
 }

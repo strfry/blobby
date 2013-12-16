@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 /* includes */
 #include <iostream>
 #include <algorithm>
+#include <set>
 
 #include "tinyxml/tinyxml.h"
 
@@ -97,6 +98,14 @@ bool TextManager::loadFromXML(std::string filename){
 	int num_strings = mStrings.size();
 	int found_count = 0;
 	
+	#ifdef DEBUG
+	std::set<std::string> stringsToTranslate;
+	for(std::string s: mStrings)
+	{
+		stringsToTranslate.insert( s );
+	}
+	#endif // DEBUG
+
 	// this loop assumes that the strings in the xml file are in the correct order
 	//  in each step, it reads the next string element and writes it to the next position in mStrings
 	for (	TiXmlElement* stringel = language->FirstChildElement("string");
@@ -108,7 +117,12 @@ bool TextManager::loadFromXML(std::string filename){
 		/// \todo we don't check for duplicate entries!
 		const char* e = stringel->Attribute("english");
 		const char* t = stringel->Attribute("translation");
-		if (t && e){
+		if (t && e)
+		{
+			#ifdef DEBUG
+			// remove every found element
+			stringsToTranslate.erase( std::string(e) );
+			#endif // DEBUG
 			// search the english string and replace it with the translation
 			std::vector<std::string>::iterator found = std::find(mStrings.begin(), mStrings.end(), e);
 			if(found != mStrings.end())
@@ -136,6 +150,13 @@ bool TextManager::loadFromXML(std::string filename){
 	{
 		std::cerr << "missing translations: got " << found_count << 
 					" out of " << num_strings << " translation entries" << std::endl;
+
+		#ifdef DEBUG
+		for(auto e : stringsToTranslate)
+		{
+			std::cerr << " missing " << e << "\n";
+		}
+		#endif // DEBUG
 	}
 	
 	return true;
@@ -187,7 +208,7 @@ void TextManager::setDefault()
 	mStrings[NET_SERVER_SCAN] = "scan for servers";
 	mStrings[NET_DIRECT_CONNECT] = "direct connect";
 	mStrings[NET_SERVER_INFO] = "server info";
-	mStrings[NET_ACTIVE_GAMES] = "active games: ";
+	mStrings[NET_ACTIVE_GAMES] = "games: ";
 	mStrings[NET_WAITING_PLAYER] = "waiting player: ";
 	mStrings[NET_HOST_GAME] = "host game";
 	mStrings[NET_CONNECTING] = "connecting to server ...";
@@ -196,6 +217,7 @@ void TextManager::setDefault()
 	mStrings[NET_SERVER_FULL] = "server full";
 	mStrings[NET_STAY_ON_SERVER] = "stay on server";
 	
+
 	mStrings[OP_INPUT_OP] = "input options";
 	mStrings[OP_GFX_OP] = "graphic options";
 	mStrings[OP_MISC] = "misc options";

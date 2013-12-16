@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,6 +18,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
+/**
+ * @file TextManager.h
+ * @brief Contains a class which handles different languages for text translations
+ */
 
 #pragma once
 
@@ -42,7 +47,7 @@ class TextManager
 			LBL_NO,
 			LBL_CONF_QUIT,
 			LBL_CONTINUE,
-			
+
 			// labels for main menu
 			MNU_LABEL_ONLINE,
 			MNU_LABEL_LAN,
@@ -51,12 +56,12 @@ class TextManager
 			MNU_LABEL_REPLAY,
 			MNU_LABEL_CREDITS,
 			MNU_LABEL_EXIT,
-			
+
 			// credits
 			CRD_PROGRAMMERS,
 			CRD_GRAPHICS,
 			CRD_THX,
-	
+
 			// replays
 			RP_SHOW_AGAIN,
 			RP_PLAY,
@@ -71,7 +76,7 @@ class TextManager
 			RP_SAVE_NAME,
 			RP_WAIT_REPLAY,
 			RP_SAVE,
-			
+
 			// game texts
 			GAME_WIN,
 			GAME_TRY_AGAIN,
@@ -79,7 +84,7 @@ class TextManager
 			GAME_OPP_LEFT,
 			GAME_PAUSED,
 			GAME_QUIT,
-			
+
 			// network texts
 			NET_SERVER_SCAN,
 			NET_DIRECT_CONNECT,
@@ -92,8 +97,13 @@ class TextManager
 			NET_CON_FAILED,
 			NET_SERVER_FULL,
 			NET_STAY_ON_SERVER,
-			
-			// options 
+			NET_RANDOM_OPPONENT,
+			NET_SPEED,
+			NET_RULES_TITLE,
+			NET_RULES_BY,
+			NET_CHALLENGE,
+
+			// options
 			OP_INPUT_OP,
 			OP_GFX_OP,
 			OP_MISC,
@@ -145,45 +155,45 @@ class TextManager
 			OP_MEDIUM,
 			OP_STRONG,
 			OP_RULES,
-			
+
 			UPDATE_NOTIFICATION,
-			
+
 			COUNT
 		};
-		
+
 		/// returns the string identified by str
 		const std::string& getString(STRING str) const;
-		
+
 		std::string getLang() const;
-		
+
 		/// returns the mSingleton
 		static const TextManager* getSingleton();
-		
+
 		/// creates a textmanager for a particular language
 		static TextManager* createTextManager(std::string langname);
-	
+
 		/// switches the language
 		static void switchLanguage(std::string langname);
-		
+
 		/// map to map abbreviations to full name (e.g. de to deutsch)
 		static std::map<std::string, std::string> language_names;
-		
+
 	private:
 		/// private construktor, use createTextManager
 		TextManager(std::string l);
-		
+
 		/// Singleton
 		static TextManager* mSingleton;
-		
+
 		/// vector with all strings
 		std::vector<std::string> mStrings;
-		
+
 		/// string with language name
 		std::string lang;
-		
+
 		/// loads the language data from an xml file
 		bool loadFromXML(std::string file);
-		
+
 		/// sets the strings to the default values
 		void setDefault();
 };

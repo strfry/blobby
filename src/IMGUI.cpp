@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <queue>
 #include <cassert>
 
-#include <SDL/SDL.h>
+#include <SDL2/SDL.h>
 
 /* implementation */
 
@@ -52,6 +52,7 @@ struct QueueObject
 	Vector2 pos1;
 	Vector2 pos2;
 	Color col;
+	float alpha;
 	std::string text;
 	std::vector<std::string> entries;
 	int selected;
@@ -112,6 +113,9 @@ void IMGUI::begin()
 	
 	if (InputManager::getSingleton()->select())
 		mLastKeyAction = SELECT;
+
+	if (InputManager::getSingleton()->exit())
+		mLastKeyAction = BACK;
 }
 
 void IMGUI::end()
@@ -129,7 +133,7 @@ void IMGUI::end()
 				break;
 			
 			case OVERLAY:
-				rmanager.drawOverlay(0.65, obj.pos1, obj.pos2, obj.col);
+				rmanager.drawOverlay(obj.alpha, obj.pos1, obj.pos2, obj.col);
 				break;
 			
 			case TEXT:
@@ -238,7 +242,7 @@ void IMGUI::doText(int id, const Vector2& position, TextManager::STRING text, un
 	doText(id, position, TextManager::getSingleton()->getString(text), flags);
 }
 
-void IMGUI::doOverlay(int id, const Vector2& pos1, const Vector2& pos2, const Color& col)
+void IMGUI::doOverlay(int id, const Vector2& pos1, const Vector2& pos2, const Color& col, float alpha)
 {
 	QueueObject obj;
 	obj.type = OVERLAY;
@@ -246,6 +250,7 @@ void IMGUI::doOverlay(int id, const Vector2& pos1, const Vector2& pos2, const Co
 	obj.pos1 = pos1;
 	obj.pos2 = pos2;
 	obj.col = col;
+	obj.alpha = alpha;
 	mQueue->push(obj);
 	RenderManager::getSingleton().redraw();
 }
@@ -316,6 +321,21 @@ bool IMGUI::doButton(int id, const Vector2& position, const std::string& text, u
 					break;
 			}
 		}
+
+		// React to back button
+		if (mLastKeyAction == BACK)
+		{
+			if ((text == (TextManager::getSingleton())->getString(TextManager::LBL_CANCEL)) ||
+			    (text == (TextManager::getSingleton())->getString(TextManager::MNU_LABEL_EXIT)))
+			{
+				//todo: Workarround to catch backkey
+				clicked = true;
+				mActiveButton = id;
+			}
+		}
+
+
+
 
 		// React to mouse input.
 		Vector2 mousepos = InputManager::getSingleton()->position();
@@ -485,6 +505,9 @@ bool IMGUI::doEditbox(int id, const Vector2& position, int length, std::string& 
 				cpos = (int) text.length();
 			
 			mActiveButton = id;
+
+			// Show keyboard
+			SDL_StartTextInput();
 		}
 	}
 

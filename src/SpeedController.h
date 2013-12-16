@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -16,6 +17,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
+
+/**
+ * @file SpeedController.h
+ * @brief Contains a class which determine the framerate
+ */
 
 #pragma once
 
@@ -37,7 +43,7 @@ class SpeedController : public ObjectCounter<SpeedController>
 	public:
 		SpeedController(float gameFPS);
 		~SpeedController();
-		
+
 		void setGameSpeed(float fps);
 		float getGameSpeed() const{return mGameFPS;}
 
@@ -49,14 +55,13 @@ class SpeedController : public ObjectCounter<SpeedController>
 		void setDrawFPS(bool draw) { mDrawFPS = draw; }  //help methods
 		bool getDrawFPS() const { return mDrawFPS; }
 
-	/// This updates everything and waits the necessary time	
+	/// This updates everything and waits the necessary time
 		void update();
 
 		static void setMainInstance(SpeedController* inst) { mMainInstance = inst; }
 		static SpeedController* getMainInstance() { return mMainInstance; }
 	private:
 		float mGameFPS;
-		float mRealFPS;
 		int mFPS;
 		int mFPSCounter;
 		bool mFramedrop;

@@ -24,9 +24,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <sstream>
 #include <iostream>
 
-#include <SDL/SDL.h>
+#include <SDL2/SDL.h>
 
+#ifndef __ANDROID__
 #include "config.h"
+#endif
 
 #include "RenderManager.h"
 #include "SoundManager.h"
@@ -69,17 +71,22 @@ void setupPHYSFS()
 	std::string separator = fs.getDirSeparator();
 	// Game should be playable out of the source package on all
 	// platforms
-	fs.addToSearchPath("data");
-	fs.addToSearchPath("data/gfx.zip");
-	fs.addToSearchPath("data/sounds.zip");
-	fs.addToSearchPath("data/scripts.zip");
-	fs.addToSearchPath("data/backgrounds.zip");
-	fs.addToSearchPath("data/rules.zip");
+	std::string baseSearchPath("data" + separator);
+	#ifdef __ANDROID__
+		baseSearchPath = SDL_AndroidGetExternalStoragePath() + separator;
+	#endif
+
+	fs.addToSearchPath(baseSearchPath);
+	fs.addToSearchPath(baseSearchPath + "gfx.zip");
+	fs.addToSearchPath(baseSearchPath + "sounds.zip");
+	fs.addToSearchPath(baseSearchPath + "scripts.zip");
+	fs.addToSearchPath(baseSearchPath + "backgrounds.zip");
+	fs.addToSearchPath(baseSearchPath + "rules.zip");
 
 	#if defined(WIN32)
 		// Just write in installation directory
 		fs.setWriteDir("data");
-	#else
+
 		// handle the case when it is installed
 		fs.addToSearchPath(BLOBBY_INSTALL_PREFIX  "/share/blobby");
 		fs.addToSearchPath(BLOBBY_INSTALL_PREFIX  "/share/blobby/gfx.zip");
@@ -87,50 +94,72 @@ void setupPHYSFS()
 		fs.addToSearchPath(BLOBBY_INSTALL_PREFIX  "/share/blobby/scripts.zip");
 		fs.addToSearchPath(BLOBBY_INSTALL_PREFIX  "/share/blobby/backgrounds.zip");
 		fs.addToSearchPath(BLOBBY_INSTALL_PREFIX  "/share/blobby/rules.zip");
-
-		// Create a search path in the home directory and ensure that
-		// all paths exist and are actually directories
-		std::string userdir = fs.getUserDir();
-		std::string userAppend = ".blobby";
-		std::string homedir = userdir + userAppend;
-		/// \todo please review this code and determine if we really need to add userdir to serach path
-		/// only to remove it later
-		fs.setWriteDir(userdir);
-		fs.probeDir(userAppend);
-		/// \todo why do we need separator here?
-		fs.probeDir(userAppend + separator + "replays");
-		fs.probeDir(userAppend + separator + "gfx");
-		fs.probeDir(userAppend + separator + "sounds");
-		fs.probeDir(userAppend + separator + "scripts");
-		fs.probeDir(userAppend + separator + "backgrounds");
-		fs.probeDir(userAppend + separator + "rules");
-		fs.removeFromSearchPath(userdir);
-		// here we set the write dir anew!
-		fs.setWriteDir(homedir);
-		#if defined(GAMEDATADIR)
-		{
-			// A global installation path makes only sense on non-Windows
-			// platforms
-			std::string basedir = GAMEDATADIR;
-			fs.addToSearchPath(basedir);
-			fs.addToSearchPath(basedir + separator + "gfx.zip");
-			fs.addToSearchPath(basedir + separator + "sounds.zip");
-			fs.addToSearchPath(basedir + separator + "scripts.zip");
-			fs.addToSearchPath(basedir + separator + "backgrounds.zip");
-			fs.addToSearchPath(basedir + separator + "rules.zip");
-		}
+	#else
+		#ifndef __ANDROID__
+			// Create a search path in the home directory and ensure that
+			// all paths exist and are actually directories
+			std::string userdir = fs.getUserDir();
+			std::string userAppend = ".blobby";
+			std::string homedir = userdir + userAppend;
+			/// \todo please review this code and determine if we really need to add userdir to serach path
+			/// only to remove it later
+			fs.setWriteDir(userdir);
+			fs.probeDir(userAppend);
+			/// \todo why do we need separator here?
+			fs.probeDir(userAppend + separator + "replays");
+			fs.probeDir(userAppend + separator + "gfx");
+			fs.probeDir(userAppend + separator + "sounds");
+			fs.probeDir(userAppend + separator + "scripts");
+			fs.probeDir(userAppend + separator + "backgrounds");
+			fs.probeDir(userAppend + separator + "rules");
+			fs.removeFromSearchPath(userdir);
+			// here we set the write dir anew!
+			fs.setWriteDir(homedir);
+			#if defined(GAMEDATADIR)
+			{
+				// A global installation path makes only sense on non-Windows
+				// platforms
+				std::string basedir = GAMEDATADIR;
+				fs.addToSearchPath(basedir);
+				fs.addToSearchPath(basedir + separator + "gfx.zip");
+				fs.addToSearchPath(basedir + separator + "sounds.zip");
+				fs.addToSearchPath(basedir + separator + "scripts.zip");
+				fs.addToSearchPath(basedir + separator + "backgrounds.zip");
+				fs.addToSearchPath(basedir + separator + "rules.zip");
+			}
+			#endif
+		#else
+			fs.setWriteDir(baseSearchPath);
+			fs.probeDir("replays");
+			fs.probeDir("gfx");
+			fs.probeDir("sounds");
+			fs.probeDir("scripts");
+			fs.probeDir("backgrounds");
+			fs.probeDir("rules");
 		#endif
+
 	#endif
 }
+
 #undef main
 extern "C"
+#ifdef __ANDROID__
+int SDL_main(int argc, char* argv[])
+#else
 int main(int argc, char* argv[])
+#endif
 {
+	DEBUG_STATUS("started main");
+
 	FileSystem filesys(argv[0]);
 	setupPHYSFS();
 
+	DEBUG_STATUS("physfs initialised");
+
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK);
-	SDL_EnableUNICODE(1);
+
+	DEBUG_STATUS("SDL initialised");
+
 	atexit(SDL_Quit);
 	srand(SDL_GetTicks());
 	// Default is OpenGL and false
@@ -145,10 +174,10 @@ int main(int argc, char* argv[])
 	time_t time = std::time(0);
 	ptm = gmtime ( &time );
 
-	if( ptm->tm_year > (2012-1900) || ptm->tm_mon >= 4 ) {
+	if( ptm->tm_year > (2013-1900) || ptm->tm_mon >= 12 ) {
 		#ifdef WIN32
 		MessageBox(0, (std::string("This is a test version of ") + AppTitle + " which expired on "
-									"1.5.2012. Please visit blobby.sourceforge.net for a newer version").c_str(),
+									"1.12.2013. Please visit blobby.sourceforge.net for a newer version").c_str(),
 					"TEST VERISON OUTDATED",
 					MB_OK);
 		#endif
@@ -158,7 +187,7 @@ int main(int argc, char* argv[])
 	#ifdef WIN32
 	MessageBox(0, (std::string("This is a test version of ") + AppTitle + " for testing only.\n"
 								"It might be unstable and/or incompatible to the current release. "
-								"Use of this version is limited to 1.5.2012.\nUntil then, "
+								"Use of this version is limited to 1.12.2013.\nUntil then, "
 								"the final version will most likely be released and you should update to that one.\n"
 								"Visit blobby.sourceforge.net for more information or bug reporting.").c_str(),
 				"TEST VERISON WARNING",
@@ -175,8 +204,9 @@ int main(int argc, char* argv[])
 
 		if(gameConfig.getString("device") == "SDL")
 			rmanager = RenderManager::createRenderManagerSDL();
-		else if (gameConfig.getString("device") == "GP2X")
-			rmanager = RenderManager::createRenderManagerGP2X();
+		/*else if (gameConfig.getString("device") == "GP2X")
+			rmanager = RenderManager::createRenderManagerGP2X();*/
+#ifndef __ANDROID__
 		else if (gameConfig.getString("device") == "OpenGL")
 			rmanager = RenderManager::createRenderManagerGL2D();
 		else
@@ -185,6 +215,7 @@ int main(int argc, char* argv[])
 			std::cerr << "Falling back to OpenGL" << std::endl;
 			rmanager = RenderManager::createRenderManagerGL2D();
 		}
+#endif
 
 		// fullscreen?
 		if(gameConfig.getString("fullscreen") == "true")
@@ -215,6 +246,9 @@ int main(int argc, char* argv[])
 
 		InputManager* inputmgr = InputManager::createInputManager();
 		int running = 1;
+
+		DEBUG_STATUS("starting mainloop");
+
 		while (running)
 		{
 			inputmgr->updateInput();

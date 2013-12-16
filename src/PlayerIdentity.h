@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
-Copyright (C) 2008 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,19 +29,22 @@ class PlayerIdentity
 	public:
 		PlayerIdentity() {};
 		PlayerIdentity(std::string name);
-		PlayerIdentity(const std::string& name, Color color, bool osci);
+		PlayerIdentity(const std::string& name, Color color, bool osci, PlayerSide pref);
 		~PlayerIdentity();
 
 		const std::string& getName() const;
 		Color getStaticColor() const;
 		bool getOscillating() const;
-		
+		PlayerSide getPreferredSide() const;
+
 		void setName(const std::string& nname);
 		void setStaticColor(Color ncol);
 		void setOscillating(bool oc);
-	
+		void setPreferredSide(PlayerSide side);
+
 	private:
-		std::string mName;		
+		std::string mName;
 		Color mStaticColor;
 		bool mOscillating;
+		PlayerSide mPreferredSide;
 };

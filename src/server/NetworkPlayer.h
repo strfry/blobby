@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -21,8 +22,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <string>
 #include <boost/shared_ptr.hpp>
+#include <boost/noncopyable.hpp>
 
 #include "raknet/NetworkTypes.h"
+#include "raknet/BitStream.h"
 #include "Global.h"
 #include "../BlobbyDebug.h"
 #include "PlayerIdentity.h"
@@ -35,35 +38,44 @@ class NetworkGame;
 		his network address and associated game
 */
 /// \todo add data to log when last packet arrived
-class NetworkPlayer : public ObjectCounter<NetworkPlayer>
+class NetworkPlayer : public ObjectCounter<NetworkPlayer>, public boost::noncopyable
 {
 	public:
 		NetworkPlayer();
-		
+
 		NetworkPlayer(PlayerID id, const std::string& name, Color color, PlayerSide side);
 		// i guess we should! not need to make a copy here
 		// but this is saver as this constructor can't mess up other code.
 		NetworkPlayer(PlayerID id, RakNet::BitStream stream);
-	
+
 		bool valid() const;
+
+		// gets network ID of this player
 		const PlayerID& getID() const;
+		// gets name of this player
 		const std::string& getName() const;
+		// gets colour of this player
 		Color getColor() const;
+		// gets side this player wants to play on
 		PlayerSide getDesiredSide() const;
+		// gets the complete player identity
+		PlayerIdentity getIdentity() const;
+
+		// get game the player currently is in
 		const boost::shared_ptr<NetworkGame>& getGame() const;
-		
+
+		void setGame(boost::shared_ptr<NetworkGame>);
+
 	private:
 		/* Network ID */
 		PlayerID mID;
 		/* Identity */
 		PlayerIdentity mIdentity;
-		/* Perferences */
-		PlayerSide mDesiredSide;
-		
+
 		/* Game Data */
 		boost::shared_ptr<NetworkGame> mGame;
-		
-		/* we could add more data such as stats, 
+
+		/* we could add more data such as stats,
 			accoutn info, etc later.
 		*/
 };

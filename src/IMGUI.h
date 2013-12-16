@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -41,6 +42,7 @@ enum KeyAction
 	LEFT,
 	RIGHT,
 	SELECT,
+	BACK,
 	NONE
 };
 
@@ -54,22 +56,22 @@ enum SelectBoxAction
 /*! \class IMGUI
 	\brief GUI Manager
 	\details This class manages drawing and input handling of the blobby GUI.
-			It is poorly designed, does not use OOP and makes extension difficult, so 
+			It is poorly designed, does not use OOP and makes extension difficult, so
 			it needs a complete rewrite.
 */
 class IMGUI : public ObjectCounter<IMGUI>
 {
 	public:
 		static IMGUI& getSingleton();
-		
+
 		void begin();
 		void end();
 		void resetSelection();
-		
+
 		void doImage(int id, const Vector2& position, const std::string& name);
 		void doText(int id, const Vector2& position, const std::string& text, unsigned int flags = TF_NORMAL);
 		void doText(int id, const Vector2& position, TextManager::STRING text, unsigned int flags = TF_NORMAL);
-		void doOverlay(int id, const Vector2& pos1, const Vector2& pos2, const Color& col = Color(0, 0, 0));
+		void doOverlay(int id, const Vector2& pos1, const Vector2& pos2, const Color& col = Color(0, 0, 0), float alpha = 0.65);
 		void doCursor(bool draw = true) { mDrawCursor = draw; 	mUsingCursor = true; }
 
 		bool doButton(int id, const Vector2& position, const std::string& text, unsigned int flags = TF_NORMAL);

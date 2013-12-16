@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,33 +20,48 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #pragma once
 
+#include "State.h"
+
+#include <vector>
+#include <string>
+
 #include <boost/shared_ptr.hpp>
-#include "raknet/RakPeer.h"
 
-class Packet;
+#include "raknet/RakClient.h"
 
-typedef boost::shared_ptr<Packet> packet_ptr;
+#include "NetworkMessage.h"
+#include "PlayerIdentity.h"
 
-struct deleter
+class LobbyState : public State
 {
-	RakPeer* peer;
-	void operator()(Packet* p)
-	{
-		peer->DeallocatePacket(p);
-	}
+	public:
+		LobbyState(ServerInfo info);
+		virtual ~LobbyState();
+
+		virtual void step();
+		virtual const char* getStateName() const;
+
+	private:
+		boost::shared_ptr<RakClient> mClient;
+		PlayerIdentity mLocalPlayer;
+		ServerInfo mInfo;
+		int mSelectedPlayer;
+
+		struct WaitingPlayer
+		{
+			std::string displayname;
+			PlayerID id;
+		};
+
+		std::vector<WaitingPlayer> mConnectedPlayers;
+		std::string mChallenge;
+
+		enum
+		{
+			CONNECTING,
+			CONNECTED,
+			DISCONNECTED,
+			CONNECTION_FAILED
+		} mLobbyState;
 };
 
-inline packet_ptr receivePacket(RakPeer* peer)
-{
-	deleter del;
-	del.peer = peer;
-	Packet* pptr = peer->Receive();
-	if(pptr)
-	{
-		return packet_ptr(pptr, del);
-	} 
-	else 
-	{
-		return packet_ptr();
-	}	
-}

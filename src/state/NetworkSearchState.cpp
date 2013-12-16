@@ -39,9 +39,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "tinyxml/tinyxml.h"
 
 #include "NetworkState.h"
+#include "LobbyState.h"
 #include "TextManager.h"
 #include "IMGUI.h"
-#include "RakNetPacket.h"
 #include "IUserConfigReader.h"
 #include "FileWrite.h"
 #include "FileRead.h"
@@ -77,13 +77,16 @@ void NetworkSearchState::step()
 {	
 	packet_ptr packet;
 	
+	// set to true to initiate server connection
+	bool doEnterServer = false;
+
 	for (ClientList::iterator iter = mQueryClients.begin();
 		iter != mQueryClients.end(); ++iter)
 	{
 		bool skip = false;
 		bool skip_iter = false;
 
-		while ((packet = receivePacket(*iter)) && !skip)
+		while ((packet = (*iter)->Receive()) && !skip)
 		{
 			switch(packet->data[0])
 			{
@@ -97,21 +100,17 @@ void NetworkSearchState::step()
 					stream.Write((unsigned char)ID_BLOBBY_SERVER_PRESENT);
 					stream.Write(BLOBBY_VERSION_MAJOR);
 					stream.Write(BLOBBY_VERSION_MINOR);
-					(*iter)->Send(&stream, LOW_PRIORITY,
-						RELIABLE_ORDERED, 0);
+					(*iter)->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0);
 					break;
 				}
 				case ID_BLOBBY_SERVER_PRESENT:
 				{
 					//FIXME: We must copy the needed informations, so that we can call DeallocatePacket(packet)
 					//FIXME: The client finds a server at this point, which is not valid
-					RakNet::BitStream stream((char*)packet->data,
-						packet->length, false);
+					RakNet::BitStream stream((char*)packet->data, packet->length, false);
 					printf("server is a blobby server\n");
 					stream.IgnoreBytes(1);	//ID_BLOBBY_SERVER_PRESENT
-					ServerInfo info(stream,
-						(*iter)->PlayerIDToDottedIP(
-							packet->playerId), packet->playerId.port);
+					ServerInfo info(stream,	(*iter)->PlayerIDToDottedIP(packet->playerId), packet->playerId.port);
 
 					if (std::find(
 							mScannedServers.begin(),
@@ -120,6 +119,10 @@ void NetworkSearchState::step()
 							// check whether the packet sizes match
 							&& packet->length == ServerInfo::BLOBBY_SERVER_PRESENT_PACKET_SIZE ){
 						mScannedServers.push_back(info);
+					}
+					 else
+					{
+						std::cout << " server invalid " << packet->length << " " << ServerInfo::BLOBBY_SERVER_PRESENT_PACKET_SIZE << "\n";
 					}
 					// the RakClient will be deleted, so
 					// we must free the packet here
@@ -136,8 +139,7 @@ void NetworkSearchState::step()
 				{
 					// this packet is send when the client is older than the server!
 					// so 
-					RakNet::BitStream stream((char*)packet->data,
-						packet->length, false);
+					RakNet::BitStream stream((char*)packet->data, packet->length, false);
 					stream.IgnoreBytes(1);	// ID_VERSION_MISMATCH
 					
 					// default values if server does not send versions.
@@ -170,7 +172,7 @@ void NetworkSearchState::step()
 		if (skip_iter)
 			break;
 	}
-	while (packet = receivePacket(mPingClient.get()))
+	while (packet = mPingClient->Receive())
 	{
 		switch (packet->data[0])
 		{
@@ -215,10 +217,9 @@ void NetworkSearchState::step()
 	std::vector<std::string> servernames;
 	for (int i = 0; i < mScannedServers.size(); i++)
 	{
-		servernames.push_back(std::string(mScannedServers[i].name) + " (" + mScannedServers[i].waitingplayer + ")" );
+		servernames.push_back(std::string(mScannedServers[i].name) + " (" + boost::lexical_cast<std::string>(mScannedServers[i].waitingplayers) + ")" );
 	}
 
-	bool doEnterServer = false;
 	if( imgui.doSelectbox(GEN_ID, Vector2(25.0, 60.0), Vector2(775.0, 470.0),
 			servernames, mSelectedServer) == SBA_DBL_CLICK )
 	{
@@ -240,7 +241,7 @@ void NetworkSearchState::step()
 		imgui.doEditbox(GEN_ID, Vector2(130.0, 210.0), 20, mEnteredServer, mServerBoxPosition);
 		if (imgui.doButton(GEN_ID, Vector2(270.0, 300.0), TextManager::LBL_OK))
 		{
-			//std::string server = mScannedServers[mSelectedServer].hostname;
+			/// \todo adapt direct connect
 			std::string server = mEnteredServer;
 			int port = BLOBBY_PORT;
 			std::size_t found = mEnteredServer.find(':');
@@ -260,9 +261,12 @@ void NetworkSearchState::step()
 					port = BLOBBY_PORT;
 			}
 
-			deleteCurrentState();
-			setCurrentState(new NetworkGameState(server, port));
-			return;
+			// add this address / port info as client
+			mDirectConnectClient = new RakClient;
+			mDirectConnectClient->Connect(server.c_str(), port, 0, 0, RAKNET_THREAD_SLEEP_TIME);
+			mQueryClients.push_back( mDirectConnectClient );
+			mEnteringServer = false;
+			imgui.resetSelection();
 		}
 		if (imgui.doButton(GEN_ID, Vector2(370.0, 300.0), TextManager::LBL_CANCEL))
 		{
@@ -275,21 +279,21 @@ void NetworkSearchState::step()
 	if (mDisplayInfo)
 	{
 		imgui.doInactiveMode(false);
-		imgui.doOverlay(GEN_ID, Vector2(40.0, 80.0), Vector2(760.0, 440.0));
+		imgui.doOverlay(GEN_ID, Vector2(40.0, 80.0), Vector2(760.0, 440.0), Color(0,0,0), 1.0);
 		imgui.doText(GEN_ID, Vector2(50, 100), mScannedServers[mSelectedServer].name);
 		imgui.doText(GEN_ID, Vector2(50, 130), mScannedServers[mSelectedServer].hostname);
 
 		std::stringstream activegames;
 		activegames << TextManager::getSingleton()->getString(TextManager::NET_ACTIVE_GAMES)
-					<< ": " << mScannedServers[mSelectedServer].activegames;
+					<< mScannedServers[mSelectedServer].activegames;
 		imgui.doText(GEN_ID, Vector2(50, 160), activegames.str());
 		std::stringstream waitingplayer;
 		waitingplayer << TextManager::getSingleton()->getString(TextManager::NET_WAITING_PLAYER)
-					  << mScannedServers[mSelectedServer].waitingplayer;
+					  << mScannedServers[mSelectedServer].waitingplayers;
 		imgui.doText(GEN_ID, Vector2(50, 190), waitingplayer.str());
 		std::stringstream gamespeed;
-		gamespeed << TextManager::getSingleton()->getString(TextManager::OP_SPEED)<<" "
-					  << int(100.0 / 75.0 * mScannedServers[mSelectedServer].gamespeed)<<"%";
+		gamespeed << TextManager::getSingleton()->getString(TextManager::OP_SPEED) << " "
+					  << int(100.0 / 75.0 * mScannedServers[mSelectedServer].gamespeed) << "%";
 		imgui.doText(GEN_ID, Vector2(50, 220), gamespeed.str());
 		std::string description = mScannedServers[mSelectedServer].description;
 		for (int i = 0; i < description.length(); i += 29)
@@ -319,7 +323,7 @@ void NetworkSearchState::step()
 	{
 		ServerInfo server = mScannedServers[mSelectedServer];
 		deleteCurrentState();
-		setCurrentState(new NetworkGameState(server.hostname, server.port));
+		setCurrentState(new LobbyState(server));
 	}
 	if (imgui.doButton(GEN_ID, Vector2(480, 530), TextManager::LBL_CANCEL))
 	{
@@ -349,7 +353,8 @@ OnlineSearchState::OnlineSearchState()
 void OnlineSearchState::searchServers()
 {
 	// Get the serverlist
-	try {
+	try
+	{
 		BlobNet::Layer::Http http("blobby.sourceforge.net", 80);
 
 		std::stringstream serverListXml;
@@ -361,8 +366,10 @@ void OnlineSearchState::searchServers()
 		file.write(serverListXml.str());
 		
 		file.close();
+	} catch (std::exception& e) {
+		std::cout << "Can't get onlineserver.xml: " << e.what() << std::endl;
 	} catch (...) {
-		std::cout << "Can't get onlineserver.xml" << std::endl;
+		std::cout << "Can't get onlineserver.xml. Unknown error." << std::endl;
 	}
 
 	std::vector< std::pair<std::string, int> > serverList;
@@ -434,7 +441,8 @@ void OnlineSearchState::searchServers()
 	std::string server = address;
 	int port = BLOBBY_PORT;
 	std::size_t found = address.find(':');
-	if (found != std::string::npos) {
+	if (found != std::string::npos)
+	{
 		server = address.substr(0, found);
 		
 		try
@@ -452,12 +460,12 @@ void OnlineSearchState::searchServers()
 	std::pair<std::string, int> pairs(server.c_str(), port);
 	serverList.push_back(pairs);
 
-	/// \todo does anyone know how exaclty mPingClient works?
 	mScannedServers.clear();
 
 	for(int i = 0; i < serverList.size(); i++)
 	{
-		mPingClient->PingServer(serverList[i].first.c_str(), serverList[i].second, 0, true);
+		std::cout << "ping" << server.first << "\n";
+		mPingClient->Ping(server.first.c_str(), server.second, true);
 	}
 
 

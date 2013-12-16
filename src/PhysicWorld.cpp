@@ -41,15 +41,18 @@ const float BLOBBY_ANIMATION_SPEED = 0.5;
 
 inline void set_fpu_single_precision();
 
-PhysicWorld::PhysicWorld() : mLastHitIntensity(0), mBallRotation(0), 
-								mBallPosition( Vector2(200, STANDARD_BALL_HEIGHT) ) ,
-								mBallAngularVelocity(STANDARD_BALL_ANGULAR_VELOCITY)
+PhysicWorld::PhysicWorld()
+: mBallPosition(Vector2(200, STANDARD_BALL_HEIGHT))
+, mBallRotation(0)
+, mBallAngularVelocity(STANDARD_BALL_ANGULAR_VELOCITY)
+, mLastHitIntensity(0)
 {
 	mCurrentBlobbyAnimationSpeed[LEFT_PLAYER] = 0.0;
 	mCurrentBlobbyAnimationSpeed[RIGHT_PLAYER] = 0.0;
+
 	mBlobState[LEFT_PLAYER] = 0.0;
 	mBlobState[RIGHT_PLAYER] = 0.0;
-	
+
 	mBlobPosition[LEFT_PLAYER] = Vector2( 200, GROUND_PLANE_HEIGHT);
 	mBlobPosition[RIGHT_PLAYER] = Vector2(600, GROUND_PLANE_HEIGHT);
 }
@@ -81,7 +84,7 @@ float PhysicWorld::getLastHitIntensity() const
 
 bool PhysicWorld::playerTopBallCollision(int player) const
 {
-	if (Vector2(mBallPosition, Vector2(mBlobPosition[player].x,	mBlobPosition[player].y - BLOBBY_UPPER_SPHERE)).length() 
+	if (Vector2(mBallPosition, Vector2(mBlobPosition[player].x,	mBlobPosition[player].y - BLOBBY_UPPER_SPHERE)).length()
 							<= BALL_RADIUS + BLOBBY_UPPER_RADIUS)
 		return true;
 
@@ -90,7 +93,7 @@ bool PhysicWorld::playerTopBallCollision(int player) const
 
 inline bool PhysicWorld::playerBottomBallCollision(int player) const
 {
-	if (Vector2(mBallPosition, Vector2(mBlobPosition[player].x,	mBlobPosition[player].y + BLOBBY_LOWER_SPHERE)).length() 
+	if (Vector2(mBallPosition, Vector2(mBlobPosition[player].x,	mBlobPosition[player].y + BLOBBY_LOWER_SPHERE)).length()
 							<= BALL_RADIUS + BLOBBY_LOWER_RADIUS)
 		return true;
 
@@ -128,8 +131,7 @@ void PhysicWorld::blobbyAnimationStep(PlayerSide player)
 
 	if (mBlobState[player] >= 4.5)
 	{
-		mCurrentBlobbyAnimationSpeed[player]
-			=- BLOBBY_ANIMATION_SPEED;
+		mCurrentBlobbyAnimationSpeed[player] = -BLOBBY_ANIMATION_SPEED;
 	}
 
 	mBlobState[player] += mCurrentBlobbyAnimationSpeed[player];
@@ -345,7 +347,7 @@ int PhysicWorld::step(const PlayerInput& leftInput, const PlayerInput& rightInpu
 		mBallRotation += mBallAngularVelocity * (mBallVelocity.length() / 6);
 	else
 		mBallRotation -= mBallAngularVelocity * (mBallVelocity.length()/ 6);
-	
+
 	// Overflow-Protection
 	if (mBallRotation <= 0)
 		mBallRotation = 6.25 + mBallRotation;

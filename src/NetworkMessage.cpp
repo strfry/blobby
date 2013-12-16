@@ -32,47 +32,49 @@ ServerInfo::ServerInfo(RakNet::BitStream& stream, const char* ip, uint16_t p)
 {
 	strncpy(hostname, ip, sizeof(hostname));
 	hostname[sizeof(hostname) - 1] = 0;
-	
+
 	port = p;
 
 	stream.Read(activegames);
 	stream.Read(gamespeed);
 	stream.Read(name, sizeof(name));
-	stream.Read(waitingplayer, sizeof(waitingplayer));
+	stream.Read(waitingplayers);
 	stream.Read(description, sizeof(description));
+	stream.Read(rulestitle, sizeof(rulestitle));
+	stream.Read(rulesauthor, sizeof(rulesauthor));
 }
 
-ServerInfo::ServerInfo(const UserConfig& config)
+ServerInfo::ServerInfo(const IUserConfigReader& config)
 {
 	/// \todo we only need a config reader here!
-	
+
 	// default values
 	std::string n = "Blobby Volley 2 Server";
 	std::string d = "no description available";
-	
+
 	memset(this, 0, sizeof(ServerInfo));
 	std::string tmp;
-	tmp = config.getString("name");
-	if( tmp == "" )
-		tmp = n;
-	
+	tmp = config.getString("name", n);
 	strncpy(name, tmp.c_str(), sizeof(name) - 1);
-	tmp = config.getString("description");
-	if( tmp == "" )
-		tmp = d;
-	
+	tmp = config.getString("description", d);
 	strncpy(description, tmp.c_str(), sizeof(description) - 1);
-	gamespeed = config.getInteger("speed");
+	gamespeed = config.getInteger("speed", 75);
 	/// \todo maybe we should check if that's a reasonable value, too.
-	if (gamespeed == 0)
+	if (gamespeed < 20 || gamespeed > 200)
 		gamespeed = 75;
+
+	port = config.getInteger("port", BLOBBY_PORT);
 }
 
 ServerInfo::ServerInfo(const std::string& playername)
 {
 	memset(this, 0, sizeof(ServerInfo));
-	strncpy(name, std::string(playername + "'s game").c_str(), sizeof(name) - 1);
-	strncpy(description, "client hosted game", sizeof(description) - 1);
+
+	std::strncpy(hostname, "localhost", sizeof(hostname));
+	port = BLOBBY_PORT;
+
+	std::strncpy(name, std::string(playername + "'s game").c_str(), sizeof(name) - 1);
+	std::strncpy(description, "client hosted game", sizeof(description) - 1);
 	gamespeed = (int)SpeedController::getMainInstance()->getGameSpeed();
 }
 
@@ -81,22 +83,21 @@ void ServerInfo::writeToBitstream(RakNet::BitStream& stream)
 	stream.Write(activegames);
 	stream.Write(gamespeed);
 	stream.Write(name, sizeof(name));
-	stream.Write(waitingplayer, sizeof(waitingplayer));
+	stream.Write(waitingplayers);
 	stream.Write(description, sizeof(description));
-}
-
-void ServerInfo::setWaitingPlayer(const std::string& name)
-{
-	strncpy(waitingplayer, name.c_str(), sizeof(waitingplayer) - 1);
+	stream.Write(rulestitle, sizeof(rulestitle));
+	stream.Write(rulesauthor, sizeof(rulesauthor));
+	assert( stream.GetNumberOfBytesUsed() == BLOBBY_SERVER_PRESENT_PACKET_SIZE);
 }
 
 const size_t ServerInfo::BLOBBY_SERVER_PRESENT_PACKET_SIZE = sizeof((unsigned char)ID_BLOBBY_SERVER_PRESENT)
-		+ 2 * sizeof(int) 	// activegames & gamespeed
+		+ 3 * sizeof(int) 	// activegames & gamespeed &  waiting players
 		+ 32				// name
-		+ 64				// waiting player
-		+ 192;				// description
+		+ 192				// description
+		+ 64;				// rules title / author
 
-		
+
+
 
 bool operator == (const ServerInfo& lval, const ServerInfo& rval)
 {
@@ -106,4 +107,8 @@ bool operator == (const ServerInfo& lval, const ServerInfo& rval)
 			sizeof(lval.hostname));
 }
 
+std::ostream& operator<<(std::ostream& stream, const ServerInfo& val)
+{
+	return stream << val.name << " (" << val.hostname << ":" << val.port << ")";
+}
 

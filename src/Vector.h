@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,6 +18,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 =============================================================================*/
 
+/**
+ * @file Vector.h
+ * @brief Contains a class to handle two dimensional vectors
+ */
+
 #pragma once
 
 #include <cassert>
@@ -29,20 +35,20 @@ class Vector2
 	public:
 		union
 		{
-			struct 
+			struct
 			{
 				float x;
-				float y;		
+				float y;
 			};
 			float val[2];
 		};
-	
+
 		Vector2();
 		Vector2(float x, float y);
 		Vector2(const Vector2& v1, const Vector2& v2);
 
 		void clear();
-		
+
 		Vector2 reflectX() const;
 		Vector2 reflectY() const;
 		Vector2 scale(float factor) const;
@@ -51,7 +57,7 @@ class Vector2
 		float length() const;
 		Vector2 normalise();
 		Vector2 contraVector() const ;
-		
+
 		inline Vector2 halfVector(const Vector2& vec) const
 		{
 			return Vector2(x + (vec.x - x) / 2, y + (vec.y - y) / 2);
@@ -60,66 +66,66 @@ class Vector2
 		inline Vector2& operator = (const Vector2& newVector)
 		{
 			x = newVector.x;
-			y = newVector.y;	
+			y = newVector.y;
 			return *this;
 		}
-		
+
 		inline bool operator == (const Vector2& vector) const
 		{
 			return (x == vector.x && y == vector.y);
 		}
-		
+
 		inline bool operator != (const Vector2& vector) const
 		{
 			return (x != vector.x || y != vector.y);
 		}
-		
+
 		inline Vector2 operator + (const Vector2& vector) const
 		{
 			return Vector2(x + vector.x, y + vector.y);
 		}
-		
+
 		inline Vector2 operator - (const Vector2& vector) const
 		{
 			return Vector2(x - vector.x, y - vector.y);
 		}
-		
+
 		inline Vector2 operator * (float scalar) const
 		{
 			return Vector2(x * scalar, y * scalar);
 		}
-		
+
 		inline Vector2 operator * (const Vector2& vector) const
 		{
 			return Vector2(x * vector.x, y * vector.y);
 		}
-		
+
 		inline Vector2 operator / (float scalar) const
 		{
 			assert(scalar != 0.0);
 			float invert = 1.0 / scalar;
 			return Vector2(x * invert, y * invert);
 		}
-		
+
 		inline Vector2 operator - () const
 		{
 			return Vector2(-x, -y);
 		}
-		
+
 		inline Vector2& operator += (const Vector2& vector)
 		{
 			x += vector.x;
 			y += vector.y;
 			return *this;
 		}
-		
+
 		inline Vector2& operator -= (const Vector2& vector)
 		{
 			x -= vector.x;
 			y -= vector.y;
 			return *this;
 		}
-		
+
 		inline Vector2& operator *= (const Vector2& vector)
 		{
 			x *= vector.x;
@@ -132,12 +138,12 @@ class Vector2
 		{
 			return x * vector.x + y * vector.y;
 		}
-		
+
 		inline float crossProduct(const Vector2& vector) const
 		{
 			return x * vector.y - y * vector.x;
 		}
-		
+
 		inline Vector2 reflect(const Vector2& normal) const
 		{
 			return Vector2(*this - (normal * 2 * dotProduct(normal)));
@@ -213,8 +219,8 @@ inline Vector2 Vector2::normalise()
 {
 	float fLength = length();
 	if (fLength > 1e-08)
-		return Vector2(x / fLength, y / fLength);	
-	
+		return Vector2(x / fLength, y / fLength);
+
 	return *this;
 }
 
@@ -236,9 +242,9 @@ inline bool operator < (const Vector2& v1, const Vector2& v2)
 		if (v1.y < v2.y)
 			return true;
 	}
-	
+
 	return false;
-	
+
 }
 
 inline bool operator > (const Vector2& v1, const Vector2& v2)
@@ -250,4 +256,3 @@ inline bool operator > (const Vector2& v1, const Vector2& v2)
 	}
 	return false;
 }
-

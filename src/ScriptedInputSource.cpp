@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <algorithm>
 #include <iostream>
 
-#include <SDL/SDL.h>
+#include <SDL2/SDL.h>
 
 extern "C"
 {
@@ -92,9 +92,11 @@ float ScriptedInputSource::coordinate<vel_y>::convert (float val) {
 	return -val;
 }
 
-ScriptedInputSource::ScriptedInputSource(const std::string& filename,
-						PlayerSide playerside, unsigned int difficulty): mLastBallSpeed(0),
-										mMaxDelay(difficulty), mCurDelay(difficulty), mSide(playerside)
+ScriptedInputSource::ScriptedInputSource(const std::string& filename, PlayerSide playerside, unsigned int difficulty)
+: mMaxDelay(difficulty)
+, mCurDelay(difficulty)
+, mLastBallSpeed(0)
+, mSide(playerside)
 {
 	mStartTime = SDL_GetTicks();
 	mState = lua_open();

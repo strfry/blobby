@@ -48,8 +48,42 @@
 
 
 
-\section{Structure of files}
-Every .cpp .h file has the following format:
+\section{Structure of Files}
+This chapter gives an overview about the used .cpp and .h file structure convention used in the Blobby Volley 2 project.
+If you want to contribute some code to the project it's important you take care of it.
+\subsection{Headerfile}
+Every headerfile of Blobby Volley 2 needs in top of the page the license and author text shown in listing \ref{lst:headerOfHeaderFile}.
+\begin{lstlisting}[caption=License and author text of a headerfile, label=lst:headerOfHeaderFile]
+/*=============================================================================
+Blobby Volley 2
+Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+=============================================================================*/
+\end{lstlisting}
+After the header follows an empty line, followed by a brief filedescription which must look like in listing \ref{lst:filedescriptionOfHeaderFile}.
+\begin{lstlisting}[caption=Filedescription of an headerfile, label=lst:filedescriptionOfHeaderFile]
+/**
+ * @file Filename.h
+ * @brief The short description of the file
+ */
+\end{lstlisting}
+
+\subsection{Bodyfile}
+
 \begin{lstlisting}
 /*=============================================================================
 Blobby Volley 2
@@ -76,9 +110,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 /* includes */
 
 /* implementation */
-
 \end{lstlisting}
-
 
 
 \subsection{Includes}
