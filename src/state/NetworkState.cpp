@@ -36,10 +36,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "NetworkState.h"
 #include "NetworkMessage.h"
-#include "NetworkGame.h"
-#include "RakNetPacket.h"
 #include "TextManager.h"
 #include "ReplayRecorder.h"
+#include "DuelMatch.h"
 #include "IMGUI.h"
 #include "SoundManager.h"
 #include "LocalInputSource.h"
@@ -49,6 +48,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "FileRead.h"
 #include "FileWrite.h"
 #include "MatchEvents.h"
+#include "SpeedController.h"
+#include "server/DedicatedServer.h"
+#include "LobbyState.h"
 
 
 /* implementation */
@@ -65,16 +67,14 @@ NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port):
 	mOwnSide = (PlayerSide)config.getInteger("network_side");
 	mUseRemoteColor = config.getBool("use_remote_color");
 	mLocalInput.reset(new LocalInputSource(mOwnSide));
+	mLocalInput->setMatch(mFakeMatch.get());
 	mSaveReplay = false;
 	mWaitingForReplay = false;
 	mErrorMessage = "";
 
 	RenderManager::getSingleton().redraw();
 
-	if (mClient->Connect(servername.c_str(), port, 0, 0, RAKNET_THREAD_SLEEP_TIME))
-		mNetworkState = CONNECTING;
-	else
-		mNetworkState = CONNECTION_FAILED;
+	mNetworkState = WAITING_FOR_OPPONENT;
 
 
 	// game is not started until two players are connected
@@ -127,29 +127,10 @@ void NetworkGameState::step()
 	RenderManager* rmanager = &RenderManager::getSingleton();
 
 	packet_ptr packet;
-	while (packet = receivePacket(mClient.get()))
+	while (packet = mClient->Receive())
 	{
 		switch(packet->data[0])
 		{
-			case ID_CONNECTION_REQUEST_ACCEPTED:
-			{
-				RakNet::BitStream stream;
-				stream.Write((unsigned char)ID_ENTER_GAME);
-				stream.Write(mOwnSide);
-
-				// Send playername
-				char myname[16];
-				strncpy(myname, mLocalPlayer->getName().c_str(), sizeof(myname));
-				stream.Write(myname, sizeof(myname));
-
-				// send color settings
-				stream.Write(mLocalPlayer->getStaticColor().toInt());
-
-				mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
-
-				mNetworkState = WAITING_FOR_OPPONENT;
-				break;
-			}
 			case ID_PHYSIC_UPDATE:
 			{
 				RakNet::BitStream stream((char*)packet->data, packet->length, false);
@@ -419,11 +400,13 @@ void NetworkGameState::step()
 
 				break;
 			}
-			case ID_CONNECTION_ATTEMPT_FAILED:
-				mNetworkState = CONNECTION_FAILED;
-				break;
+			// status messages we don't care about
 			case ID_REMOTE_DISCONNECTION_NOTIFICATION:
 			case ID_REMOTE_CONNECTION_LOST:
+			case ID_SERVER_STATUS:
+			case ID_CHALLENGE:
+			case ID_REMOTE_NEW_INCOMING_CONNECTION:
+			case ID_REMOTE_EXISTING_CONNECTION:
 				break;
 			case ID_DISCONNECTION_NOTIFICATION:
 			case ID_CONNECTION_LOST:
@@ -432,12 +415,6 @@ void NetworkGameState::step()
 				break;
 			case ID_NO_FREE_INCOMING_CONNECTIONS:
 				mNetworkState = SERVER_FULL;
-				break;
-			case ID_RECEIVED_STATIC_DATA:
-				break;
-			case ID_REMOTE_NEW_INCOMING_CONNECTION:
-				break;
-			case ID_REMOTE_EXISTING_CONNECTION:
 				break;
 			case ID_CHAT_MESSAGE:
 			{
@@ -496,6 +473,28 @@ void NetworkGameState::step()
 				// the server won't send it again.
 				mWaitingForReplay = false;
 
+				break;
+			}
+
+			// we never do anything that should cause such a packet to be received!
+			case ID_CONNECTION_REQUEST_ACCEPTED:
+			case ID_CONNECTION_ATTEMPT_FAILED:
+				assert( 0 );
+				break;
+
+			case ID_BLOBBY_SERVER_PRESENT:
+			{
+				// this should only be called if we use the stay on server option
+				RakNet::BitStream stream( packet->getStream() );
+				stream.IgnoreBytes(1);	//ID_BLOBBY_SERVER_PRESENT
+				ServerInfo info(stream,	mClient->PlayerIDToDottedIP(packet->playerId), packet->playerId.port);
+
+				if (packet->length == ServerInfo::BLOBBY_SERVER_PRESENT_PACKET_SIZE )
+				{
+					deleteCurrentState();
+					setCurrentState(new LobbyState(info));
+					return;
+				}
 				break;
 			}
 			default:
@@ -581,14 +580,6 @@ void NetworkGameState::step()
 	}
 	else switch (mNetworkState)
 	{
-		case CONNECTING:
-		{
-			imgui.doOverlay(GEN_ID, Vector2(100.0, 210.0),
-					Vector2(700.0, 310.0));
-			imgui.doText(GEN_ID, Vector2(150.0, 250.0),
-					TextManager::NET_CONNECTING);
-			break;
-		}
 		case WAITING_FOR_OPPONENT:
 		{
 			imgui.doOverlay(GEN_ID, Vector2(100.0, 210.0),
@@ -645,21 +636,6 @@ void NetworkGameState::step()
 			{
 				mSaveReplay = true;
 				imgui.resetSelection();
-			}
-			break;
-		}
-		case CONNECTION_FAILED:
-		{
-			imgui.doCursor();
-			imgui.doOverlay(GEN_ID, Vector2(100.0, 210.0),
-					Vector2(700.0, 370.0));
-			imgui.doText(GEN_ID, Vector2(200.0, 250.0),
-					TextManager::NET_CON_FAILED);
-			if (imgui.doButton(GEN_ID, Vector2(350.0, 300.0),
-					TextManager::LBL_OK))
-			{
-				deleteCurrentState();
-				setCurrentState(new MainMenuState);
 			}
 			break;
 		}
@@ -739,7 +715,7 @@ void NetworkGameState::step()
 			{
 
 				// GUI-Hack, so that we can send messages
-				if ((InputManager::getSingleton()->getLastActionKey() == "return") && (mChattext != ""))
+				if ((InputManager::getSingleton()->getLastActionKey() == "Return") && (mChattext != ""))
 				{
 					RakNet::BitStream stream;
 					char message[31];
@@ -776,163 +752,113 @@ const char* NetworkGameState::getStateName() const
 	return "NetworkGameState";
 }
 
-NetworkHostState::NetworkHostState()
+NetworkHostState::NetworkHostState() : mServer(  ), mClient( new RakClient ), mGameState(nullptr)
 {
-	mServer = new RakServer;
-	mServer->Start(2, 0, BLOBBY_PORT);
-	mNetworkGame = 0;
-	mGameState = new NetworkGameState("localhost", BLOBBY_PORT);
-	mLocalPlayerSide = NO_PLAYER;
+	// read config
+	/// \todo we need read-only access here!
+	UserConfig config;
+	config.loadFile("config.xml");
+	PlayerSide localSide = (PlayerSide)config.getInteger("network_side");
+
+	// load/init players
+	if(localSide == LEFT_PLAYER)
+	{
+		mLocalPlayer = config.loadPlayerIdentity(LEFT_PLAYER, true);
+	}
+	 else
+	{
+		mLocalPlayer = config.loadPlayerIdentity(RIGHT_PLAYER, true);
+	}
+
+	ServerInfo info( mLocalPlayer.getName().c_str());
+	std::string rulesfile = config.getString("rules");
+
+	mServer.reset( new DedicatedServer(info, rulesfile, 4));
+
+	// connect to server
+	if (!mClient->Connect(info.hostname, info.port, 0, 0, RAKNET_THREAD_SLEEP_TIME))
+		throw( std::runtime_error(std::string("Could not connect to server ") + info.hostname) );
+
+
 }
 
 NetworkHostState::~NetworkHostState()
 {
 	delete mGameState;
-	delete mNetworkGame;
-	mServer->Disconnect(1);
-	delete mServer;
 }
 
 void NetworkHostState::step()
 {
 	packet_ptr packet;
-	while (packet = receivePacket(mServer))
+	if( mGameState == nullptr )
 	{
-		switch (packet->data[0])
+		while (packet = mClient->Receive())
 		{
-			case ID_DISCONNECTION_NOTIFICATION:
-			case ID_CONNECTION_LOST:
-			case ID_INPUT_UPDATE:
-			case ID_CHAT_MESSAGE:
-			case ID_PAUSE:
-			case ID_UNPAUSE:
-			case ID_REPLAY:
+			switch(packet->data[0])
 			{
-				if (packet->playerId == mLocalPlayer ||
-					packet->playerId == mRemotePlayer)
+				// as soon as we are connected to the server
+				case ID_CONNECTION_REQUEST_ACCEPTED:
 				{
-					if (mNetworkGame)
-						mNetworkGame->injectPacket(packet);
+					// ----------------------------------------------------
+					// Send ENTER SERVER packet
+					RakNet::BitStream stream;
+					stream.Write((unsigned char)ID_ENTER_SERVER);
+
+					// Send preferred side
+					stream.Write( mLocalPlayer.getPreferredSide() );
+
+					// Send playername
+					char myname[16];
+					strncpy(myname, mLocalPlayer.getName().c_str(), sizeof(myname));
+					stream.Write(myname, sizeof(myname));
+
+					// send color settings
+					stream.Write(mLocalPlayer.getStaticColor().toInt());
+
+					mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
+
+					// Send ENTER GAME packet
+
+					RakNet::BitStream stream2;
+					stream2.Write((char)ID_CHALLENGE);
+					auto writer = createGenericWriter(&stream2);
+					writer->generic<PlayerID>( UNASSIGNED_PLAYER_ID );
+
+					mClient->Send(&stream2, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
+
+					mGameState = new NetworkGameState(mClient);
+
+					break;
 				}
-				break;
-			}
-			case ID_BLOBBY_SERVER_PRESENT:
-			{
-				ServerInfo myinfo(mLocalPlayerSide == NO_PLAYER ? "somebody" : mLocalPlayerName.c_str());
-				myinfo.activegames = mNetworkGame ? 1 : 0;
-				if (mLocalPlayerSide == NO_PLAYER || mNetworkGame)
-				{
-					strncpy(myinfo.waitingplayer, "none",
-						sizeof(myinfo.waitingplayer) - 1);
-				}
-				else
-				{
-					strncpy(myinfo.waitingplayer, mLocalPlayerName.c_str(),
-						sizeof(myinfo.waitingplayer) - 1);
-				}
-				RakNet::BitStream stream;
-				stream.Write((unsigned char)ID_BLOBBY_SERVER_PRESENT);
-				myinfo.writeToBitstream(stream);
-				mServer->Send(&stream, HIGH_PRIORITY,
-						RELIABLE_ORDERED, 0,
-						packet->playerId, false);
-				break;
-			}
-			case ID_ENTER_GAME:
-			{
-				int ival;
-				RakNet::BitStream stream((char*)packet->data,
-						packet->length, false);
-
-				stream.IgnoreBytes(1);	//ID_ENTER_GAME
-
-				// read playername and side
-				stream.Read(ival);
-
-				char charName[16];
-				stream.Read(charName, sizeof(charName));
-
-				// read colour data
-				int color;
-				stream.Read(color);
-
-				// ensures that charName is null terminated
-				charName[sizeof(charName)-1] = '\0';
-
-				std::string playerName(charName);
-				PlayerSide newSide = (PlayerSide)ival;
-
-				if (mLocalPlayerSide == NO_PLAYER)
-				{ // First player is probably the local one
-					mLocalPlayerSide = newSide;
-					mLocalPlayer = packet->playerId;
-					mLocalPlayerName = playerName;
-
-					// set the color
-					switch(newSide){
-						case LEFT_PLAYER:
-							mLeftColor = color;
-							break;
-						case RIGHT_PLAYER:
-							mRightColor = color;
-							break;
-					}
-				}
-				else
-				{
-					mRemotePlayer = packet->playerId;
-					mRemotePlayerName = playerName;
-
-					PlayerID leftPlayer;
-					PlayerID rightPlayer;
-					std::string leftPlayerName;
-					std::string rightPlayerName;
-
-					if (LEFT_PLAYER == mLocalPlayerSide)
+				case ID_SERVER_STATUS:
 					{
-						leftPlayer = mLocalPlayer;
-						rightPlayer = packet->playerId;
-						leftPlayerName = mLocalPlayerName;
-						rightPlayerName = playerName;
-						// set other color
-						mRightColor = color;
-					}
-					else
-					{
-						leftPlayer = packet->playerId;
-						rightPlayer = mLocalPlayer;
-						leftPlayerName = playerName;
-						rightPlayerName = mLocalPlayerName;
-						// set other color
-						mLeftColor = color;
-					}
 
-					PlayerSide switchSide = NO_PLAYER;
-
-					if (newSide == mLocalPlayerSide)
-					{
-						if (newSide == LEFT_PLAYER)
-							switchSide = RIGHT_PLAYER;
-						if (newSide == RIGHT_PLAYER)
-							switchSide = LEFT_PLAYER;
 					}
-					mNetworkGame = new NetworkGame(
-						*mServer, leftPlayer, rightPlayer,
-						leftPlayerName, rightPlayerName,
-						mLeftColor, mRightColor,
-						switchSide, "rules.lua");
-				}
+					break;
+				default:
+					std::cout << "Unknown packet " << int(packet->data[0]) << " received\n";
 			}
 		}
 	}
-	mGameState->step();
-	if (dynamic_cast<NetworkHostState*>(getCurrentState()) != 0)
+
+	if(mServer->hasActiveGame())
 	{
-		if (mNetworkGame)
-		{
-				mNetworkGame->step();
-		}
+		mServer->allowNewPlayers(false);
 	}
+
+	mServer->processPackets();
+
+	/// \todo make this gamespeed independent
+	mLobbyCounter++;
+	if(mLobbyCounter % (750 /*10s*/) == 0 )
+	{
+		mServer->updateLobby();
+	}
+
+	mServer->updateGames();
+
+	if( mGameState )
+		mGameState->step();
 }
 
 const char* NetworkHostState::getStateName() const
@@ -940,3 +866,14 @@ const char* NetworkHostState::getStateName() const
 	return "NetworkHostState";
 }
 
+// definition of syslog for client hosted games
+void syslog(int pri, const char* format, ...)
+{
+	// do nothing?
+}
+
+// debug counters
+int SWLS_PacketCount;
+int SWLS_Connections;
+int SWLS_Games;
+int SWLS_GameSteps;

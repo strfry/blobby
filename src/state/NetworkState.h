@@ -1,6 +1,7 @@
 /*=============================================================================
 Blobby Volley 2
 Copyright (C) 2006 Jonathan Sieber (jonathan_sieber@yahoo.de)
+Copyright (C) 2006 Daniel Knobe (daniel-knobe@web.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -32,6 +33,7 @@ class RakServer;
 class DuelMatch;
 class NetworkGame;
 class PlayerIdentity;
+class DedicatedServer;
 
 /*! \class NetworkGameState
 	\brief State for Network Game
@@ -53,11 +55,9 @@ public:
 private:
 	enum
 	{
-		CONNECTING,
 		WAITING_FOR_OPPONENT,
 		OPPONENT_DISCONNECTED,
 		DISCONNECTED,
-		CONNECTION_FAILED,
 		SERVER_FULL,
 		PLAYING,
 		PLAYER_WON,
@@ -81,7 +81,7 @@ private:
 	std::string mFilename;
 	std::string mErrorMessage;
 
-	boost::scoped_ptr<RakClient> mClient;
+	boost::shared_ptr<RakClient> mClient;
 	PlayerSide mOwnSide;
 	PlayerSide mWinningPlayer;
 
@@ -117,16 +117,12 @@ public:
 	virtual const char* getStateName() const;
 
 private:
+	boost::scoped_ptr<DedicatedServer> mServer;
+	boost::shared_ptr<RakClient> mClient;
 	NetworkGameState* mGameState;
-	NetworkGame* mNetworkGame;
-	RakServer* mServer;
 
-	PlayerSide mLocalPlayerSide;
-	PlayerID mLocalPlayer;
-	PlayerID mRemotePlayer;
-	Color mLeftColor;
-	Color mRightColor;
-	std::string mLocalPlayerName;
-	std::string mRemotePlayerName;
+	PlayerIdentity mLocalPlayer;
+	unsigned int mLobbyCounter;
+
 };
 
