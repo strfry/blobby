@@ -37,22 +37,24 @@ TextManager* TextManager::mSingleton = 0;
 
 TextManager* TextManager::createTextManager(std::string langname){
 	delete mSingleton;
-	
+
 	mSingleton = new TextManager(langname);
-	
+
 	std::string langfile = "lang_"+langname+".xml";
-	
+
 	bool loaded = false;
 	try{
 		loaded = mSingleton->loadFromXML(langfile);
 	}catch(FileLoadException& fle){
 		std::cerr << fle.what() << std::endl;
 	};
-	
+
 	if(!loaded){
 		std::cerr << "error loading language " << langfile << "!" << std::endl;
 		std::cerr << "\tfalling back to english" << std::endl;
 	}
+
+	return mSingleton;
 }
 
 const TextManager* TextManager::getSingleton(){
@@ -65,10 +67,10 @@ TextManager::TextManager(std::string l):lang(l){
 }
 
 void TextManager::switchLanguage(std::string langname){
-	// if old and new language are the same, nothing must be done 
+	// if old and new language are the same, nothing must be done
 	if(langname == mSingleton->lang)
 		return;
-		
+
 	// otherwise, the old TextManager is destroyed and a new one is created
 	createTextManager(langname);
 }
@@ -84,7 +86,7 @@ std::string TextManager::getLang() const{
 bool TextManager::loadFromXML(std::string filename){
 	// read and parse file
 	boost::shared_ptr<TiXmlDocument> language_data = FileRead::readXMLDocument(filename);
-	
+
 	if (language_data->Error())
 	{
 		std::cerr << "Warning: Parse error in " << filename;
@@ -94,10 +96,10 @@ bool TextManager::loadFromXML(std::string filename){
 	TiXmlElement* language = language_data->FirstChildElement("language");
 	if (!language)
 		return false;
-	
+
 	int num_strings = mStrings.size();
 	int found_count = 0;
-	
+
 	#ifdef DEBUG
 	std::set<std::string> stringsToTranslate;
 	for(std::string s: mStrings)
@@ -111,9 +113,9 @@ bool TextManager::loadFromXML(std::string filename){
 	for (	TiXmlElement* stringel = language->FirstChildElement("string");
 			stringel;
 			stringel = stringel->NextSiblingElement("string"))
-	
+
 	{
-		
+
 		/// \todo we don't check for duplicate entries!
 		const char* e = stringel->Attribute("english");
 		const char* t = stringel->Attribute("translation");
@@ -132,8 +134,8 @@ bool TextManager::loadFromXML(std::string filename){
 			}
 			else
 				std::cerr << "error in language file: entry " << e << " -> " << t << " invalid\n";
-		
-		} 
+
+		}
 		else if(t)
 		{
 			std::cerr << "error in language file: english not found for " << t << std::endl;
@@ -142,13 +144,13 @@ bool TextManager::loadFromXML(std::string filename){
 		{
 			std::cerr << "error in language file: translation not found for " << e << std::endl;
 		}
-		
+
 	}
-	
+
 	// do we check if we got all?
 	if(num_strings != found_count)
 	{
-		std::cerr << "missing translations: got " << found_count << 
+		std::cerr << "missing translations: got " << found_count <<
 					" out of " << num_strings << " translation entries" << std::endl;
 
 		#ifdef DEBUG
@@ -158,7 +160,7 @@ bool TextManager::loadFromXML(std::string filename){
 		}
 		#endif // DEBUG
 	}
-	
+
 	return true;
 }
 
@@ -171,7 +173,7 @@ void TextManager::setDefault()
 	mStrings[LBL_NO] = "no";
 	mStrings[LBL_CONF_QUIT] = "really quit?";
 	mStrings[LBL_CONTINUE] = "continue";
-	
+
 	mStrings[MNU_LABEL_ONLINE] = "online game";
 	mStrings[MNU_LABEL_LAN] = "lan game";
 	mStrings[MNU_LABEL_START] = "start";
@@ -179,11 +181,11 @@ void TextManager::setDefault()
 	mStrings[MNU_LABEL_REPLAY] = "watch replay";
 	mStrings[MNU_LABEL_CREDITS] = "credits";
 	mStrings[MNU_LABEL_EXIT] = "exit";
-	
+
 	mStrings[CRD_PROGRAMMERS] = "programmers:";
 	mStrings[CRD_GRAPHICS] = "graphics:";
 	mStrings[CRD_THX] = "special thanks at:";
-	
+
 	mStrings[RP_SHOW_AGAIN] = "show again";
 	mStrings[RP_PLAY] = "play";
 	mStrings[RP_DELETE] = "delete";
@@ -197,14 +199,14 @@ void TextManager::setDefault()
 	mStrings[RP_SAVE_NAME] = "name of the replay:";
 	mStrings[RP_WAIT_REPLAY] = "receiving replay...";
 	mStrings[RP_SAVE] = "save replay";
-	
+
 	mStrings[GAME_WIN] = "has won the game!";
 	mStrings[GAME_TRY_AGAIN] = "try again";
 	mStrings[GAME_WAITING] = "waiting for opponent...";
 	mStrings[GAME_OPP_LEFT] = "opponent left the game";
 	mStrings[GAME_PAUSED] = "game paused";
 	mStrings[GAME_QUIT] = "quit";
-	
+
 	mStrings[NET_SERVER_SCAN] = "scan for servers";
 	mStrings[NET_DIRECT_CONNECT] = "direct connect";
 	mStrings[NET_SERVER_INFO] = "server info";
@@ -216,7 +218,12 @@ void TextManager::setDefault()
 	mStrings[NET_CON_FAILED] = "connection failed";
 	mStrings[NET_SERVER_FULL] = "server full";
 	mStrings[NET_STAY_ON_SERVER] = "stay on server";
-	
+	mStrings[NET_RANDOM_OPPONENT] = "random";
+	mStrings[NET_SPEED] = "speed: ";
+	mStrings[NET_RULES_TITLE] = "rules: ";
+	mStrings[NET_RULES_BY] = " by ";
+	mStrings[NET_CHALLENGE] = "challenger: ";
+
 
 	mStrings[OP_INPUT_OP] = "input options";
 	mStrings[OP_GFX_OP] = "graphic options";
@@ -269,7 +276,7 @@ void TextManager::setDefault()
 	mStrings[OP_MEDIUM] = "medium";
 	mStrings[OP_STRONG] = "strong";
 	mStrings[OP_RULES] = "rules:";
-	
+
 	mStrings[UPDATE_NOTIFICATION] = "please visit http://blobby.sourceforge.net/ for a new version of blobby volley";
 }
 
