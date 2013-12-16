@@ -54,10 +54,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 /* implementation */
-NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port):
-	mClient(new RakClient()),
-	mFakeMatch(new DuelMatch(true, "rules.lua")),
-	mServerAddress(servername), mPort(port), mGameStepsCounter(0)
+NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client):
+	mClient( client ),
+	mFakeMatch(new DuelMatch(true, DEFAULT_RULES_FILE)),
+	mGameStepsCounter(0)
 {
 	IMGUI::getSingleton().resetSelection();
 	mWinningPlayer = NO_PLAYER;
@@ -75,7 +75,6 @@ NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port):
 	RenderManager::getSingleton().redraw();
 
 	mNetworkState = WAITING_FOR_OPPONENT;
-
 
 	// game is not started until two players are connected
 	mFakeMatch->pause();
@@ -107,13 +106,6 @@ NetworkGameState::NetworkGameState(const std::string& servername, Uint16 port):
 	mSelectedChatmessage = 0;
 	mChatCursorPosition = 0;
 	mChattext = "";
-
-	// init lag compensation
-	mCachedOwnInput.set_capacity(75);		// up to 1 sec normal gamespeed time should be enough
-	for(unsigned int i = 0; i < 75; ++i)
-	{
-		mCachedOwnInput.push_back( PlayerInput() );
-	}
 }
 
 NetworkGameState::~NetworkGameState()
@@ -608,14 +600,12 @@ void NetworkGameState::step()
 
 			if (imgui.doButton(GEN_ID, Vector2(250.0, 340.0), TextManager::NET_STAY_ON_SERVER))
 			{
-				// we need to make a copy here because this variables get deleted in destrutor
-				// when deleteCurrentState runs
-				std::string server = mServerAddress;
-				uint16_t port = mPort;
-
-				deleteCurrentState();
-				setCurrentState(new NetworkGameState(server, port));
-				return;
+				// Send a blobby server connection request
+				RakNet::BitStream stream;
+				stream.Write((unsigned char)ID_BLOBBY_SERVER_PRESENT);
+				stream.Write(BLOBBY_VERSION_MAJOR);
+				stream.Write(BLOBBY_VERSION_MINOR);
+				mClient->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0);
 			}
 			break;
 		}

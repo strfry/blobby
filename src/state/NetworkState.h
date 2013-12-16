@@ -22,10 +22,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "State.h"
 #include "NetworkMessage.h"
+#include "PlayerIdentity.h"
 #include "InputSource.h"
 
 #include <vector>
 #include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 #include <boost/circular_buffer.hpp>
 
 class RakClient;
@@ -44,9 +46,8 @@ class NetworkGameState : public State
 {
 public:
 	/// create a NetworkGameState with connection to a certain server
-	/// \param servername Name of server
-	/// \param port Target port
-	NetworkGameState(const std::string& servername, Uint16 port);
+	/// \param client A client which has an established connection to the server we want to start the game on.
+	NetworkGameState(boost::shared_ptr<RakClient> client);
 
 	virtual ~NetworkGameState();
 	virtual void step();
@@ -63,10 +64,6 @@ private:
 		PLAYER_WON,
 		PAUSING
 	} mNetworkState;
-
-	// server info
-	std::string mServerAddress;
-	uint16_t mPort;
 
 	// these are pointers to mLeftPlayer or mRightPlayer respectively, so we don't need a smart pointer here
 	PlayerIdentity* mLocalPlayer;

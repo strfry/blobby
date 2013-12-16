@@ -66,7 +66,7 @@ SDL_Surface* RenderManagerSDL::colorSurface(SDL_Surface *surface, Color color)
 		pixel->r = rr > 0 ? rr : 1;
 		pixel->g = rg > 0 ? rg : 1;
 		pixel->b = rb > 0 ? rb : 1;
-		
+
 	}
 	SDL_UnlockSurface(newSurface);
 
@@ -92,14 +92,18 @@ RenderManager* RenderManager::createRenderManagerSDL()
 
 void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 {
-	
+	// Set modesetting
+	Uint32 screenFlags = 0;
+	if (fullscreen)
+		screenFlags |= SDL_WINDOW_FULLSCREEN;
+
 	// Create window
 	mWindow = SDL_CreateWindow(AppTitle,
 		SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED,
 		xResolution, yResolution,
 		screenFlags);
-	
+
 	// Set icon
 	SDL_Surface* icon = SDL_LoadBMP("data/Icon.bmp");
 	SDL_SetColorKey(icon, SDL_TRUE,
@@ -113,12 +117,8 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 	// Hide mousecursor
 	SDL_ShowCursor(0);
 
-	mOverlaySurface = SDL_CreateRGBSurface(SDL_HWSURFACE | SDL_SRCALPHA,
-		mScreen->w, mScreen->h, mScreen->format->BitsPerPixel,
-		mScreen->format->Rmask, mScreen->format->Gmask,
-		mScreen->format->Bmask, mScreen->format->Amask);
-	SDL_Rect screenRect = {0, 0, (short)xResolution, (short)yResolution};
-	SDL_FillRect(mOverlaySurface, &screenRect, SDL_MapRGB(mScreen->format, 0, 0, 0));
+	// Load all textures and surfaces to render the game
+	SDL_Surface* tmpSurface;
 
 	// Create a 1x1 black surface which will be scaled to draw an overlay
 	tmpSurface = SDL_CreateRGBSurface(0, 1, 1, 32,
@@ -273,7 +273,8 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 		mHighlightFont.push_back(SDL_CreateTextureFromSurface(mRenderer, tempFont2));
 		SDL_FreeSurface(tempFont);
 		SDL_FreeSurface(tempFont2);
-		
+	}
+
 	// Load blood surface
 	SDL_Surface* blobStandardBlood = loadSurface("gfx/blood.bmp");
 	SDL_Surface* formatedBlobStandardBlood = SDL_ConvertSurfaceFormat(blobStandardBlood, SDL_PIXELFORMAT_ABGR8888, 0);
@@ -292,7 +293,7 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 	}
 
 	mStandardBlobBlood = formatedBlobStandardBlood;
-	
+
 	// Create streamed textures for blood
 	SDL_Texture* leftBlobBlood = SDL_CreateTexture(mRenderer,
 			SDL_PIXELFORMAT_ABGR8888,
@@ -318,15 +319,15 @@ void RenderManagerSDL::init(int xResolution, int yResolution, bool fullscreen)
 void RenderManagerSDL::deinit()
 {
 	SDL_DestroyTexture(mOverlayTexture);
-	
+
 	for(unsigned int i = 0; i < 2; i++) {
 		SDL_DestroyTexture(mMarker[i]);
 	}
 	SDL_DestroyTexture(mBackground);
-	
+
 	for (unsigned int i = 0; i < mBall.size(); ++i)
 		SDL_DestroyTexture(mBall[i]);
-	
+
 	SDL_DestroyTexture(mBallShadow);
 
 	for (unsigned int i = 0; i < mStandardBlob.size(); ++i)
@@ -438,7 +439,7 @@ void RenderManagerSDL::draw()
 	// Drawing the names
 	drawText(mLeftPlayerName, Vector2(12, 550), false);
 	drawText(mRightPlayerName, Vector2(788-(24*mRightPlayerName.length()), 550), false);
-	
+
 	// Drawing the Clock
 	drawText(mTime, Vector2(400 - mTime.length()*12, 24), false);
 }
@@ -475,7 +476,7 @@ void RenderManagerSDL::setBlobColor(int player, Color color)
 	} else {
 		return;
 	}
-	
+
 	DynamicColoredTexture* handledBlobBlood;
 
 	if (player == LEFT_PLAYER)
@@ -486,10 +487,10 @@ void RenderManagerSDL::setBlobColor(int player, Color color)
 	{
 		handledBlobBlood = &mRightBlobBlood;
 	}
-	
-	SDL_FreeSurface(*handledBlobBlood);
-	*handledBlobBlood = colorSurface(mStandardBlobBlood, color).mSDLsf;
-	
+
+	SDL_Surface* tempSurface = colorSurface(mStandardBlobBlood, mBlobColor[player]);
+	SDL_UpdateTexture(handledBlobBlood->mSDLsf, NULL, tempSurface->pixels, tempSurface->pitch);
+	SDL_FreeSurface(tempSurface);
 }
 
 
@@ -511,8 +512,8 @@ void RenderManagerSDL::colorizeBlobs(int player)
 		handledBlobShadow = &mRightBlobShadow;
 		frame = mRightBlobAnimationState;
 	}
-	
-	if( (*handledBlob)[frame].mColor != mBlobColor[player]) 
+
+	if( (*handledBlob)[frame].mColor != mBlobColor[player])
 	{
 		SDL_Surface* tempSurface = colorSurface(mStandardBlob[frame], mBlobColor[player]);
 		SDL_UpdateTexture((*handledBlob)[frame].mSDLsf, NULL, tempSurface->pixels, tempSurface->pitch);
@@ -572,29 +573,6 @@ void RenderManagerSDL::setPlayernames(std::string leftName, std::string rightNam
 {
 	mLeftPlayerName = leftName;
 	mRightPlayerName = rightName;
-	
-	int tl = mLeftPlayerName.size() * FONT_WIDTH_NORMAL;
-	SDL_FreeSurface(mLeftPlayerNameTexture);
-	SDL_Surface* surface = createEmptySurface(tl, 24);
-	SDL_SetAlpha(surface, SDL_SRCALPHA, 255);
-	SDL_SetColorKey(surface, SDL_SRCCOLORKEY | SDL_RLEACCEL,
-			SDL_MapRGB(surface->format, 0, 0, 0));
-	drawTextImpl(mLeftPlayerName, Vector2(0,0), TF_NORMAL, surface);
-	
-	mLeftPlayerNameTexture = SDL_DisplayFormatAlpha(surface);
-	SDL_FreeSurface(surface);
-	
-	
-	tl = mRightPlayerName.size() * FONT_WIDTH_NORMAL;
-	SDL_FreeSurface(mRightPlayerNameTexture);
-	surface = createEmptySurface(tl, 24);
-	SDL_SetAlpha(surface, SDL_SRCALPHA, 255);
-	SDL_SetColorKey(surface, SDL_SRCCOLORKEY | SDL_RLEACCEL,
-			SDL_MapRGB(surface->format, 0, 0, 0));
-	drawTextImpl(mRightPlayerName, Vector2(0,0), TF_NORMAL, surface);
-	
-	mRightPlayerNameTexture = SDL_DisplayFormatAlpha(surface);
-	SDL_FreeSurface(surface);
 }
 
 void RenderManagerSDL::setTime(const std::string& t)
@@ -618,11 +596,11 @@ void RenderManagerSDL::drawTextImpl(const std::string& text, Vector2 position, u
 	{
 		if (flags & TF_OBFUSCATE)
 			index = FONT_INDEX_ASTERISK;
-		
+
 		SDL_Rect charRect;
 		charRect.x = lround(position.x) + length;
 		charRect.y = lround(position.y);
-		
+
 		if (flags & TF_SMALL_FONT)
 		{
 			charRect.w = FONT_WIDTH_SMALL;
@@ -649,7 +627,7 @@ void RenderManagerSDL::drawTextImpl(const std::string& text, Vector2 position, u
 				SDL_RenderCopy(mRenderer,mFont[index], NULL, &charRect);
 			}
 		}
-		
+
 		index = getNextFontIndex(string);
 		length += FontSize;
 	}
@@ -702,7 +680,7 @@ void RenderManagerSDL::drawBlob(const Vector2& pos, const Color& col)
 	position.y = lround(pos.y);
 
 	static int toDraw = 0;
-	
+
 	mLeftBlobAnimationState = 0;
 	mRightBlobAnimationState = 0;
 
@@ -710,7 +688,7 @@ void RenderManagerSDL::drawBlob(const Vector2& pos, const Color& col)
 	/// \todo this recolores the current frame (0)
 	/// + shadows; thats not exactly what we want
 	colorizeBlobs(toDraw);
-	
+
 
 	//  Second dirty workaround in the function to have the right position of blobs in the GUI
 	position.x = position.x - (int)(75/2);
@@ -733,14 +711,14 @@ void RenderManagerSDL::drawBlob(const Vector2& pos, const Color& col)
 void RenderManagerSDL::drawParticle(const Vector2& pos, int player)
 {
 	mNeedRedraw = true;
-	
+
 	SDL_Rect blitRect = {
 		(short)lround(pos.x - float(9) / 2.0),
 		(short)lround(pos.y - float(9) / 2.0),
 		(short)9,
 		(short)9,
 	};
-	
+
 	DynamicColoredTexture blood = player == LEFT_PLAYER ? mLeftBlobBlood : mRightBlobBlood;
 
 	SDL_RenderCopy(mRenderer, blood.mSDLsf, 0, &blitRect);

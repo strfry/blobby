@@ -74,9 +74,9 @@ NetworkSearchState::~NetworkSearchState()
 }
 
 void NetworkSearchState::step()
-{	
+{
 	packet_ptr packet;
-	
+
 	// set to true to initiate server connection
 	bool doEnterServer = false;
 
@@ -112,13 +112,26 @@ void NetworkSearchState::step()
 					stream.IgnoreBytes(1);	//ID_BLOBBY_SERVER_PRESENT
 					ServerInfo info(stream,	(*iter)->PlayerIDToDottedIP(packet->playerId), packet->playerId.port);
 
-					if (std::find(
-							mScannedServers.begin(),
-							mScannedServers.end(),
-							info) == mScannedServers.end() 
-							// check whether the packet sizes match
-							&& packet->length == ServerInfo::BLOBBY_SERVER_PRESENT_PACKET_SIZE ){
-						mScannedServers.push_back(info);
+					// check that the packet sizes match
+					if(packet->length == ServerInfo::BLOBBY_SERVER_PRESENT_PACKET_SIZE)
+					{
+						if (std::find( mScannedServers.begin(),	mScannedServers.end(), info) == mScannedServers.end() )
+						{
+							mScannedServers.push_back(info);
+
+							// check whether this was a direct connect server
+							if(*iter == mDirectConnectClient)
+							{
+								mSelectedServer = mScannedServers.size() - 1;
+								doEnterServer = true;
+							}
+						}
+						 else
+						{
+							std::cout << "duplicate server entry\n";
+							std::cout << info << "\n";
+						}
+
 					}
 					 else
 					{
@@ -138,19 +151,19 @@ void NetworkSearchState::step()
 				case ID_VERSION_MISMATCH:
 				{
 					// this packet is send when the client is older than the server!
-					// so 
+					// so
 					RakNet::BitStream stream((char*)packet->data, packet->length, false);
 					stream.IgnoreBytes(1);	// ID_VERSION_MISMATCH
-					
+
 					// default values if server does not send versions.
 					// thats the 0.9 behaviour
-					int smajor = 0, sminor = 9;		
+					int smajor = 0, sminor = 9;
 					stream.Read(smajor);	// load server version information
 					stream.Read(sminor);
 					printf("found blobby server with version %d.%d\n", smajor, sminor);
-					
+
 					mDisplayUpdateNotification = true;
-					
+
 					// the RakClient will be deleted, so
 					// we must free the packet here
 					packet.reset();
@@ -215,7 +228,7 @@ void NetworkSearchState::step()
 	}
 
 	std::vector<std::string> servernames;
-	for (int i = 0; i < mScannedServers.size(); i++)
+	for (unsigned int i = 0; i < mScannedServers.size(); i++)
 	{
 		servernames.push_back(std::string(mScannedServers[i].name) + " (" + boost::lexical_cast<std::string>(mScannedServers[i].waitingplayers) + ")" );
 	}
@@ -247,7 +260,7 @@ void NetworkSearchState::step()
 			std::size_t found = mEnteredServer.find(':');
 			if (found != std::string::npos) {
 				server = mEnteredServer.substr(0, found);
-				
+
 				try
 				{
 					port = boost::lexical_cast<int>(mEnteredServer.substr(found+1));
@@ -255,7 +268,7 @@ void NetworkSearchState::step()
 				catch (boost::bad_lexical_cast)
 				{
 					/// \todo inform the user that default port was selected
-					
+
 				}
 				if ((port <= 0) || (port > 65535))
 					port = BLOBBY_PORT;
@@ -296,7 +309,7 @@ void NetworkSearchState::step()
 					  << int(100.0 / 75.0 * mScannedServers[mSelectedServer].gamespeed) << "%";
 		imgui.doText(GEN_ID, Vector2(50, 220), gamespeed.str());
 		std::string description = mScannedServers[mSelectedServer].description;
-		for (int i = 0; i < description.length(); i += 29)
+		for (unsigned int i = 0; i < description.length(); i += 29)
 		{
 			imgui.doText(GEN_ID, Vector2(50, 250 + i / 29 * 30),
 					description.substr(i, 29));
@@ -318,8 +331,8 @@ void NetworkSearchState::step()
 		return;
 	}
 
-	if (imgui.doButton(GEN_ID, Vector2(230, 530), TextManager::LBL_OK) 
-							&& !mScannedServers.empty() || doEnterServer)
+	if ((imgui.doButton(GEN_ID, Vector2(230, 530), TextManager::LBL_OK) && !mScannedServers.empty())
+			|| doEnterServer)
 	{
 		ServerInfo server = mScannedServers[mSelectedServer];
 		deleteCurrentState();
@@ -330,7 +343,7 @@ void NetworkSearchState::step()
 		deleteCurrentState();
 		setCurrentState(new MainMenuState);
 	}
-	
+
 	if(mDisplayUpdateNotification)
 	{
 		imgui.doOverlay(GEN_ID, Vector2(71, 572), Vector2(729, 590), Color(128, 0, 0));
@@ -364,7 +377,7 @@ void OnlineSearchState::searchServers()
 		FileWrite file("onlineserver.xml");
 
 		file.write(serverListXml.str());
-		
+
 		file.close();
 	} catch (std::exception& e) {
 		std::cout << "Can't get onlineserver.xml: " << e.what() << std::endl;
@@ -383,17 +396,17 @@ void OnlineSearchState::searchServers()
 			std::cerr << "Warning: Parse error in " << "onlineserver.xml";
 			std::cerr << "!" << std::endl;
 		}
-		
+
 		TiXmlElement* onlineserverElem = serverListXml->FirstChildElement("onlineserver");
-		
+
 		if (onlineserverElem == NULL)
 		{
 			std::cout << "Can't read onlineserver.xml" << std::endl;
 			return;
 		}
 
-		for (TiXmlElement* serverElem = onlineserverElem->FirstChildElement("server"); 
-		     serverElem != NULL; 
+		for (TiXmlElement* serverElem = onlineserverElem->FirstChildElement("server");
+		     serverElem != NULL;
 		     serverElem = serverElem->NextSiblingElement("server"))
 		{
 			std::string host;
@@ -409,7 +422,7 @@ void OnlineSearchState::searchServers()
 					host = tmp;
 					continue;
 				}
-					
+
 				tmp = varElem->Attribute("port");
 				if(tmp)
 				{
@@ -435,7 +448,6 @@ void OnlineSearchState::searchServers()
 		std::cout << "Can't read onlineserver.xml" << std::endl;
 	}
 
-		
 	/// \todo check if we already try to connect to this one!
 	std::string address = IUserConfigReader::createUserConfigReader("config.xml")->getString("additional_network_server");
 	std::string server = address;
@@ -444,7 +456,7 @@ void OnlineSearchState::searchServers()
 	if (found != std::string::npos)
 	{
 		server = address.substr(0, found);
-		
+
 		try
 		{
 			port = boost::lexical_cast<int>(address.substr(found+1));
@@ -461,15 +473,13 @@ void OnlineSearchState::searchServers()
 	serverList.push_back(pairs);
 
 	mScannedServers.clear();
-
-	for(int i = 0; i < serverList.size(); i++)
+	mPingClient->Initialize( serverList.size() + 2, 0, 10 );
+	for( auto& server : serverList )
 	{
 		std::cout << "ping" << server.first << "\n";
 		mPingClient->Ping(server.first.c_str(), server.second, true);
 	}
 
-
-	
 }
 
 const char* OnlineSearchState::getStateName() const
