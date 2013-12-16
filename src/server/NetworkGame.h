@@ -88,6 +88,8 @@ class NetworkGame : public ObjectCounter<NetworkGame>
 		boost::scoped_ptr<DuelMatch> mMatch;
 		boost::shared_ptr<InputSource> mLeftInput;
 		boost::shared_ptr<InputSource> mRightInput;
+		unsigned int mLeftLastStep;
+		unsigned int mRightLastStep;
 
 		boost::scoped_ptr<ReplayRecorder> mRecorder;
 

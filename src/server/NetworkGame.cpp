@@ -162,14 +162,13 @@ void NetworkGame::processPackets()
 			case ID_INPUT_UPDATE:
 			{
 				PlayerInput newInput;
-				int ival;
+				int stepcount;
 				RakNet::BitStream stream((char*)packet->data,
 						packet->length, false);
 
-				// ignore ID_INPUT_UPDATE and ID_TIMESTAMP
+				// ignore ID_INPUT_UPDATE
 				stream.IgnoreBytes(1);
-				stream.IgnoreBytes(1);
-				stream.Read(ival);
+				stream.Read(stepcount);
 				stream.Read(newInput.left);
 				stream.Read(newInput.right);
 				stream.Read(newInput.up);
@@ -179,12 +178,14 @@ void NetworkGame::processPackets()
 					if (mSwitchedSide == LEFT_PLAYER)
 						newInput.swap();
 					mLeftInput->setInput(newInput);
+					mLeftLastStep = stepcount;
 				}
-				if (packet->playerId == mRightPlayer)
+				 else if (packet->playerId == mRightPlayer)
 				{
 					if (mSwitchedSide == RIGHT_PLAYER)
 						newInput.swap();
 					mRightInput->setInput(newInput);
+					mRightLastStep = stepcount;
 				}
 				break;
 			}
@@ -442,8 +443,7 @@ void NetworkGame::broadcastPhysicState()
 {
 	RakNet::BitStream stream;
 	stream.Write((unsigned char)ID_PHYSIC_UPDATE);
-	stream.Write((unsigned char)ID_TIMESTAMP);
-	stream.Write(RakNet::GetTime());
+	stream.Write( mLeftLastStep );
 	DuelMatchState ms = mMatch->getState();
 
 	boost::shared_ptr<GenericOut> out = createGenericWriter( &stream );
@@ -460,8 +460,7 @@ void NetworkGame::broadcastPhysicState()
 	ms = mMatch->getState();
 	stream.Reset();
 	stream.Write((unsigned char)ID_PHYSIC_UPDATE);
-	stream.Write((unsigned char)ID_TIMESTAMP);
-	stream.Write(RakNet::GetTime());
+	stream.Write( mRightLastStep );
 
 	out = createGenericWriter( &stream );
 
