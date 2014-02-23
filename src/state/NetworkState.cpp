@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <algorithm>
 #include <iostream>
 #include <ctime>
+#include <iterator>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/scoped_array.hpp>
@@ -152,8 +153,8 @@ void NetworkGameState::step()
 
 				// simulate deltaT/2 timesteps (we assume symmetric packet delay)
 				std::cout << "LAG: " << deltaT << "\n";
-				auto iterator = mCachedOwnInput.rbegin();
-				iterator += deltaT / 2;
+				auto iterator = mCachedOwnInput.begin();
+				std::advance(iterator, mCachedOwnInput.size() - deltaT - 1);
 				for(int i = 0; i < deltaT/2; ++i)
 				{
 					mNetworkInput->setInput(*iterator);
