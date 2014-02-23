@@ -83,7 +83,6 @@
 		<Unit filename="src/CMakeLists.txt" />
 		<Unit filename="src/Clock.cpp" />
 		<Unit filename="src/Clock.h" />
-		<Unit filename="src/CrossCorrelation.h" />
 		<Unit filename="src/DuelMatch.cpp" />
 		<Unit filename="src/DuelMatch.h" />
 		<Unit filename="src/DuelMatchState.cpp" />
@@ -116,10 +115,6 @@
 		<Unit filename="src/IScriptableComponent.cpp" />
 		<Unit filename="src/IScriptableComponent.h" />
 		<Unit filename="src/IUserConfigReader.h" />
-		<Unit filename="src/InputDevice.cpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-		</Unit>
 		<Unit filename="src/InputDevice.h" />
 		<Unit filename="src/InputManager.cpp">
 			<Option target="Debug" />
@@ -133,11 +128,6 @@
 			<Option target="Release" />
 		</Unit>
 		<Unit filename="src/InputSourceFactory.h" />
-		<Unit filename="src/LagDetectionSystem.cpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-		</Unit>
-		<Unit filename="src/LagDetectionSystem.h" />
 		<Unit filename="src/LocalInputSource.cpp">
 			<Option target="Debug" />
 			<Option target="Release" />
@@ -152,6 +142,7 @@
 		<Unit filename="src/PhysicWorld.h" />
 		<Unit filename="src/PlayerIdentity.cpp" />
 		<Unit filename="src/PlayerIdentity.h" />
+		<Unit filename="src/PlayerInput.h" />
 		<Unit filename="src/RenderManager.cpp">
 			<Option target="Debug" />
 			<Option target="Release" />
@@ -212,6 +203,30 @@
 		<Unit filename="src/blobnet/layer/Http.cpp" />
 		<Unit filename="src/blobnet/layer/Http.hpp" />
 		<Unit filename="src/doxyfile" />
+		<Unit filename="src/input_device/JoystickInput.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="src/input_device/JoystickPool.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="src/input_device/JoystickPool.h">
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="src/input_device/KeyboardInput.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="src/input_device/MouseInput.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="src/input_device/TouchInput.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
 		<Unit filename="src/lua/lapi.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -427,7 +442,6 @@
 		<Unit filename="src/tinyxml/tinyxml.h" />
 		<Unit filename="src/tinyxml/tinyxmlerror.cpp" />
 		<Unit filename="src/tinyxml/tinyxmlparser.cpp" />
-		<Unit filename="src/utf8.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />

@@ -20,20 +20,54 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #pragma once
 
-#include "PhysicState.h"
-#include "GameLogicState.h"
-#include "PlayerInput.h"
+#include <map>
 
-struct DuelMatchState
+#include <SDL2/SDL_events.h>
+
+#include "BlobbyDebug.h"
+
+class JoystickPool : public ObjectCounter<JoystickPool>
 {
-	void swapSides();
+	public:
+		static JoystickPool& getSingleton();
 
-	bool operator==(const DuelMatchState& other) const;
+		SDL_Joystick* getJoystick(int id);
 
-	PhysicState worldState;
-	GameLogicState logicState;
+		void probeJoysticks();
+		void closeJoysticks();
 
-	PlayerInput playerInput[MAX_PLAYERS];
+	private:
+		typedef std::map<int, SDL_Joystick*> JoyMap;
+		JoyMap mJoyMap;
+		static JoystickPool* mSingleton;
+};
 
-	unsigned char errorSide;
+struct JoystickAction : public ObjectCounter<JoystickAction>
+{
+	enum Type
+	{
+		AXIS,
+		BUTTON,
+// 	We don't implement these exotic input methods here
+//		HAT,
+//		TRACKBALL
+	};
+
+	JoystickAction(std::string string);
+	JoystickAction(int _joyid, Type _type, int _number)
+		: type(_type), joy(0), joyid(_joyid),
+			number(_number) {}
+	~JoystickAction();
+	JoystickAction(const JoystickAction& action);
+
+	std::string toString();
+
+	Type type;
+
+	SDL_Joystick* joy;
+	int joyid;
+
+	// Note: Axis are stored as the SDL axis +1, so we can used
+	// the signedness as direction indication
+	int number;
 };
