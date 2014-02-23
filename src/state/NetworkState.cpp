@@ -106,6 +106,9 @@ NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client):
 	mSelectedChatmessage = 0;
 	mChatCursorPosition = 0;
 	mChattext = "";
+
+	mGameStepsCounter = 0;
+	mCachedOwnInput.resize(75);
 }
 
 NetworkGameState::~NetworkGameState()
@@ -137,18 +140,24 @@ void NetworkGameState::step()
 
 				// difference between current step and last step
 				int deltaT = mGameStepsCounter - laststep;
-				// backup current input data
-				PlayerInput own = mLocalInput->getInput();
+				// prevent overflow, if lag is longer than our cached input
+				// if this happens, the connection is really screwed up, maybe we should
+				// display a warning or even send a pause event?
+				if( deltaT >= mCachedOwnInput.size())
+				{
+					deltaT = mCachedOwnInput.size() - 1;
+				}
+
 				// simulate deltaT/2 timesteps (we assume symmetric packet delay)
 				for(int i = 0; i < deltaT / 2; ++i)
 				{
-					mLocalInput->setInput(mCachedOwnInput[deltaT - i]);
+					// this does not work: mFakeMatch does not read any input from 
+					// mLocalInput
+					//mLocalInput->setInput(mCachedOwnInput[deltaT - i]);
 
-					mFakeMatch->step();
+					//mFakeMatch->step();
 				}
 
-				// restore current input
-				mLocalInput->setInput(own);
 				break;
 			}
 			case ID_WIN_NOTIFICATION:
@@ -665,7 +674,7 @@ void NetworkGameState::step()
 			mClient->Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0);
 
 			// cache input for lag compensation
-			mCachedOwnInput.push_back( input );
+			mCachedOwnInput.push_back( mLocalInput->getInput() );
 			break;
 		}
 		case PLAYER_WON:
