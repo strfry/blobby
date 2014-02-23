@@ -72,6 +72,7 @@ private:
 	bool mUseRemoteColor;
 
 	boost::scoped_ptr<InputSource> mLocalInput;
+	boost::shared_ptr<InputSource> mNetworkInput;
 
 	bool mSaveReplay;
 	bool mWaitingForReplay;

@@ -57,13 +57,17 @@ void DuelMatch::setPlayers( PlayerIdentity lplayer, PlayerIdentity rplayer)
 void DuelMatch::setInputSources(boost::shared_ptr<InputSource> linput, boost::shared_ptr<InputSource> rinput )
 {
 	if(linput)
+	{
 		mInputSources[LEFT_PLAYER] = linput;
+		mInputSources[LEFT_PLAYER]->setMatch(this);
+	}
 
 	if(rinput)
+	{
 		mInputSources[RIGHT_PLAYER] = rinput;
+		mInputSources[RIGHT_PLAYER]->setMatch(this);
+	}
 
-	mInputSources[LEFT_PLAYER]->setMatch(this);
-	mInputSources[RIGHT_PLAYER]->setMatch(this);
 }
 
 void DuelMatch::reset()

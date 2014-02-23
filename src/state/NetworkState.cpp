@@ -69,6 +69,8 @@ NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client):
 	mUseRemoteColor = config.getBool("use_remote_color");
 	mLocalInput.reset(new LocalInputSource(mOwnSide));
 	mLocalInput->setMatch(mFakeMatch.get());
+	mNetworkInput = boost::make_shared<InputSource>();
+
 	mSaveReplay = false;
 	mWaitingForReplay = false;
 	mErrorMessage = "";
@@ -89,6 +91,7 @@ NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client):
 		mLocalPlayer = &mFakeMatch->getPlayer( LEFT_PLAYER );
 		mRemotePlayer = &mFakeMatch->getPlayer( RIGHT_PLAYER );
 		mFakeMatch->setPlayers( localplayer, remoteplayer );
+		mFakeMatch->setInputSources(mNetworkInput, nullptr);
 	}
 	 else
 	{
@@ -97,6 +100,7 @@ NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client):
 		mLocalPlayer = &mFakeMatch->getPlayer( RIGHT_PLAYER );
 		mRemotePlayer = &mFakeMatch->getPlayer( LEFT_PLAYER );
 		mFakeMatch->setPlayers( remoteplayer, localplayer );
+		mFakeMatch->setInputSources(nullptr, mNetworkInput);
 	}
 
 	mRemotePlayer->setName("");
@@ -141,22 +145,21 @@ void NetworkGameState::step()
 
 				// difference between current step and last step
 				int deltaT = mGameStepsCounter - laststep;
-				// prevent overflow, if lag is longer than our cached input
-				// if this happens, the connection is really screwed up, maybe we should
-				// display a warning or even send a pause event?
 				if( deltaT >= mCachedOwnInput.size())
 				{
 					deltaT = mCachedOwnInput.size() - 1;
 				}
 
 				// simulate deltaT/2 timesteps (we assume symmetric packet delay)
-				for(int i = 0; i < deltaT / 2; ++i)
+				std::cout << "LAG: " << deltaT << "\n";
+				auto iterator = mCachedOwnInput.rbegin();
+				iterator += deltaT / 2;
+				for(int i = 0; i < deltaT/2; ++i)
 				{
-					// this does not work: mFakeMatch does not read any input from 
-					// mLocalInput
-					//mLocalInput->setInput(mCachedOwnInput[deltaT - i]);
+					mNetworkInput->setInput(*iterator);
+					iterator++;
 
-					//mFakeMatch->step();
+					mFakeMatch->step();
 				}
 
 				break;
