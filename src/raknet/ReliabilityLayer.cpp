@@ -871,7 +871,7 @@ void ReliabilityLayer::Update( SOCKET s, PlayerID playerId, int MTUSize, unsigne
 			dt = new DataAndTime;
 			memcpy( dt->data, updateBitStream.GetData(), updateBitStream.GetNumberOfBytesUsed() );
 			dt->length = updateBitStream.GetNumberOfBytesUsed();
-			dt->sendTime = time + 500;// + ( rand() % 100 );
+			dt->sendTime = time + 100 + ( rand() % 100 );
 			delayList.insert( dt );
 #endif
 
