@@ -135,14 +135,14 @@ void OptionState::step()
 	imgui.doText(GEN_ID, Vector2(660.0, 350.0), f > 0.66 ? TextManager::OP_STRONG :
 											 	(f > 0.33 ? TextManager::OP_MEDIUM:
 												TextManager::OP_WEAK));
-#ifndef __ANDROID__
+
 	if (imgui.doButton(GEN_ID, Vector2(40.0, 390.0), TextManager::OP_INPUT_OP))
 	{
 		save();
 		deleteCurrentState();
 		setCurrentState(new InputOptionsState());
 	}
-#endif
+
 	if (imgui.doButton(GEN_ID, Vector2(40.0, 430.0), TextManager::OP_GFX_OP))
 	{
 		save();
@@ -198,6 +198,8 @@ GraphicOptionsState::~GraphicOptionsState()
 void GraphicOptionsState::save()
 {
 #ifndef __ANDROID__
+#ifdef __APPLE__
+#if MAC_OS_X
 	if ((mOptionConfig.getBool("fullscreen") != mFullscreen) ||
 			(mOptionConfig.getString("device") != mRenderer))
 	{
@@ -211,6 +213,22 @@ void GraphicOptionsState::save()
 			std::string("backgrounds/") +
 			mOptionConfig.getString("background"));
 	}
+#endif
+#else
+	if ((mOptionConfig.getBool("fullscreen") != mFullscreen) ||
+        (mOptionConfig.getString("device") != mRenderer))
+	{
+		mOptionConfig.setBool("fullscreen", mFullscreen);
+		mOptionConfig.setString("device", mRenderer);
+		if (mRenderer == "OpenGL")
+			RenderManager::createRenderManagerGL2D()->init(800, 600, mFullscreen);
+		else
+			RenderManager::createRenderManagerSDL()->init(800, 600, mFullscreen);
+		RenderManager::getSingleton().setBackground(
+                                                    std::string("backgrounds/") +
+                                                    mOptionConfig.getString("background"));
+	}
+#endif
 #endif
 
 	if(mOptionConfig.getBool("show_shadow") != mShowShadow)
@@ -237,7 +255,10 @@ void GraphicOptionsState::step()
 	imgui.doCursor();
 	imgui.doImage(GEN_ID, Vector2(400.0, 300.0), "background");
 	imgui.doOverlay(GEN_ID, Vector2(0.0, 0.0), Vector2(800.0, 600.0));
+
 #ifndef __ANDROID__
+#ifdef __APPLE__
+#if MAC_OS_X
 	imgui.doText(GEN_ID, Vector2(34.0, 10.0), TextManager::OP_VIDEO);
 
 	if (imgui.doButton(GEN_ID, Vector2(34.0, 40.0), TextManager::OP_FULLSCREEN))
@@ -259,11 +280,39 @@ void GraphicOptionsState::step()
 	else
 		imgui.doImage(GEN_ID, Vector2(428.0, 82.0), "gfx/pfeil_rechts.bmp");
 #endif
+#else
+	imgui.doText(GEN_ID, Vector2(34.0, 10.0), TextManager::OP_VIDEO);
 
+	if (imgui.doButton(GEN_ID, Vector2(34.0, 40.0), TextManager::OP_FULLSCREEN))
+		mFullscreen = true;
+	if (imgui.doButton(GEN_ID, Vector2(34.0, 70.0), TextManager::OP_WINDOW))
+		mFullscreen = false;
+	if (mFullscreen)
+		imgui.doImage(GEN_ID, Vector2(18.0, 52.0), "gfx/pfeil_rechts.bmp");
+	else
+		imgui.doImage(GEN_ID, Vector2(18.0, 82.0), "gfx/pfeil_rechts.bmp");
+
+	imgui.doText(GEN_ID, Vector2(444.0, 10.0), TextManager::OP_RENDER_DEVICE);
+	if (imgui.doButton(GEN_ID, Vector2(444.0, 40.0), "OpenGL"))
+		mRenderer = "OpenGL";
+	if (imgui.doButton(GEN_ID, Vector2(444.0, 70.0), "SDL"))
+		mRenderer = "SDL";
+	if (mRenderer == "OpenGL")
+		imgui.doImage(GEN_ID, Vector2(428.0, 52.0), "gfx/pfeil_rechts.bmp");
+	else
+		imgui.doImage(GEN_ID, Vector2(428.0, 82.0), "gfx/pfeil_rechts.bmp");
+#endif
+#endif
 	float heightOfElement = 110.0;
 
 #ifdef __ANDROID__
 	heightOfElement = 10.0;
+#else
+#ifdef __APPLE__
+#if !MAC_OS_X
+	heightOfElement = 10.0;
+#endif
+#endif
 #endif
 
 	imgui.doText(GEN_ID, Vector2(34.0, heightOfElement), TextManager::OP_SHOW_SHADOW);
@@ -278,10 +327,19 @@ void GraphicOptionsState::step()
 		imgui.doImage(GEN_ID, Vector2(204.0, heightOfElement + 13.0), "gfx/pfeil_rechts.bmp");
 
 #ifdef __ANDROID__
-	heightOfElement = 120.0;
+	heightOfElement += 50.0;
 #else
-	heightOfElement = 190.0;
+#ifdef __APPLE__
+#if !MAC_OS_X
+	heightOfElement += 50.0;
+#else
+	heightOfElement += 30.0;
 #endif
+#else
+	heightOfElement += 30.0;
+#endif
+#endif
+
 	//Blob colors:
 	imgui.doText(GEN_ID, Vector2(280.0, heightOfElement), TextManager::OP_BLOB_COLORS);
 	heightOfElement += 40.0;
@@ -290,7 +348,15 @@ void GraphicOptionsState::step()
 #ifdef __ANDROID__
 	heightOfElement += 50.0;
 #else
+#ifdef __APPLE__
+#if !MAC_OS_X
+	heightOfElement += 50.0;
+#else
 	heightOfElement += 30.0;
+#endif
+#else
+	heightOfElement += 30.0;
+#endif
 #endif
 	{
 		imgui.doText(GEN_ID, Vector2(34.0, heightOfElement), TextManager::OP_RED);
@@ -301,7 +367,15 @@ void GraphicOptionsState::step()
 #ifdef __ANDROID__
 	heightOfElement += 50.0;
 #else
+#ifdef __APPLE__
+#if !MAC_OS_X
+	heightOfElement += 50.0;
+#else
 	heightOfElement += 30.0;
+#endif
+#else
+	heightOfElement += 30.0;
+#endif
 #endif
 	{
 		imgui.doText(GEN_ID, Vector2(34.0, heightOfElement), TextManager::OP_GREEN);
@@ -312,7 +386,15 @@ void GraphicOptionsState::step()
 #ifdef __ANDROID__
 	heightOfElement += 50.0;
 #else
+#ifdef __APPLE__
+#if !MAC_OS_X
+	heightOfElement += 50.0;
+#else
 	heightOfElement += 30.0;
+#endif
+#else
+	heightOfElement += 30.0;
+#endif
 #endif
 	{
 		imgui.doText(GEN_ID, Vector2(34.0, heightOfElement), TextManager::OP_BLUE);
@@ -344,13 +426,30 @@ void GraphicOptionsState::step()
 #ifdef __ANDROID__
 	heightOfElement = 160.0;
 #else
+#ifdef __APPLE__
+#if !MAC_OS_X
+	heightOfElement = 160.0;
+#else
 	heightOfElement = 230.0;
 #endif
+#else
+	heightOfElement = 230.0;
+#endif
+#endif
+
 	imgui.doText(GEN_ID, Vector2(434.0, heightOfElement), TextManager::OP_RIGHT_PLAYER);
 #ifdef __ANDROID__
 	heightOfElement += 50.0;
 #else
+#ifdef __APPLE__
+#if !MAC_OS_X
+	heightOfElement += 50.0;
+#else
 	heightOfElement += 30.0;
+#endif
+#else
+	heightOfElement += 30.0;
+#endif
 #endif
 	{
 		imgui.doText(GEN_ID, Vector2(434.0, heightOfElement), TextManager::OP_RED);
@@ -361,7 +460,15 @@ void GraphicOptionsState::step()
 #ifdef __ANDROID__
 	heightOfElement += 50.0;
 #else
+#ifdef __APPLE__
+#if !MAC_OS_X
+	heightOfElement += 50.0;
+#else
 	heightOfElement += 30.0;
+#endif
+#else
+	heightOfElement += 30.0;
+#endif
 #endif
 	{
 		imgui.doText(GEN_ID, Vector2(434.0, heightOfElement), TextManager::OP_GREEN);
@@ -372,7 +479,15 @@ void GraphicOptionsState::step()
 #ifdef __ANDROID__
 	heightOfElement += 50.0;
 #else
+#ifdef __APPLE__
+#if !MAC_OS_X
+	heightOfElement += 50.0;
+#else
 	heightOfElement += 30.0;
+#endif
+#else
+	heightOfElement += 30.0;
+#endif
 #endif
 	{
 		imgui.doText(GEN_ID, Vector2(434.0, heightOfElement), TextManager::OP_BLUE);
@@ -441,6 +556,8 @@ InputOptionsState::InputOptionsState()
 	mRightBlobbyJoystickLeft = mOptionConfig.getString("right_blobby_joystick_left");
 	mRightBlobbyJoystickRight = mOptionConfig.getString("right_blobby_joystick_right");
 	mRightBlobbyJoystickJump = mOptionConfig.getString("right_blobby_joystick_jump");
+	//global data:
+	mBlobbyTouchType = mOptionConfig.getInteger("blobby_touch_type");
 }
 
 InputOptionsState::~InputOptionsState()
@@ -467,10 +584,13 @@ void InputOptionsState::save()
 	mOptionConfig.setString("right_blobby_joystick_left", mRightBlobbyJoystickLeft);
 	mOptionConfig.setString("right_blobby_joystick_right", mRightBlobbyJoystickRight);
 	mOptionConfig.setString("right_blobby_joystick_jump", mRightBlobbyJoystickJump);
+	//global data:
+	mOptionConfig.setInteger("blobby_touch_type", mBlobbyTouchType);
 
 	mOptionConfig.saveFile("inputconfig.xml");
 }
 
+#if !defined(__ANDROID__) && !TARGET_IPHONE_SIMULATOR && !TARGET_OS_IPHONE
 void InputOptionsState::step()
 {
 	IMGUI& imgui = IMGUI::getSingleton();
@@ -872,6 +992,66 @@ void InputOptionsState::step()
 		setCurrentState(new OptionState());
 	}
 }
+#else
+
+void InputOptionsState::step()
+{
+	IMGUI& imgui = IMGUI::getSingleton();
+	imgui.doCursor();
+	imgui.doImage(GEN_ID, Vector2(400.0, 300.0), "background");
+	imgui.doOverlay(GEN_ID, Vector2(0.0, 0.0), Vector2(800.0, 600.0));
+
+	imgui.doText(GEN_ID, Vector2(43.0, 10.0), TextManager::OP_TOUCH_TYPE);
+	if (imgui.doButton(GEN_ID, Vector2(70.0, 50.0), TextManager::OP_TOUCH_DIRECT))
+		mBlobbyTouchType = 0;
+	if (imgui.doButton(GEN_ID, Vector2(70.0, 100.0), TextManager::OP_TOUCH_ARROWS))
+		mBlobbyTouchType = 1;
+	if (mBlobbyTouchType == 0)
+		imgui.doImage(GEN_ID, Vector2(52.0, 62.0), "gfx/pfeil_rechts.bmp");
+	else
+		imgui.doImage(GEN_ID, Vector2(52.0, 112.0), "gfx/pfeil_rechts.bmp");
+
+	imgui.doOverlay(GEN_ID, Vector2(180.0, 150.0), Vector2(620.0, 490.0));
+	imgui.doImage(GEN_ID, Vector2(400.0, 320.0), "background", Vector2(400.0, 300.0));
+
+	// We draw the range of the touchsurfaces here
+	if (mBlobbyTouchType == 0)
+	{
+		// Left arrowkey
+		imgui.doOverlay(GEN_ID, Vector2(200.0 + 5.0, 170.0 + 100.0 + 5.0), Vector2(200.0 + 95.0 + 100.0, 170.0 + 295));
+		imgui.doImage(GEN_ID, Vector2(289.0, 440.0), "gfx/pfeil_links.bmp");
+		imgui.doImage(GEN_ID, Vector2(311.0, 440.0), "gfx/pfeil_rechts.bmp");
+	}
+	else
+	{
+		// Background is x: 200, y: 170, w: 400, h: 300
+
+		// Left arrowkey
+		imgui.doOverlay(GEN_ID, Vector2(200.0 + 5.0, 170.0 + 100.0 + 5.0), Vector2(200.0 + 95.0, 170.0 + 295));
+		imgui.doImage(GEN_ID, Vector2(250.0, 440.0), "gfx/pfeil_links.bmp");
+
+		// Right arrowkey
+		imgui.doOverlay(GEN_ID, Vector2(200.0 + 5.0 + 100.0, 170.0 + 100.0 + 5.0), Vector2(200.0 + 95.0 + 100.0, 170.0 + 295));
+		imgui.doImage(GEN_ID, Vector2(350.0, 440.0), "gfx/pfeil_rechts.bmp");
+	}
+
+	imgui.doOverlay(GEN_ID, Vector2(200.0 + 5.0 + 250.0, 170.0 + 100.0 + 5.0), Vector2(200.0 + 95.0 + 300.0, 170.0 + 295));
+	imgui.doImage(GEN_ID, Vector2(525.0, 440.0), "gfx/pfeil_oben.bmp");
+
+
+	if (imgui.doButton(GEN_ID, Vector2(224.0, 530.0), TextManager::LBL_OK))
+	{
+		save();
+		deleteCurrentState();
+		setCurrentState(new OptionState());
+	}
+	if (imgui.doButton(GEN_ID, Vector2(424.0, 530.0), TextManager::LBL_CANCEL))
+	{
+		deleteCurrentState();
+		setCurrentState(new OptionState());
+	}
+}
+#endif
 
 const char* InputOptionsState::getStateName() const
 {
@@ -935,10 +1115,8 @@ void MiscOptionsState::save()
 	mOptionConfig.setInteger("gamefps", mGameFPS);
 	mOptionConfig.setInteger("network_side", mNetworkSide);
 	mOptionConfig.setString("language", mLanguage);
-	if (mBackground > -1)
-		mOptionConfig.setString("background", mBackgrounds[mBackground]);
-	if (mRule > -1)
-		mOptionConfig.setString("rules", mRules[mRule] + ".lua");
+	mOptionConfig.setString("background", mBackgrounds[mBackground]);
+	mOptionConfig.setString("rules", mRules[mRule] + ".lua");
 	mOptionConfig.saveFile("config.xml");
 
 	SpeedController::getMainInstance()->setDrawFPS(mOptionConfig.getBool("showfps"));
@@ -957,13 +1135,12 @@ void MiscOptionsState::step()
 	imgui.doOverlay(GEN_ID, Vector2(0.0, 0.0), Vector2(800.0, 600.0));
 
 	imgui.doText(GEN_ID, Vector2(34.0, 10.0), TextManager::OP_BACKGROUND);
-	int tmp = mBackground;
+	unsigned tmp = mBackground;
 	imgui.doSelectbox(GEN_ID, Vector2(34.0, 40.0), Vector2(400.0, 175.0), mBackgrounds, tmp);
 	if (tmp != mBackground)
 	{
 		mBackground = tmp;
-		if (mBackground > -1)
-			RenderManager::getSingleton().setBackground(std::string("backgrounds/") + mBackgrounds[mBackground]);
+		RenderManager::getSingleton().setBackground(std::string("backgrounds/") + mBackgrounds[mBackground]);
 	}
 
 	imgui.doText(GEN_ID, Vector2(34.0, 190.0), TextManager::OP_RULES);
@@ -986,7 +1163,10 @@ void MiscOptionsState::step()
 	{
 		imgui.doImage(GEN_ID, Vector2(513.0, 92.0), "gfx/pfeil_rechts.bmp");
 	}
+
 #ifndef __ANDROID__
+#ifdef __APPLE__
+#if MAC_OS_X
 	if (imgui.doButton(GEN_ID, Vector2(484.0, 120.0), TextManager::OP_FPS))
 	{
 		mShowFPS = !mShowFPS;
@@ -996,6 +1176,18 @@ void MiscOptionsState::step()
 	{
 		imgui.doImage(GEN_ID, Vector2(466.0, 132.0), "gfx/pfeil_rechts.bmp");
 	}
+#endif
+#else
+	if (imgui.doButton(GEN_ID, Vector2(484.0, 120.0), TextManager::OP_FPS))
+	{
+		mShowFPS = !mShowFPS;
+		SpeedController::getMainInstance()->setDrawFPS(mShowFPS);
+	}
+	if (mShowFPS)
+	{
+		imgui.doImage(GEN_ID, Vector2(466.0, 132.0), "gfx/pfeil_rechts.bmp");
+	}
+#endif
 #endif
 	if (imgui.doButton(GEN_ID, Vector2(484.0, 160.0), TextManager::OP_BLOOD))
 	{

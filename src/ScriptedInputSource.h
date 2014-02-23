@@ -25,12 +25,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #pragma once
 
+#include <string>
+
+#include <boost/circular_buffer.hpp>
+
 #include "Global.h"
 #include "InputSource.h"
 #include "Vector.h"
-#include <boost/circular_buffer.hpp>
-
-#include <string>
+#include "IScriptableComponent.h"
 
 /// \class ScriptedInputSource
 /// \brief Bot controller
@@ -46,7 +48,7 @@ const int WAITING_TIME = 1500;
 struct lua_State;
 class DuelMatch;
 
-class ScriptedInputSource : public InputSource
+class ScriptedInputSource : public InputSource, public IScriptableComponent
 {
 	public:
 		/// The constructor automatically loads and initializes the script
@@ -55,7 +57,7 @@ class ScriptedInputSource : public InputSource
 		ScriptedInputSource(const std::string& filename, PlayerSide side, unsigned int difficulty);
 		~ScriptedInputSource();
 
-		virtual PlayerInput getNextInput();
+		virtual PlayerInputAbs getNextInput();
 
 	private:
 		/// this variable saves the current match
@@ -118,8 +120,6 @@ class ScriptedInputSource : public InputSource
 		static int nextevent(lua_State* state);
 		static int predictImpact(lua_State* state);
 
-
-		lua_State* mState;
 		unsigned int mStartTime;
 
 		// ki strength values

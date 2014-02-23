@@ -129,7 +129,7 @@ void IMGUI::end()
 		switch (obj.type)
 		{
 			case IMAGE:
-				rmanager.drawImage(obj.text, obj.pos1);
+				rmanager.drawImage(obj.text, obj.pos1, obj.pos2);
 				break;
 
 			case OVERLAY:
@@ -169,7 +169,7 @@ void IMGUI::end()
 				rmanager.drawOverlay(0.5, obj.pos1, obj.pos2);
 				for (unsigned int c = 0; c < obj.entries.size(); c++)
 				{
-					if(c == obj.selected)
+					if( c == static_cast<unsigned int>(obj.selected) )
 						rmanager.drawText(obj.entries[c], Vector2(obj.pos1.x+5, obj.pos1.y+(c*FontSize)+5), obj.flags | TF_HIGHLIGHT);
 					else
 						rmanager.drawText(obj.entries[c], Vector2(obj.pos1.x+5, obj.pos1.y+(c*FontSize)+5), obj.flags);
@@ -181,7 +181,7 @@ void IMGUI::end()
 				rmanager.drawOverlay(0.3, obj.pos1, obj.pos2);
 				for (unsigned int c = 0; c < obj.entries.size(); c++)
 				{
-					if(c == obj.selected)
+					if( c == static_cast<unsigned int>(obj.selected) )
 						rmanager.drawText(obj.entries[c], Vector2(obj.pos1.x+5, obj.pos1.y+(c*FontSize)+5), obj.flags | TF_HIGHLIGHT);
 					else
 						rmanager.drawText(obj.entries[c], Vector2(obj.pos1.x+5, obj.pos1.y+(c*FontSize)+5), obj.flags);
@@ -216,12 +216,13 @@ void IMGUI::end()
 	}
 }
 
-void IMGUI::doImage(int id, const Vector2& position, const std::string& name)
+void IMGUI::doImage(int id, const Vector2& position, const std::string& name, const Vector2& size)
 {
 	QueueObject obj;
 	obj.type = IMAGE;
 	obj.id = id;
 	obj.pos1 = position;
+	obj.pos2 = size;
 	obj.text = name;
 	mQueue->push(obj);
 }
@@ -232,6 +233,20 @@ void IMGUI::doText(int id, const Vector2& position, const std::string& text, uns
 	obj.type = TEXT;
 	obj.id = id;
 	obj.pos1 = position;
+
+	int fontSize = flags & TF_SMALL_FONT ? FONT_WIDTH_SMALL : FONT_WIDTH_NORMAL;
+	// update position depending on alignment
+	if( flags & TF_ALIGN_CENTER )
+	{
+		obj.pos1.x -= text.size() * fontSize / 2;
+	}
+
+	if( flags & TF_ALIGN_RIGHT )
+	{
+		obj.pos1.x -= text.size() * fontSize;
+	}
+
+
 	obj.text = text;
 	obj.flags = flags;
 	mQueue->push(obj);
@@ -269,6 +284,18 @@ bool IMGUI::doButton(int id, const Vector2& position, const std::string& text, u
 	obj.text = text;
 	obj.type = TEXT;
 	obj.flags = flags;
+
+	int fontSize = flags & TF_SMALL_FONT ? FONT_WIDTH_SMALL : FONT_WIDTH_NORMAL;
+	// update position depending on alignment
+	if( flags & TF_ALIGN_CENTER )
+	{
+		obj.pos1.x -= text.size() * fontSize / 2;
+	}
+
+	if( flags & TF_ALIGN_RIGHT )
+	{
+		obj.pos1.x -= text.size() * fontSize;
+	}
 
 	if (!mInactive)
 	{
@@ -338,10 +365,10 @@ bool IMGUI::doButton(int id, const Vector2& position, const std::string& text, u
 
 		// React to mouse input.
 		Vector2 mousepos = InputManager::getSingleton()->position();
-		if (mousepos.x > position.x &&
-			mousepos.y > position.y &&
-			mousepos.x < position.x + text.length() * (flags & TF_SMALL_FONT ? FONT_WIDTH_SMALL : FONT_WIDTH_NORMAL) &&
-			mousepos.y < position.y + (flags & TF_SMALL_FONT ? FONT_WIDTH_SMALL : FONT_WIDTH_NORMAL))
+		if (mousepos.x > obj.pos1.x &&
+			mousepos.y > obj.pos1.y &&
+			mousepos.x < obj.pos1.x + text.length() * (flags & TF_SMALL_FONT ? FONT_WIDTH_SMALL : FONT_WIDTH_NORMAL) &&
+			mousepos.y < obj.pos1.y + (flags & TF_SMALL_FONT ? FONT_WIDTH_SMALL : FONT_WIDTH_NORMAL))
 		{
 			obj.flags = obj.flags | TF_HIGHLIGHT;
 			if (InputManager::getSingleton()->click())
@@ -475,7 +502,7 @@ void IMGUI::resetSelection()
 	mButtonReset = true;
 }
 
-bool IMGUI::doEditbox(int id, const Vector2& position, int length, std::string& text, unsigned& cpos, unsigned int flags, bool force_active)
+bool IMGUI::doEditbox(int id, const Vector2& position, unsigned int length, std::string& text, unsigned& cpos, unsigned int flags, bool force_active)
 {
 	int FontSize = (flags & TF_SMALL_FONT ? FONT_WIDTH_SMALL : FONT_WIDTH_NORMAL);
 	bool changed = false;
@@ -683,7 +710,7 @@ bool IMGUI::doEditbox(int id, const Vector2& position, int length, std::string& 
 	return changed;
 }
 
-SelectBoxAction IMGUI::doSelectbox(int id, const Vector2& pos1, const Vector2& pos2, const std::vector<std::string>& entries, int& selected, unsigned int flags)
+SelectBoxAction IMGUI::doSelectbox(int id, const Vector2& pos1, const Vector2& pos2, const std::vector<std::string>& entries, unsigned int& selected, unsigned int flags)
 {
 	int FontSize = (flags & TF_SMALL_FONT ? (FONT_WIDTH_SMALL+LINE_SPACER_SMALL) : (FONT_WIDTH_NORMAL+LINE_SPACER_NORMAL));
 	SelectBoxAction changed = SBA_NONE;
@@ -749,7 +776,7 @@ SelectBoxAction IMGUI::doSelectbox(int id, const Vector2& pos1, const Vector2& p
 					break;
 
 				case RIGHT:
-					if (selected < entries.size()-1)
+					if (selected + 1 < entries.size())
 					{
 						selected++;
 						changed = SBA_SELECT;
@@ -778,13 +805,13 @@ SelectBoxAction IMGUI::doSelectbox(int id, const Vector2& pos1, const Vector2& p
 		{
 			if (InputManager::getSingleton()->click())
 			{
-				int tmp = (int)((mousepos.y-pos1.y-5) / FontSize)+first;
+				int tmp = (int)((mousepos.y - pos1.y - 5) / FontSize) + first;
 				/// \todo well, it's not really a doulbe click...
 				/// we need to do this in inputmanager
 				if( selected == tmp && InputManager::getSingleton()->doubleClick() )
 					changed = SBA_DBL_CLICK;
 
-				if (tmp < entries.size())
+				if (tmp >= 0 && static_cast<unsigned int>(tmp) < entries.size())
 					selected = tmp;
 
 				mActiveButton = id;
@@ -794,7 +821,7 @@ SelectBoxAction IMGUI::doSelectbox(int id, const Vector2& pos1, const Vector2& p
 				selected--;
 				changed = SBA_SELECT;
 			}
-			if ((InputManager::getSingleton()->mouseWheelDown()) && (selected < entries.size()-1))
+			if ((InputManager::getSingleton()->mouseWheelDown()) && (selected + 1 < entries.size()))
 			{
 				selected++;
 				changed = SBA_SELECT;
@@ -809,7 +836,7 @@ SelectBoxAction IMGUI::doSelectbox(int id, const Vector2& pos1, const Vector2& p
 				changed = SBA_SELECT;
 			}
 
-			if (mousepos.y > pos2.y-27 && mousepos.y < pos2.y-27+24 && selected < entries.size()-1)
+			if (mousepos.y > pos2.y-27 && mousepos.y < pos2.y-27+24 && selected + 1 < entries.size())
 			{
 				selected++;
 				changed = SBA_SELECT;
@@ -839,7 +866,7 @@ SelectBoxAction IMGUI::doSelectbox(int id, const Vector2& pos1, const Vector2& p
 	return changed;
 }
 
-void IMGUI::doChatbox(int id, const Vector2& pos1, const Vector2& pos2, const std::vector<std::string>& entries, int& selected, const std::vector<bool>& local, unsigned int flags)
+void IMGUI::doChatbox(int id, const Vector2& pos1, const Vector2& pos2, const std::vector<std::string>& entries, unsigned int& selected, const std::vector<bool>& local, unsigned int flags)
 {
 	assert( entries.size() == local.size() );
 	int FontSize = (flags & TF_SMALL_FONT ? (FONT_WIDTH_SMALL+LINE_SPACER_SMALL) : (FONT_WIDTH_NORMAL+LINE_SPACER_NORMAL));
@@ -851,7 +878,7 @@ void IMGUI::doChatbox(int id, const Vector2& pos1, const Vector2& pos2, const st
 	obj.flags = flags;
 
 	const int itemsPerPage = int(pos2.y - pos1.y - 10) / FontSize;
-	int first = selected; //the first visible element in the list
+	unsigned int first = selected; //the first visible element in the list
 
 	if (!mInactive)
 	{
@@ -903,7 +930,7 @@ void IMGUI::doChatbox(int id, const Vector2& pos1, const Vector2& pos2, const st
 					break;
 
 				case RIGHT:
-					if (selected < entries.size()-1)
+					if (selected + 1 < entries.size())
 					{
 						selected++;
 					}
@@ -933,7 +960,7 @@ void IMGUI::doChatbox(int id, const Vector2& pos1, const Vector2& pos2, const st
 				selected--;
 			}
 
-			if ((InputManager::getSingleton()->mouseWheelDown()) && (selected < entries.size()-1))
+			if ((InputManager::getSingleton()->mouseWheelDown()) && (selected + 1 < entries.size()))
 			{
 				selected++;
 			}
@@ -946,7 +973,7 @@ void IMGUI::doChatbox(int id, const Vector2& pos1, const Vector2& pos2, const st
 				selected--;
 			}
 
-			if (mousepos.y > pos2.y-27 && mousepos.y < pos2.y-27+24 && selected < entries.size()-1)
+			if (mousepos.y > pos2.y-27 && mousepos.y < pos2.y-27+24 && selected + 1 < entries.size())
 			{
 				selected++;
 			}
@@ -958,7 +985,7 @@ void IMGUI::doChatbox(int id, const Vector2& pos1, const Vector2& pos2, const st
 	first = (selected / itemsPerPage)*itemsPerPage; //recalc first
 	if ( !entries.empty() )
 	{
-		int last = selected + 1;
+		unsigned int last = selected + 1;
 		first = last - itemsPerPage;
 		/// \todo maybe we should adapt selected so we even can't scroll up further!
 		// we don't want negative chatlog, so we just scroll upward without coming to negative
@@ -980,7 +1007,7 @@ void IMGUI::doChatbox(int id, const Vector2& pos1, const Vector2& pos2, const st
 		// HACK: we use taxt to store information which text is from local player and which from
 		//			remote player.
 		obj.text = "";
-		for(int i = first; i < last; ++i)
+		for(unsigned int i = first; i < last; ++i)
 		{
 			obj.text += local[i] ? 'L' : 'R';
 		}

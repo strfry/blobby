@@ -649,7 +649,8 @@ void NetworkGameState::step()
 			mFakeMatch->step();
 			mGameStepsCounter++;
 
-			PlayerInput input = mLocalInput->updateInput();
+			mLocalInput->updateInput();
+			PlayerInputAbs input = mLocalInput->getRealInput();
 
 			if (InputManager::getSingleton()->exit())
 			{
@@ -660,9 +661,7 @@ void NetworkGameState::step()
 			RakNet::BitStream stream;
 			stream.Write((unsigned char)ID_INPUT_UPDATE);
 			stream.Write(mGameStepsCounter);
-			stream.Write(input.left);
-			stream.Write(input.right);
-			stream.Write(input.up);
+			input.writeTo(stream);
 			mClient->Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0);
 
 			// cache input for lag compensation

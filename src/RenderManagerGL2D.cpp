@@ -228,7 +228,7 @@ void RenderManagerGL2D::init(int xResolution, int yResolution, bool fullscreen)
 		screenFlags);
 
 	// Set icon
-	SDL_Surface* icon = SDL_LoadBMP("data/Icon.bmp");
+	SDL_Surface* icon = loadSurface("Icon.bmp");
 	SDL_SetColorKey(icon, SDL_TRUE,
 			SDL_MapRGB(icon->format, 0, 0, 0));
 	SDL_SetWindowIcon(mWindow, icon);
@@ -620,7 +620,7 @@ void RenderManagerGL2D::drawText(const std::string& text, Vector2 position, unsi
 	}
 }
 
-void RenderManagerGL2D::drawImage(const std::string& filename, Vector2 position)
+void RenderManagerGL2D::drawImage(const std::string& filename, Vector2 position, Vector2 size)
 {
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_ALPHA_TEST);
@@ -706,8 +706,8 @@ void RenderManagerGL2D::drawParticle(const Vector2& pos, int player)
 	if (player > 1)
 		glColor3ubv(Color(255, 0, 0).val);
 
-	float w = 9.0;
-	float h = 9.0;
+	float w = 16.0;
+	float h = 16.0;
 	glTexCoord2f(0.0, 0.0);
 	glVertex2f(pos.x - w / 2.0, pos.y - h / 2.0);
 	glTexCoord2f(1.0, 0.0);

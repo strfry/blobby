@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <string>
 #include <vector>
 #include <utility>
+#include <future>
 #include <iostream> // debugging
 
 #include <boost/lexical_cast.hpp>
@@ -71,6 +72,13 @@ NetworkSearchState::~NetworkSearchState()
 			delete *iter;
 		}
 	}
+}
+
+void NetworkSearchState::searchServers()
+{
+	// we need the explicit async launch policy here, because otherwise gcc will always launch deferred and we have no sync point
+	// where we would wait for that.
+	mPingJob = std::async(std::launch::async, [this](){ doSearchServers();});
 }
 
 void NetworkSearchState::step()
@@ -233,8 +241,7 @@ void NetworkSearchState::step()
 		servernames.push_back(std::string(mScannedServers[i].name) + " (" + boost::lexical_cast<std::string>(mScannedServers[i].waitingplayers) + ")" );
 	}
 
-	if( imgui.doSelectbox(GEN_ID, Vector2(25.0, 60.0), Vector2(775.0, 470.0),
-			servernames, mSelectedServer) == SBA_DBL_CLICK )
+	if( imgui.doSelectbox(GEN_ID, Vector2(25.0, 60.0), Vector2(775.0, 470.0), servernames, mSelectedServer) == SBA_DBL_CLICK )
 	{
 		doEnterServer = true;
 	}
@@ -362,8 +369,7 @@ OnlineSearchState::OnlineSearchState()
 	searchServers();
 }
 
-
-void OnlineSearchState::searchServers()
+void OnlineSearchState::doSearchServers()
 {
 	// Get the serverlist
 	try
@@ -474,13 +480,14 @@ void OnlineSearchState::searchServers()
 
 	mScannedServers.clear();
 	mPingClient->Initialize( serverList.size() + 2, 0, 10 );
+
 	for( auto& server : serverList )
 	{
 		std::cout << "ping" << server.first << "\n";
 		mPingClient->Ping(server.first.c_str(), server.second, true);
 	}
-
 }
+
 
 const char* OnlineSearchState::getStateName() const
 {
@@ -492,7 +499,7 @@ LANSearchState::LANSearchState()
 	searchServers();
 }
 
-void LANSearchState::searchServers()
+void LANSearchState::doSearchServers()
 {
 	mScannedServers.clear();
 	mPingClient->PingServer("255.255.255.255", BLOBBY_PORT, 0, true);

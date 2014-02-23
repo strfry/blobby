@@ -107,7 +107,13 @@ class RenderManager : public ObjectCounter<RenderManager>
 		static RenderManager* createRenderManagerSDL();
 		//static RenderManager* createRenderManagerGP2X();
 #ifndef __ANDROID__
-		static RenderManager* createRenderManagerGL2D();
+#ifdef __APPLE__
+#if MAC_OS_X
+        static RenderManager* createRenderManagerGL2D();
+#endif
+#else
+        static RenderManager* createRenderManagerGL2D();
+#endif
 #endif
 		static RenderManager* createRenderManagerNull();
 
@@ -170,7 +176,7 @@ class RenderManager : public ObjectCounter<RenderManager>
 		// This loads and draws an image by name
 		// The according Surface is automatically colorkeyed
 		// The image is centered around position
-		virtual void drawImage(const std::string& filename, Vector2 position) {};
+		virtual void drawImage(const std::string& filename, Vector2 position, Vector2 size = Vector2(0,0)) {};
 
 		// This draws a greyed-out area
 		virtual void drawOverlay(float opacity, Vector2 pos1, Vector2 pos2, Color col = Color(0,0,0)) {}

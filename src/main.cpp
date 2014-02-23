@@ -26,8 +26,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <SDL2/SDL.h>
 
+#ifndef __APPLE__
 #ifndef __ANDROID__
 #include "config.h"
+#endif
+#endif
+
+#ifdef __APPLE__
+	#if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
+		#include <physfs.h>
+	#else
+		#include "config.h"
+	#endif
 #endif
 
 #include "RenderManager.h"
@@ -70,10 +80,16 @@ void setupPHYSFS()
 	FileSystem& fs = FileSystem::getSingleton();
 	std::string separator = fs.getDirSeparator();
 	// Game should be playable out of the source package on all
-	// platforms
+	// relevant platforms.
 	std::string baseSearchPath("data" + separator);
+	// Android and iOS are needing a special path
 	#ifdef __ANDROID__
 		baseSearchPath = SDL_AndroidGetExternalStoragePath() + separator;
+	#endif
+	#ifdef __APPLE__
+		#if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
+			baseSearchPath = PHYSFS_getBaseDir();
+		#endif
 	#endif
 
 	fs.addToSearchPath(baseSearchPath);
@@ -98,7 +114,15 @@ void setupPHYSFS()
 		#ifndef __ANDROID__
 			// Create a search path in the home directory and ensure that
 			// all paths exist and are actually directories
-			std::string userdir = fs.getUserDir();
+			#ifdef __APPLE__
+				#if TARGET_OS_IPHONE
+					std::string userdir = baseSearchPath + "../Documents/";
+				#else
+					std::string userdir = fs.getUserDir();
+				#endif
+			#else
+				std::string userdir = fs.getUserDir();
+			#endif
 			std::string userAppend = ".blobby";
 			std::string homedir = userdir + userAppend;
 			/// \todo please review this code and determine if we really need to add userdir to serach path
@@ -141,12 +165,22 @@ void setupPHYSFS()
 	#endif
 }
 
-#undef main
-extern "C"
 #ifdef __ANDROID__
-int SDL_main(int argc, char* argv[])
+	#undef main
+	extern "C"
+	int SDL_main(int argc, char* argv[])
+#elif __APPLE__
+	#if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
+		int main(int argc, char* argv[])
+	#else
+		#undef main
+		extern "C"
+		int SDL_main(int argc, char* argv[])
+	#endif
 #else
-int main(int argc, char* argv[])
+	#undef main
+	extern "C"
+	int main(int argc, char* argv[])
 #endif
 {
 	DEBUG_STATUS("started main");
@@ -174,25 +208,20 @@ int main(int argc, char* argv[])
 	time_t time = std::time(0);
 	ptm = gmtime ( &time );
 
-	if( ptm->tm_year > (2013-1900) || ptm->tm_mon >= 12 ) {
-		#ifdef WIN32
-		MessageBox(0, (std::string("This is a test version of ") + AppTitle + " which expired on "
-									"1.12.2013. Please visit blobby.sourceforge.net for a newer version").c_str(),
-					"TEST VERISON OUTDATED",
-					MB_OK);
-		#endif
+	if( ptm->tm_year > (2013-1900) || ptm->tm_mon >= 12 )
+	{
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "TEST VERISON OUTDATED",
+									(std::string("This is a test version of ") + AppTitle + " which expired on "
+									"1.12.2013. Please visit blobby.sourceforge.net for a newer version").c_str(), 0);
 		return -1;
 	}
 
-	#ifdef WIN32
-	MessageBox(0, (std::string("This is a test version of ") + AppTitle + " for testing only.\n"
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "TEST VERISON WARNING",
+								(std::string("This is a test version of ") + AppTitle + " for testing only.\n"
 								"It might be unstable and/or incompatible to the current release. "
 								"Use of this version is limited to 1.12.2013.\nUntil then, "
 								"the final version will most likely be released and you should update to that one.\n"
-								"Visit blobby.sourceforge.net for more information or bug reporting.").c_str(),
-				"TEST VERISON WARNING",
-				MB_OK);
-	#endif
+								"Visit blobby.sourceforge.net for more information or bug reporting.").c_str(), 0);
 	#endif
 
 	try
@@ -207,6 +236,7 @@ int main(int argc, char* argv[])
 		/*else if (gameConfig.getString("device") == "GP2X")
 			rmanager = RenderManager::createRenderManagerGP2X();*/
 #ifndef __ANDROID__
+	#ifndef __APPLE__
 		else if (gameConfig.getString("device") == "OpenGL")
 			rmanager = RenderManager::createRenderManagerGL2D();
 		else
@@ -215,6 +245,18 @@ int main(int argc, char* argv[])
 			std::cerr << "Falling back to OpenGL" << std::endl;
 			rmanager = RenderManager::createRenderManagerGL2D();
 		}
+	#else
+		#if MAC_OS_X
+			else if (gameConfig.getString("device") == "OpenGL")
+				rmanager = RenderManager::createRenderManagerGL2D();
+			else
+			{
+				std::cerr << "Warning: Unknown renderer selected!";
+				std::cerr << "Falling back to OpenGL" << std::endl;
+				rmanager = RenderManager::createRenderManagerGL2D();
+			}
+		#endif
+	#endif
 #endif
 
 		// fullscreen?
@@ -269,7 +311,7 @@ int main(int argc, char* argv[])
 				if (newfps != lastfps)
 				{
 					std::stringstream tmp;
-					tmp << AppTitle << "    FPS: " << newfps;
+					tmp << AppTitle << "	FPS: " << newfps;
 					rmanager->setTitle(tmp.str());
 				}
 				lastfps = newfps;

@@ -38,6 +38,7 @@ extern "C"
 #include "DuelMatch.h"
 #include "GameConstants.h"
 #include "IUserConfigReader.h"
+#include "IScriptableComponent.h"
 #include "InputSource.h"
 
 
@@ -444,7 +445,7 @@ protected:
 };
 
 
-class LuaGameLogic : public FallbackGameLogic
+class LuaGameLogic : public FallbackGameLogic, public IScriptableComponent
 {
 	public:
 		LuaGameLogic(const std::string& file, DuelMatch* match);
@@ -484,10 +485,6 @@ class LuaGameLogic : public FallbackGameLogic
 		virtual void OnBallHitsGroundHandler(PlayerSide side);
 		virtual void OnGameHandler();
 
-		// helper functions
-		void setLuaGlobalVariable(const char* name, double value);
-		bool luaCheckFunc(const char* fname) const;
-
 		static LuaGameLogic* getGameLogic(lua_State* state);
 
 	private:
@@ -512,8 +509,6 @@ class LuaGameLogic : public FallbackGameLogic
 		static int luaIsGameRunning(lua_State* state);
 
 		// lua state
-		lua_State* mState;
-
 		std::string mSourceFile;
 
 		std::string mAuthor;
@@ -521,7 +516,7 @@ class LuaGameLogic : public FallbackGameLogic
 };
 
 
-LuaGameLogic::LuaGameLogic( const std::string& filename, DuelMatch* match ) : mState( lua_open() ), mSourceFile(filename)
+LuaGameLogic::LuaGameLogic( const std::string& filename, DuelMatch* match ) : mSourceFile(filename)
 {
 	lua_pushlightuserdata(mState, this);
 	lua_setglobal(mState, "__GAME_LOGIC_POINTER");
@@ -532,9 +527,10 @@ LuaGameLogic::LuaGameLogic( const std::string& filename, DuelMatch* match ) : mS
 	lua_pushnumber(mState, getScoreToWin());
 	lua_setglobal(mState, "SCORE_TO_WIN");
 
+	setGameConstants();
 
 	// add functions
-	luaopen_math(mState);
+	luaL_requiref(mState, "math", luaopen_math, 1);
 	lua_register(mState, "touches", luaTouches);
 	lua_register(mState, "launched", luaLaunched);
 	lua_register(mState, "ballx", luaBallX);
@@ -553,23 +549,6 @@ LuaGameLogic::LuaGameLogic( const std::string& filename, DuelMatch* match ) : mS
 	lua_register(mState, "time", luaGetGameTime);
 	lua_register(mState, "isgamerunning", luaIsGameRunning);
 
-
-	// set game constants
-	setLuaGlobalVariable("CONST_FIELD_WIDTH", RIGHT_PLANE);
-	setLuaGlobalVariable("CONST_GROUND_HEIGHT", GROUND_PLANE_HEIGHT_MAX);
-	setLuaGlobalVariable("CONST_BALL_GRAVITY", -BALL_GRAVITATION);
-	setLuaGlobalVariable("CONST_BALL_RADIUS", BALL_RADIUS);
-	setLuaGlobalVariable("CONST_BLOBBY_JUMP", BLOBBY_JUMP_ACCELERATION);
-	setLuaGlobalVariable("CONST_BLOBBY_BODY_RADIUS", BLOBBY_LOWER_RADIUS);
-	setLuaGlobalVariable("CONST_BLOBBY_HEAD_RADIUS", BLOBBY_UPPER_RADIUS);
-	setLuaGlobalVariable("CONST_BLOBBY_HEIGHT", BLOBBY_HEIGHT);
-	setLuaGlobalVariable("CONST_BLOBBY_GRAVITY", GRAVITATION);
-	setLuaGlobalVariable("CONST_NET_HEIGHT", NET_SPHERE_POSITION);
-	setLuaGlobalVariable("CONST_NET_RADIUS", NET_RADIUS);
-	setLuaGlobalVariable("NO_PLAYER", NO_PLAYER);
-	setLuaGlobalVariable("LEFT_PLAYER", LEFT_PLAYER);
-	setLuaGlobalVariable("RIGHT_PLAYER", RIGHT_PLAYER);
-
 	// now load script file
 	int error = FileRead::readLuaScript(std::string("rules/") + filename, mState);
 
@@ -582,8 +561,6 @@ LuaGameLogic::LuaGameLogic( const std::string& filename, DuelMatch* match ) : mS
 		std::cerr << std::endl;
 		ScriptException except;
 		except.luaerror = lua_tostring(mState, -1);
-		lua_pop(mState, 1);
-		lua_close(mState);
 		throw except;
 	}
 
@@ -606,31 +583,12 @@ LuaGameLogic::LuaGameLogic( const std::string& filename, DuelMatch* match ) : mS
 
 LuaGameLogic::~LuaGameLogic()
 {
-	lua_close(mState);
-}
-
-void LuaGameLogic::setLuaGlobalVariable(const char* name, double value)
-{
-	lua_pushnumber(mState, value);
-	lua_setglobal(mState, name);
-}
-
-bool LuaGameLogic::luaCheckFunc(const char* fname) const
-{
-	lua_getglobal(mState, fname);
-	if (!lua_isfunction(mState, -1))
-	{
-		lua_pop(mState, 1);
-		return false;
-	}
-
-	return true;
 }
 
 PlayerSide LuaGameLogic::checkWin() const
 {
 	bool won = false;
-	if (!luaCheckFunc("IsWinning"))
+	if (!getLuaFunction("IsWinning"))
 	{
 		return FallbackGameLogic::checkWin();
 	}
@@ -660,7 +618,7 @@ PlayerSide LuaGameLogic::checkWin() const
 
 PlayerInput LuaGameLogic::handleInput(PlayerInput ip, PlayerSide player)
 {
-	if (!luaCheckFunc( "HandleInput" ))
+	if (!getLuaFunction( "HandleInput" ))
 	{
 		return FallbackGameLogic::handleInput(ip, player);
 	}
@@ -687,7 +645,7 @@ PlayerInput LuaGameLogic::handleInput(PlayerInput ip, PlayerSide player)
 
 void LuaGameLogic::OnBallHitsPlayerHandler(PlayerSide side)
 {
-	if (!luaCheckFunc("OnBallHitsPlayer"))
+	if (!getLuaFunction("OnBallHitsPlayer"))
 	{
 		FallbackGameLogic::OnBallHitsPlayerHandler(side);
 		return;
@@ -702,7 +660,7 @@ void LuaGameLogic::OnBallHitsPlayerHandler(PlayerSide side)
 
 void LuaGameLogic::OnBallHitsWallHandler(PlayerSide side)
 {
-	if (!luaCheckFunc("OnBallHitsWall"))
+	if (!getLuaFunction("OnBallHitsWall"))
 	{
 		FallbackGameLogic::OnBallHitsWallHandler(side);
 		return;
@@ -718,7 +676,7 @@ void LuaGameLogic::OnBallHitsWallHandler(PlayerSide side)
 
 void LuaGameLogic::OnBallHitsNetHandler(PlayerSide side)
 {
-	if (!luaCheckFunc( "OnBallHitsNet" ))
+	if (!getLuaFunction( "OnBallHitsNet" ))
 	{
 		FallbackGameLogic::OnBallHitsNetHandler(side);
 		return;
@@ -735,7 +693,7 @@ void LuaGameLogic::OnBallHitsNetHandler(PlayerSide side)
 
 void LuaGameLogic::OnBallHitsGroundHandler(PlayerSide side)
 {
-	if (!luaCheckFunc( "OnBallHitsGround" ))
+	if (!getLuaFunction( "OnBallHitsGround" ))
 	{
 		FallbackGameLogic::OnBallHitsGroundHandler(side);
 		return;
@@ -752,7 +710,7 @@ void LuaGameLogic::OnBallHitsGroundHandler(PlayerSide side)
 
 void LuaGameLogic::OnGameHandler()
 {
-	if (!luaCheckFunc( "OnGame" ))
+	if (!getLuaFunction( "OnGame" ))
 	{
 		FallbackGameLogic::OnGameHandler();
 		return;

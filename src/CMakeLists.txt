@@ -10,26 +10,27 @@ set(CMAKE_CXX_FLAGS "-Wall")
 include_directories(.)
 
 set(common_SRC
-	Global.h
 	BlobbyDebug.cpp BlobbyDebug.h
 	Clock.cpp Clock.h
 	DuelMatch.cpp DuelMatch.h
-	ReplayRecorder.cpp ReplayRecorder.h
-	NetworkMessage.cpp NetworkMessage.h
-	GameLogic.cpp GameLogic.h
-	PhysicWorld.cpp PhysicWorld.h
-	SpeedController.cpp SpeedController.h
-	UserConfig.cpp UserConfig.h
-	File.cpp File.h
-	FileWrite.cpp FileWrite.h
 	FileRead.cpp FileRead.h
 	FileSystem.cpp FileSystem.h
+	FileWrite.cpp FileWrite.h
+	File.cpp File.h
+	GameLogic.cpp GameLogic.h
+	GenericIO.cpp GenericIO.h
+	Global.h
+	NetworkMessage.cpp NetworkMessage.h
+	PhysicWorld.cpp PhysicWorld.h
+	ReplayRecorder.cpp ReplayRecorder.h
+	SpeedController.cpp SpeedController.h
+	UserConfig.cpp UserConfig.h
 	PhysicState.cpp PhysicState.h
 	DuelMatchState.cpp DuelMatchState.h
 	GameLogicState.cpp GameLogicState.h
-	GenericIO.cpp GenericIO.h
 	ReplaySavePoint.cpp ReplaySavePoint.h
 	InputSource.cpp InputSource.h
+	IScriptableComponent.cpp IScriptableComponent.h
 	PlayerIdentity.cpp PlayerIdentity.h
 	server/DedicatedServer.cpp server/DedicatedServer.h
 	server/NetworkPlayer.cpp server/NetworkPlayer.h
@@ -74,7 +75,7 @@ set (blobby-server_SRC ${common_SRC}
 find_package(Boost REQUIRED)
 find_package(PhysFS REQUIRED)
 find_package(OpenGL)
-
+find_package(Threads REQUIRED)
 
 INCLUDE(FindPkgConfig)
 PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)
@@ -94,12 +95,12 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 add_executable(blobby ${blobby_SRC})
-target_link_libraries(blobby lua raknet blobnet tinyxml ${RAKNET_LIBRARIES} ${PHYSFS_LIBRARY} ${OPENGL_LIBRARIES} ${SDL2_LIBRARIES})
+target_link_libraries(blobby lua raknet blobnet tinyxml ${RAKNET_LIBRARIES} ${PHYSFS_LIBRARY} ${OPENGL_LIBRARIES} ${SDL2_LIBRARIES} pthread)
 
 if (UNIX)
 	add_executable(blobby-server ${blobby-server_SRC})
-	target_link_libraries(blobby-server lua raknet blobnet tinyxml ${RAKNET_LIBRARIES} ${PHYSFS_LIBRARY} ${SDL2_LIBRARIES})
-endif (UNIX) 
+	target_link_libraries(blobby-server lua raknet blobnet tinyxml ${RAKNET_LIBRARIES} ${PHYSFS_LIBRARY} ${SDL2_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+endif (UNIX)
 
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
 	set_target_properties(blobby PROPERTIES LINK_FLAGS "-mwindows") # disable the console window
@@ -108,5 +109,5 @@ endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 if (WIN32)
 	install(TARGETS blobby DESTINATION .)
 elseif (UNIX)
-	install(TARGETS blobby DESTINATION bin)
+	install(TARGETS blobby blobby-server DESTINATION bin)
 endif (WIN32)

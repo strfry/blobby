@@ -161,29 +161,26 @@ void NetworkGame::processPackets()
 
 			case ID_INPUT_UPDATE:
 			{
-				PlayerInput newInput;
+
 				int stepcount;
-				RakNet::BitStream stream((char*)packet->data,
-						packet->length, false);
+				RakNet::BitStream stream((char*)packet->data, packet->length, false);
 
 				// ignore ID_INPUT_UPDATE
 				stream.IgnoreBytes(1);
 				stream.Read(stepcount);
-				stream.Read(newInput.left);
-				stream.Read(newInput.right);
-				stream.Read(newInput.up);
+				PlayerInputAbs newInput(stream);
 
 				if (packet->playerId == mLeftPlayer)
 				{
 					if (mSwitchedSide == LEFT_PLAYER)
-						newInput.swap();
+						newInput.swapSides();
 					mLeftInput->setInput(newInput);
 					mLeftLastStep = stepcount;
 				}
 				 else if (packet->playerId == mRightPlayer)
 				{
 					if (mSwitchedSide == RIGHT_PLAYER)
-						newInput.swap();
+						newInput.swapSides();
 					mRightInput->setInput(newInput);
 					mRightLastStep = stepcount;
 				}
