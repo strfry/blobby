@@ -42,9 +42,11 @@ DuelMatch::DuelMatch(bool remote, std::string rules) :
 		mPaused(false),
 		events(0),
 		external_events(0),
-		mRemote(remote)
+		mRemote(remote),
+		mLastWorldStateStorageA( new PhysicState ),
+		mLastWorldStateStorageB( new PhysicState ),
+		mPhysicWorld( new PhysicWorld() )
 {
-	mPhysicWorld.reset( new PhysicWorld() );
 	std::function<void(PhysicEvent)> fn = std::bind(&DuelMatch::physicEventCallback, this, std::placeholders::_1);
 	mPhysicWorld->setEventCallback( fn );
 
@@ -103,7 +105,7 @@ void DuelMatch::step()
 		mTransformedInput[RIGHT_PLAYER] = mLogic->transformInput( mTransformedInput[RIGHT_PLAYER], RIGHT_PLAYER );
 	}
 
-	// do steps in physic an logic
+	// do steps in physic an logic.
 	mLogic->step();
 	// the callback also adds the events
 	mPhysicWorld->step( mTransformedInput[LEFT_PLAYER], mTransformedInput[RIGHT_PLAYER],
@@ -168,10 +170,11 @@ void DuelMatch::step()
 		events |= EVENT_RESET;
 	}
 
+	// update to new world state
+	updateState();
+
 	// reset external events
 	external_events = 0;
-
-	mLastWorldState = mPhysicWorld->getState();
 }
 
 void DuelMatch::setScore(int left, int right)
@@ -249,12 +252,12 @@ bool DuelMatch::getBlobJump(PlayerSide player) const
 
 Vector2 DuelMatch::getBlobPosition(PlayerSide player) const
 {
-	return mLastWorldState.blobPosition[player];
+	return mLastWorldState.load()->blobPosition[player];
 }
 
 float DuelMatch::getBlobState( PlayerSide player ) const
 {
-	return mLastWorldState.blobState[player];
+	return mLastWorldState.load()->blobState[player];
 }
 
 float DuelMatch::getLastHitIntensity() const
@@ -265,22 +268,22 @@ float DuelMatch::getLastHitIntensity() const
 
 Vector2 DuelMatch::getBlobVelocity(PlayerSide player) const
 {
-	return mLastWorldState.blobVelocity[player];
+	return mLastWorldState.load()->blobVelocity[player];
 }
 
 Vector2 DuelMatch::getBallPosition() const
 {
-	return mLastWorldState.ballPosition;
+	return mLastWorldState.load()->ballPosition;
 }
 
 Vector2 DuelMatch::getBallVelocity() const
 {
-	return mLastWorldState.ballVelocity;
+	return mLastWorldState.load()->ballVelocity;
 }
 
 float DuelMatch::getBallRotation() const
 {
-	return mLastWorldState.ballRotation;
+	return mLastWorldState.load()->ballRotation;
 }
 
 PlayerSide DuelMatch::getServingPlayer() const
@@ -399,5 +402,19 @@ void DuelMatch::physicEventCallback( PhysicEvent event )
 	case PhysicEvent::BALL_HIT_WALL:
 		trigger( event.side == LEFT_PLAYER ? EVENT_BALL_HIT_LEFT_WALL : EVENT_BALL_HIT_RIGHT_WALL );
 		return;
+	}
+}
+
+void DuelMatch::updateState()
+{
+	// update physic state, alternate storage positions
+	if(mLastWorldState == mLastWorldStateStorageB.get() )
+	{
+		*mLastWorldStateStorageA = mPhysicWorld->getState();
+		mLastWorldState.store( mLastWorldStateStorageA.get() );
+	} else
+	{
+		*mLastWorldStateStorageB = mPhysicWorld->getState();
+		mLastWorldState.store( mLastWorldStateStorageB.get() );
 	}
 }

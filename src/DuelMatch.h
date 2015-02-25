@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #pragma once
 
 #include <string>
+#include <atomic>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -29,11 +30,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "PlayerInput.h"
 #include "PlayerIdentity.h"
 #include "BlobbyDebug.h"
-#include "PhysicState.h"
 
 class InputSource;
 struct DuelMatchState;
 class PhysicWorld;
+class PhysicState;
 class PhysicEvent;
 
 /*! \class DuelMatch
@@ -112,7 +113,8 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 
 		// This functions returns true if the player launched
 		// and is jumping at the moment
-		bool getBlobJump(PlayerSide player) const;
+		// the function directly accesses the world, and thus is dangerous
+		bool getBlobJump(PlayerSide player) const __attribute__((deprecated));
 
 		/// Set a new state using a saved DuelMatchState
 		void setState(const DuelMatchState& state);
@@ -133,21 +135,28 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 	private:
 
 		void physicEventCallback( PhysicEvent event );
-
-		boost::scoped_ptr<PhysicWorld> mPhysicWorld;
-
-		PhysicState mLastWorldState;
+		// update the internal last world state to the current physicworld
+		void updateState();
 
 		boost::shared_ptr<InputSource> mInputSources[MAX_PLAYERS];
-		PlayerInput mTransformedInput[MAX_PLAYERS];
-
 		PlayerIdentity mPlayers[MAX_PLAYERS];
 
-		GameLogic mLogic;
-
 		bool mPaused;
-
-		int events;
-		int external_events;
 		bool mRemote;
+
+		// data that is written to in the simulation thread
+		boost::scoped_ptr<PhysicWorld> mPhysicWorld;
+		GameLogic mLogic;
+		PlayerInput mTransformedInput[MAX_PLAYERS];
+		int events;
+
+		// we need two memory locations to store the world state.
+		boost::scoped_ptr<PhysicState> mLastWorldStateStorageA;
+		boost::scoped_ptr<PhysicState> mLastWorldStateStorageB;
+		// we then can atomically set this pointer to the PhysicState
+		// that is currently active;
+		std::atomic<const PhysicState*> mLastWorldState;
+
+		// data that changes parallel to the simulation thread
+		int external_events;
 };
