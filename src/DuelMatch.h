@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 class InputSource;
 struct DuelMatchState;
 class PhysicWorld;
+class PhysicEvent;
 
 /*! \class DuelMatch
 	\brief class representing a blobby game.
@@ -127,6 +128,8 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		int getEvents() const { return events; }
 
 	private:
+
+		void physicEventCallback( PhysicEvent event );
 
 		boost::scoped_ptr<PhysicWorld> mPhysicWorld;
 

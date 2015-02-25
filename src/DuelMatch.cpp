@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* includes */
 #include <cassert>
+#include <iostream>
 
 #include <boost/make_shared.hpp>
 
@@ -44,6 +45,8 @@ DuelMatch::DuelMatch(bool remote, std::string rules) :
 		mRemote(remote)
 {
 	mPhysicWorld.reset( new PhysicWorld() );
+	std::function<void(PhysicEvent)> fn = std::bind(&DuelMatch::physicEventCallback, this, std::placeholders::_1);
+	mPhysicWorld->setEventCallback( fn );
 
 	setInputSources(boost::make_shared<InputSource>(), boost::make_shared<InputSource>());
 }
@@ -69,6 +72,9 @@ void DuelMatch::setInputSources(boost::shared_ptr<InputSource> linput, boost::sh
 void DuelMatch::reset()
 {
 	mPhysicWorld.reset(new PhysicWorld());
+	std::function<void(PhysicEvent)> fn = std::bind(&DuelMatch::physicEventCallback, this, std::placeholders::_1);
+	mPhysicWorld->setEventCallback( fn );
+
 	mLogic = mLogic->clone();
 }
 
@@ -84,8 +90,6 @@ void DuelMatch::setRules(std::string rulesFile)
 
 void DuelMatch::step()
 {
-	events = external_events;
-
 	// in pause mode, step does nothing
 	if(mPaused)
 		return;
@@ -101,13 +105,11 @@ void DuelMatch::step()
 
 	// do steps in physic an logic
 	mLogic->step();
-	int physicEvents = mPhysicWorld->step( mTransformedInput[LEFT_PLAYER], mTransformedInput[RIGHT_PLAYER],
+	// the callback also adds the events
+	mPhysicWorld->step( mTransformedInput[LEFT_PLAYER], mTransformedInput[RIGHT_PLAYER],
 											mLogic->isBallValid(), mLogic->isGameRunning() );
 
-	// check for all hit events
-	if(!mRemote)
-		events |= physicEvents;
-
+	events = external_events;
 	// process events
 	if(events & EVENT_LEFT_BLOBBY_HIT)
 		mLogic->onBallHitsPlayer(LEFT_PLAYER);
@@ -361,4 +363,29 @@ PlayerIdentity DuelMatch::getPlayer(PlayerSide player) const
 PlayerIdentity& DuelMatch::getPlayer(PlayerSide player)
 {
 	return mPlayers[player];
+}
+
+void DuelMatch::physicEventCallback( PhysicEvent event )
+{
+	if( mRemote )
+		return;
+
+	switch( event.event )
+	{
+	case PhysicEvent::BALL_HIT_BLOB:
+		trigger( event.side == LEFT_PLAYER ? EVENT_LEFT_BLOBBY_HIT : EVENT_RIGHT_BLOBBY_HIT );
+		return;
+	case PhysicEvent::BALL_HIT_GROUND:
+		trigger( event.side == LEFT_PLAYER ? EVENT_BALL_HIT_LEFT_GROUND : EVENT_BALL_HIT_RIGHT_GROUND );
+		return;
+	case PhysicEvent::BALL_HIT_NET:
+		trigger( event.side == LEFT_PLAYER ? EVENT_BALL_HIT_NET_LEFT : EVENT_BALL_HIT_NET_RIGHT );
+		return;
+	case PhysicEvent::BALL_HIT_NET_TOP:
+		trigger( EVENT_BALL_HIT_NET_TOP );
+		return;
+	case PhysicEvent::BALL_HIT_WALL:
+		trigger( event.side == LEFT_PLAYER ? EVENT_BALL_HIT_LEFT_WALL : EVENT_BALL_HIT_RIGHT_WALL );
+		return;
+	}
 }
