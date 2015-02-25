@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Blood.h"
 #include "MatchEvents.h"
 #include "FileWrite.h"
+#include "PhysicWorld.h" // for PhysicEvent
 
 /* implementation */
 
@@ -54,8 +55,6 @@ void GameState::presentGame()
 
 	RenderManager& rmanager = RenderManager::getSingleton();
 	SoundManager& smanager = SoundManager::getSingleton();
-
-
 
 	rmanager.setBlob(LEFT_PLAYER, mMatch->getBlobPosition(LEFT_PLAYER), mMatch->getBlobState(LEFT_PLAYER));
 	rmanager.setBlob(RIGHT_PLAYER, mMatch->getBlobPosition(RIGHT_PLAYER),	mMatch->getBlobState(RIGHT_PLAYER));
@@ -81,20 +80,18 @@ void GameState::presentGame()
 	rmanager.setBall(mMatch->getBallPosition(), mMatch->getBallRotation());
 
 	int events = mMatch->getEvents();
-	if(events & EVENT_LEFT_BLOBBY_HIT)
+	std::vector<PhysicEvent> physic_events;
+	mMatch->fetchEvents( physic_events );
+	for(const auto& e : physic_events )
 	{
-		smanager.playSound("sounds/bums.wav", mMatch->getLastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
-		Vector2 hitPos = mMatch->getBallPosition() +
-				(mMatch->getBlobPosition(LEFT_PLAYER) - mMatch->getBallPosition()).normalise().scale(31.5);
-		BloodManager::getSingleton().spillBlood(hitPos, mMatch->getLastHitIntensity(), 0);
-	}
-
-	if (events & EVENT_RIGHT_BLOBBY_HIT)
-	{
-		smanager.playSound("sounds/bums.wav", mMatch->getLastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
-		Vector2 hitPos = mMatch->getBallPosition() +
-				(mMatch->getBlobPosition(RIGHT_PLAYER) - mMatch->getBallPosition()).normalise().scale(31.5);
-		BloodManager::getSingleton().spillBlood(hitPos, mMatch->getLastHitIntensity(), 1);
+		if( e.event == PhysicEvent::BALL_HIT_BLOB )
+		{
+			smanager.playSound("sounds/bums.wav", e.intensity + BALL_HIT_PLAYER_SOUND_VOLUME);
+			/// \todo save that position inside the event
+			Vector2 hitPos = mMatch->getBallPosition() +
+					(mMatch->getBlobPosition(e.side) - mMatch->getBallPosition()).normalise().scale(31.5);
+			BloodManager::getSingleton().spillBlood(hitPos, e.intensity, 0);
+		}
 	}
 
 	if (events & EVENT_ERROR)

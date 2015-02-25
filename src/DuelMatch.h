@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <string>
 #include <atomic>
+#include <mutex>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -131,7 +132,8 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		void setServingPlayer(PlayerSide side);
 
 		int getEvents() const { return events; }
-
+		// copies the physic events into the target and resets.
+		void fetchEvents(std::vector<PhysicEvent>& target);
 	private:
 
 		void physicEventCallback( PhysicEvent event );
@@ -148,6 +150,11 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		boost::scoped_ptr<PhysicWorld> mPhysicWorld;
 		GameLogic mLogic;
 		PlayerInput mTransformedInput[MAX_PLAYERS];
+		// accumulation of physic events in the current time step
+		std::vector<PhysicEvent> mStepPhysicEvents;
+		// accumulation of physic events since they were fetched the last time
+		std::vector<PhysicEvent> mPhysicEvents;
+		std::mutex mEventMutex;
 		int events;
 
 		// we need two memory locations to store the world state.

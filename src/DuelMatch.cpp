@@ -51,6 +51,9 @@ DuelMatch::DuelMatch(bool remote, std::string rules) :
 	mPhysicWorld->setEventCallback( fn );
 
 	setInputSources(boost::make_shared<InputSource>(), boost::make_shared<InputSource>());
+
+	// init
+	updateState();
 }
 
 void DuelMatch::setPlayers( PlayerIdentity lplayer, PlayerIdentity rplayer)
@@ -385,6 +388,8 @@ void DuelMatch::physicEventCallback( PhysicEvent event )
 	if( mRemote )
 		return;
 
+	mStepPhysicEvents.push_back( event );
+
 	switch( event.event )
 	{
 	case PhysicEvent::BALL_HIT_BLOB:
@@ -417,4 +422,19 @@ void DuelMatch::updateState()
 		*mLastWorldStateStorageB = mPhysicWorld->getState();
 		mLastWorldState.store( mLastWorldStateStorageB.get() );
 	}
+
+	// lock
+	std::lock_guard<std::mutex> lock(mEventMutex);
+	// move all events to accumulating vector
+	for(auto&& data : mStepPhysicEvents)
+		mPhysicEvents.push_back( data );
+	mStepPhysicEvents.clear();
+}
+
+void DuelMatch::fetchEvents(std::vector<PhysicEvent>& target)
+{
+	std::lock_guard<std::mutex> lock(mEventMutex);
+	target.swap( mPhysicEvents );
+
+	mPhysicEvents.clear();
 }
