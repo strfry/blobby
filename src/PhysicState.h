@@ -29,15 +29,15 @@ namespace RakNet
 	class BitStream;
 }
 
-
 struct PhysicState
 {
 	Vector2 blobPosition[MAX_PLAYERS];
 	Vector2 blobVelocity[MAX_PLAYERS];
+	float   blobState[MAX_PLAYERS];	// currently not serialized over network
 
 	Vector2 ballPosition;
 	Vector2 ballVelocity;
-	float ballAngularVelocity;
+	float   ballRotation;			// currently not serialized over network
 
 	// equality comparision
 	bool operator==(const PhysicState& other) const;
