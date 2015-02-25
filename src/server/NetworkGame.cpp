@@ -40,7 +40,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "FileSystem.h"
 #include "GenericIO.h"
 #include "MatchEvents.h"
-#include "PhysicWorld.h"
 #include "NetworkPlayer.h"
 #include "InputSource.h"
 
@@ -319,12 +318,12 @@ void NetworkGame::step()
 		RakNet::BitStream stream;
 		stream.Write((unsigned char)ID_COLLISION);
 		stream.Write( events & EVENT_COLLISION );
-		stream.Write( mMatch->getWorld().getLastHitIntensity() );
+		stream.Write( mMatch->getLastHitIntensity() );
 
 		RakNet::BitStream switchStream;
 		switchStream.Write((unsigned char)ID_COLLISION);
 		switchStream.Write( switchEventSides( events & EVENT_COLLISION ) );
-		switchStream.Write( mMatch->getWorld().getLastHitIntensity() );
+		switchStream.Write( mMatch->getLastHitIntensity() );
 
 		broadcastBitstream(stream, switchStream);
 	}

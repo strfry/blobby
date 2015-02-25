@@ -32,7 +32,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "TextManager.h"
 #include "Blood.h"
 #include "MatchEvents.h"
-#include "PhysicWorld.h"
 #include "FileWrite.h"
 
 /* implementation */
@@ -58,8 +57,8 @@ void GameState::presentGame()
 
 
 
-	rmanager.setBlob(LEFT_PLAYER, mMatch->getBlobPosition(LEFT_PLAYER), mMatch->getWorld().getBlobState(LEFT_PLAYER));
-	rmanager.setBlob(RIGHT_PLAYER, mMatch->getBlobPosition(RIGHT_PLAYER),	mMatch->getWorld().getBlobState(RIGHT_PLAYER));
+	rmanager.setBlob(LEFT_PLAYER, mMatch->getBlobPosition(LEFT_PLAYER), mMatch->getBlobState(LEFT_PLAYER));
+	rmanager.setBlob(RIGHT_PLAYER, mMatch->getBlobPosition(RIGHT_PLAYER),	mMatch->getBlobState(RIGHT_PLAYER));
 
 	if(mMatch->getPlayer(LEFT_PLAYER).getOscillating())
 	{
@@ -79,23 +78,23 @@ void GameState::presentGame()
 		rmanager.setBlobColor(RIGHT_PLAYER, mMatch->getPlayer(RIGHT_PLAYER).getStaticColor());
 	}
 
-	rmanager.setBall(mMatch->getBallPosition(), mMatch->getWorld().getBallRotation());
+	rmanager.setBall(mMatch->getBallPosition(), mMatch->getBallRotation());
 
 	int events = mMatch->getEvents();
 	if(events & EVENT_LEFT_BLOBBY_HIT)
 	{
-		smanager.playSound("sounds/bums.wav", mMatch->getWorld().getLastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
+		smanager.playSound("sounds/bums.wav", mMatch->getLastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
 		Vector2 hitPos = mMatch->getBallPosition() +
 				(mMatch->getBlobPosition(LEFT_PLAYER) - mMatch->getBallPosition()).normalise().scale(31.5);
-		BloodManager::getSingleton().spillBlood(hitPos, mMatch->getWorld().getLastHitIntensity(), 0);
+		BloodManager::getSingleton().spillBlood(hitPos, mMatch->getLastHitIntensity(), 0);
 	}
 
 	if (events & EVENT_RIGHT_BLOBBY_HIT)
 	{
-		smanager.playSound("sounds/bums.wav", mMatch->getWorld().getLastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
+		smanager.playSound("sounds/bums.wav", mMatch->getLastHitIntensity() + BALL_HIT_PLAYER_SOUND_VOLUME);
 		Vector2 hitPos = mMatch->getBallPosition() +
 				(mMatch->getBlobPosition(RIGHT_PLAYER) - mMatch->getBallPosition()).normalise().scale(31.5);
-		BloodManager::getSingleton().spillBlood(hitPos, mMatch->getWorld().getLastHitIntensity(), 1);
+		BloodManager::getSingleton().spillBlood(hitPos, mMatch->getLastHitIntensity(), 1);
 	}
 
 	if (events & EVENT_ERROR)
