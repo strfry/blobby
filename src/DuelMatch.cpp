@@ -170,6 +170,8 @@ void DuelMatch::step()
 
 	// reset external events
 	external_events = 0;
+
+	mLastWorldState = mPhysicWorld->getState();
 }
 
 void DuelMatch::setScore(int left, int right)
@@ -247,43 +249,38 @@ bool DuelMatch::getBlobJump(PlayerSide player) const
 
 Vector2 DuelMatch::getBlobPosition(PlayerSide player) const
 {
-	if (player == LEFT_PLAYER || player == RIGHT_PLAYER)
-		return mPhysicWorld->getBlobPosition(player);
-	else
-		return Vector2(0.0, 0.0);
+	return mLastWorldState.blobPosition[player];
 }
 
 float DuelMatch::getBlobState( PlayerSide player ) const
 {
-	return mPhysicWorld->getBlobState( player );
-}
-
-float DuelMatch::getBallRotation() const
-{
-	return mPhysicWorld->getBallRotation();
+	return mLastWorldState.blobState[player];
 }
 
 float DuelMatch::getLastHitIntensity() const
 {
+	/// \todo this accesses the physic world!
 	return mPhysicWorld->getLastHitIntensity();
 }
 
 Vector2 DuelMatch::getBlobVelocity(PlayerSide player) const
 {
-	if (player == LEFT_PLAYER || player == RIGHT_PLAYER)
-		return mPhysicWorld->getBlobVelocity(player);
-	else
-		return Vector2(0.0, 0.0);
+	return mLastWorldState.blobVelocity[player];
 }
 
 Vector2 DuelMatch::getBallPosition() const
 {
-	return mPhysicWorld->getBallPosition();
+	return mLastWorldState.ballPosition;
 }
 
 Vector2 DuelMatch::getBallVelocity() const
 {
-	return mPhysicWorld->getBallVelocity();
+	return mLastWorldState.ballVelocity;
+}
+
+float DuelMatch::getBallRotation() const
+{
+	return mLastWorldState.ballRotation;
 }
 
 PlayerSide DuelMatch::getServingPlayer() const

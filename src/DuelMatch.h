@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "PlayerInput.h"
 #include "PlayerIdentity.h"
 #include "BlobbyDebug.h"
+#include "PhysicState.h"
 
 class InputSource;
 struct DuelMatchState;
@@ -134,6 +135,8 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		void physicEventCallback( PhysicEvent event );
 
 		boost::scoped_ptr<PhysicWorld> mPhysicWorld;
+
+		PhysicState mLastWorldState;
 
 		boost::shared_ptr<InputSource> mInputSources[MAX_PLAYERS];
 		PlayerInput mTransformedInput[MAX_PLAYERS];
