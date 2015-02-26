@@ -33,11 +33,11 @@ void DuelMatchState::swapSides()
 {
 	worldState.swapSides();
 	logicState.swapSides();
-	
+
 	std::swap(playerInput[LEFT_PLAYER].left, playerInput[LEFT_PLAYER].right);
 	std::swap(playerInput[RIGHT_PLAYER].left, playerInput[RIGHT_PLAYER].right);
 	std::swap(playerInput[LEFT_PLAYER], playerInput[RIGHT_PLAYER]);
-	
+
 	switch (errorSide)
 	{
 		case LEFT_PLAYER:
@@ -53,19 +53,59 @@ USER_SERIALIZER_IMPLEMENTATION_HELPER(DuelMatchState)
 {
 	io.template generic<PhysicState> (value.worldState);
 	io.template generic<GameLogicState> (value.logicState);
-	
+
 	// the template keyword is needed here so the compiler knows generic is
 	// a template function and does not complain about <>.
 	io.template generic<PlayerInput> ( value.playerInput[LEFT_PLAYER] );
 	io.template generic<PlayerInput> ( value.playerInput[RIGHT_PLAYER] );
-	
+
 	io.byte(value.errorSide);
 }
 
-bool DuelMatchState::operator==(const DuelMatchState& other) const
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//  				info function implementation
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Vector2 DuelMatchState::getBlobPosition(PlayerSide player) const
 {
-	return worldState == other.worldState  &&  logicState == other.logicState &&
-		playerInput[LEFT_PLAYER] == other.playerInput[LEFT_PLAYER] && 
-		playerInput[RIGHT_PLAYER] == other.playerInput[RIGHT_PLAYER] &&
-		errorSide == other.errorSide;
+	return worldState.blobPosition[player];
+}
+
+float DuelMatchState::getBlobState( PlayerSide player ) const
+{
+	return worldState.blobState[player];
+}
+
+Vector2 DuelMatchState::getBlobVelocity(PlayerSide player) const
+{
+	return worldState.blobVelocity[player];
+}
+
+Vector2 DuelMatchState::getBallPosition() const
+{
+	return worldState.ballPosition;
+}
+
+Vector2 DuelMatchState::getBallVelocity() const
+{
+	return worldState.ballVelocity;
+}
+
+float DuelMatchState::getBallRotation() const
+{
+	return worldState.ballRotation;
+}
+
+PlayerSide DuelMatchState::getServingPlayer() const
+{
+	return logicState.servingPlayer;
+}
+
+bool DuelMatchState::getBallDown() const
+{
+	return !logicState.isBallValid;
+}
+
+bool DuelMatchState::getBallActive() const
+{
+	return logicState.isGameRunning;
 }

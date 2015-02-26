@@ -26,9 +26,21 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 struct DuelMatchState
 {
-	void swapSides();
+	// info functions
+	// physics
+	Vector2 getBallPosition() const;
+	Vector2 getBallVelocity() const;
+	float getBallRotation() const;
+	Vector2 getBlobPosition(PlayerSide player) const;
+	Vector2 getBlobVelocity(PlayerSide player) const;
+	float getBlobState( PlayerSide player ) const;
 
-	bool operator==(const DuelMatchState& other) const;
+	// logic
+	PlayerSide getServingPlayer() const;
+	bool getBallDown() const;
+	bool getBallActive() const;
+
+	void swapSides();
 
 	PhysicState worldState;
 	GameLogicState logicState;
