@@ -169,6 +169,8 @@ void NetworkGameState::step_impl()
 				// sync the clocks... normally, they should not differ
 				mMatch->getClock().setTime(time);
 
+/// \todo FIGURE OUT EVENT HANDLING
+
 				/// \attention
 				/// we can get a problem here:
 				/// assume the packet informing about the game event which lead to this
@@ -179,12 +181,12 @@ void NetworkGameState::step_impl()
 				///
 				/// i don't have a clean fix for this right now, so we'll have to live with a workaround for now
 				/// we just order the game to reset all triggered events.
-				mMatch->resetTriggeredEvents();
+///				mMatch->resetTriggeredEvents();
 				/// \todo a good fix would involve ensuring we process all events in the right order
 
 
 				break;
-			}
+			}/*
 			case ID_COLLISION:
 			{
 				int event;
@@ -197,7 +199,7 @@ void NetworkGameState::step_impl()
 				mMatch->setLastHitIntensity(intensity);
 				mMatch->trigger( event );
 				break;
-			}
+			}*/
 			case ID_PAUSE:
 				if (mNetworkState == PLAYING)
 				{

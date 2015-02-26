@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Blood.h"
 #include "MatchEvents.h"
 #include "FileWrite.h"
-#include "PhysicWorld.h" // for PhysicEvent
+#include "MatchEvents.h"
 
 /* implementation */
 
@@ -79,12 +79,11 @@ void GameState::presentGame()
 
 	rmanager.setBall(mMatch->getBallPosition(), mMatch->getBallRotation());
 
-	int events = mMatch->getEvents();
-	std::vector<PhysicEvent> physic_events;
+	std::vector<MatchEvent> physic_events;
 	mMatch->fetchEvents( physic_events );
 	for(const auto& e : physic_events )
 	{
-		if( e.event == PhysicEvent::BALL_HIT_BLOB )
+		if( e.event == MatchEvent::BALL_HIT_BLOB )
 		{
 			smanager.playSound("sounds/bums.wav", e.intensity + BALL_HIT_PLAYER_SOUND_VOLUME);
 			/// \todo save that position inside the event
@@ -92,10 +91,10 @@ void GameState::presentGame()
 					(mMatch->getBlobPosition(e.side) - mMatch->getBallPosition()).normalise().scale(31.5);
 			BloodManager::getSingleton().spillBlood(hitPos, e.intensity, 0);
 		}
-	}
 
-	if (events & EVENT_ERROR)
-		smanager.playSound("sounds/pfiff.wav", ROUND_START_SOUND_VOLUME);
+		if( e.event == MatchEvent::PLAYER_ERROR )
+			smanager.playSound("sounds/pfiff.wav", ROUND_START_SOUND_VOLUME);
+	}
 }
 
 void GameState::presentGameUI()

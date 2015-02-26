@@ -25,28 +25,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "PlayerInput.h"
 #include "BlobbyDebug.h"
 #include "PhysicState.h"
+#include "MatchEvents.h"
 #include <functional>	// for std::function used for the callback
-
-// encoding of events that can happen in the physics subsystem
-struct PhysicEvent
-{
-	// this characterizes the event type
-	enum EventType
-	{
-		BALL_HIT_BLOB,
-		BALL_HIT_WALL,
-		BALL_HIT_GROUND,
-		BALL_HIT_NET,
-		BALL_HIT_NET_TOP
-	};
-
-    // type of the event
-	EventType event;
-	// side on which the event happened
-    PlayerSide side;
-	// intensity of the event (only set if required by the event type)
-	float intensity;
-};
 
 /*! \brief blobby world
 	\details This class encapuslates the physical world where blobby happens. It manages the two blobs,
@@ -55,7 +35,7 @@ struct PhysicEvent
 class PhysicWorld : public ObjectCounter<PhysicWorld>
 {
 	// callback function type
-	typedef std::function<void(PhysicEvent)> event_callback_fn;
+	typedef std::function<void(MatchEvent)> event_callback_fn;
 
 	public:
 		PhysicWorld();

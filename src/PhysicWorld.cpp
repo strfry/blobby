@@ -248,9 +248,9 @@ void PhysicWorld::step(const PlayerInput& leftInput, const PlayerInput& rightInp
 	if(isBallValid)
 	{
 		if (handleBlobbyBallCollision(LEFT_PLAYER))
-			mCallback( PhysicEvent{PhysicEvent::BALL_HIT_BLOB, LEFT_PLAYER, mLastHitIntensity} );
+			mCallback( MatchEvent{MatchEvent::BALL_HIT_BLOB, LEFT_PLAYER, mLastHitIntensity} );
 		if (handleBlobbyBallCollision(RIGHT_PLAYER))
-			mCallback( PhysicEvent{PhysicEvent::BALL_HIT_BLOB, RIGHT_PLAYER, mLastHitIntensity} );
+			mCallback( MatchEvent{MatchEvent::BALL_HIT_BLOB, RIGHT_PLAYER, mLastHitIntensity} );
 	}
 	// Ball to ground Collision
 	if (mBallPosition.y + BALL_RADIUS > GROUND_PLANE_HEIGHT_MAX)
@@ -258,7 +258,7 @@ void PhysicWorld::step(const PlayerInput& leftInput, const PlayerInput& rightInp
 		mBallVelocity = mBallVelocity.reflectY();
 		mBallVelocity = mBallVelocity.scale(0.95);
 		mBallPosition.y = GROUND_PLANE_HEIGHT_MAX - BALL_RADIUS;
-		mCallback( PhysicEvent{PhysicEvent::BALL_HIT_GROUND, mBallPosition.x > NET_POSITION_X ? RIGHT_PLAYER : LEFT_PLAYER, 0} );
+		mCallback( MatchEvent{MatchEvent::BALL_HIT_GROUND, mBallPosition.x > NET_POSITION_X ? RIGHT_PLAYER : LEFT_PLAYER, 0} );
 	}
 
 	// Border Collision
@@ -267,14 +267,14 @@ void PhysicWorld::step(const PlayerInput& leftInput, const PlayerInput& rightInp
 		mBallVelocity = mBallVelocity.reflectX();
 		// set the ball's position
 		mBallPosition.x = LEFT_PLANE + BALL_RADIUS;
-		mCallback( PhysicEvent{PhysicEvent::BALL_HIT_WALL, LEFT_PLAYER, 0} );
+		mCallback( MatchEvent{MatchEvent::BALL_HIT_WALL, LEFT_PLAYER, 0} );
 	}
 	else if (mBallPosition.x + BALL_RADIUS >= RIGHT_PLANE && mBallVelocity.x > 0.0)
 	{
 		mBallVelocity = mBallVelocity.reflectX();
 		// set the ball's position
 		mBallPosition.x = RIGHT_PLANE - BALL_RADIUS;
-		mCallback( PhysicEvent{PhysicEvent::BALL_HIT_WALL, RIGHT_PLAYER, 0} );
+		mCallback( MatchEvent{MatchEvent::BALL_HIT_WALL, RIGHT_PLAYER, 0} );
 	}
 	else if (mBallPosition.y > NET_SPHERE_POSITION &&
 			fabs(mBallPosition.x - NET_POSITION_X) < BALL_RADIUS + NET_RADIUS)
@@ -284,7 +284,7 @@ void PhysicWorld::step(const PlayerInput& leftInput, const PlayerInput& rightInp
 		// set the ball's position so that it touches the net
 		mBallPosition.x = NET_POSITION_X + (right ? (BALL_RADIUS + NET_RADIUS) : (-BALL_RADIUS - NET_RADIUS));
 
-		mCallback( PhysicEvent{PhysicEvent::BALL_HIT_NET, right ? RIGHT_PLAYER : LEFT_PLAYER, 0} );
+		mCallback( MatchEvent{MatchEvent::BALL_HIT_NET, right ? RIGHT_PLAYER : LEFT_PLAYER, 0} );
 	}
 	else
 	{
@@ -315,7 +315,7 @@ void PhysicWorld::step(const PlayerInput& leftInput, const PlayerInput& rightInp
 			// pushes the ball out of the net
 			mBallPosition = (Vector2(NET_POSITION_X, NET_SPHERE_POSITION) - normal * (NET_RADIUS + BALL_RADIUS));
 
-			mCallback( PhysicEvent{PhysicEvent::BALL_HIT_NET_TOP, NO_PLAYER, 0} );
+			mCallback( MatchEvent{MatchEvent::BALL_HIT_NET_TOP, NO_PLAYER, 0} );
 		}
 		// mBallVelocity = mBallVelocity.reflect( Vector2( mBallPosition, Vector2 (NET_POSITION_X, temp) ).normalise()).scale(0.75);
 	}

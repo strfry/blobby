@@ -312,7 +312,7 @@ void NetworkGame::step()
 
 	mMatch->step();
 
-	int events = mMatch->getEvents();
+/*	int events = mMatch->getEvents();
 	if(events & EVENT_COLLISION)
 	{
 		RakNet::BitStream stream;
@@ -327,7 +327,7 @@ void NetworkGame::step()
 
 		broadcastBitstream(stream, switchStream);
 	}
-
+*/
 	if(!mPausing)
 	{
 		PlayerSide winning = mMatch->winningPlayer();
@@ -351,7 +351,7 @@ void NetworkGame::step()
 		}
 	}
 
-	if (events & EVENT_RESET)
+/*	if (events & EVENT_RESET)
 	{
 		RakNet::BitStream stream;
 		stream.Write((unsigned char)ID_BALL_RESET);
@@ -369,7 +369,7 @@ void NetworkGame::step()
 
 		broadcastBitstream(stream, switchStream);
 	}
-
+*/
 	if (!mPausing)
 	{
 		broadcastPhysicState();
@@ -438,7 +438,7 @@ int NetworkGame::switchEventSides(int events)
 {
 	int new_events = events;
 
-	setEventIf(new_events, events, EVENT_LEFT_BLOBBY_HIT, EVENT_RIGHT_BLOBBY_HIT);
+/*	setEventIf(new_events, events, EVENT_LEFT_BLOBBY_HIT, EVENT_RIGHT_BLOBBY_HIT);
 	setEventIf(new_events, events, EVENT_RIGHT_BLOBBY_HIT, EVENT_LEFT_BLOBBY_HIT);
 
 	setEventIf(new_events, events, EVENT_BALL_HIT_LEFT_GROUND, EVENT_BALL_HIT_RIGHT_GROUND);
@@ -452,7 +452,7 @@ int NetworkGame::switchEventSides(int events)
 
 	setEventIf(new_events, events, EVENT_ERROR_LEFT, EVENT_ERROR_RIGHT);
 	setEventIf(new_events, events, EVENT_ERROR_RIGHT, EVENT_ERROR_LEFT);
-
+*/
 	return new_events;
 }
 

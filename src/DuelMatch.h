@@ -36,7 +36,7 @@ class InputSource;
 struct DuelMatchState;
 class PhysicWorld;
 class PhysicState;
-class PhysicEvent;
+class MatchEvent;
 
 /*! \class DuelMatch
 	\brief class representing a blobby game.
@@ -72,11 +72,9 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		void setScore(int left, int right);
 		void resetBall(PlayerSide side);
 
-		void trigger(int event);
-		void resetTriggeredEvents();
-
 		// This reports the index of the winning player and -1 if the
 		// game is still running
+		/// \todo not thread save
 		PlayerSide winningPlayer() const;
 
 		// This methods report the current game state and a useful for
@@ -88,8 +86,6 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		int getScoreToWin() const;
 		PlayerSide getServingPlayer() const;
 
-		void setLastHitIntensity(float intensity);
-
 		int getHitcount(PlayerSide player) const;
 
 		Vector2 getBallPosition() const;
@@ -98,7 +94,6 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		Vector2 getBlobPosition(PlayerSide player) const;
 		Vector2 getBlobVelocity(PlayerSide player) const;
 		float getBlobState( PlayerSide player ) const;
-		float getLastHitIntensity() const;
 
 		const Clock& getClock() const;
 		Clock& getClock();
@@ -131,12 +126,10 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 
 		void setServingPlayer(PlayerSide side);
 
-		int getEvents() const { return events; }
 		// copies the physic events into the target and resets.
-		void fetchEvents(std::vector<PhysicEvent>& target);
+		void fetchEvents(std::vector<MatchEvent>& target);
 	private:
-
-		void physicEventCallback( PhysicEvent event );
+		void physicEventCallback( MatchEvent event );
 		// update the internal last world state to the current physicworld
 		void updateState();
 
@@ -151,19 +144,16 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		GameLogic mLogic;
 		PlayerInput mTransformedInput[MAX_PLAYERS];
 		// accumulation of physic events in the current time step
-		std::vector<PhysicEvent> mStepPhysicEvents;
+		std::vector<MatchEvent> mStepPhysicEvents;
 		// accumulation of physic events since they were fetched the last time
-		std::vector<PhysicEvent> mPhysicEvents;
+		std::vector<MatchEvent> mPhysicEvents;
 		std::mutex mEventMutex;
-		int events;
 
 		// we need two memory locations to store the world state.
-		boost::scoped_ptr<PhysicState> mLastWorldStateStorageA;
-		boost::scoped_ptr<PhysicState> mLastWorldStateStorageB;
+		boost::scoped_ptr<PhysicState> mLastStateStorageA;
+		boost::scoped_ptr<PhysicState> mLastStateStorageB;
 		// we then can atomically set this pointer to the PhysicState
 		// that is currently active;
-		std::atomic<const PhysicState*> mLastWorldState;
+		std::atomic<const PhysicState*> mLastState;
 
-		// data that changes parallel to the simulation thread
-		int external_events;
 };
