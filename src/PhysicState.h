@@ -38,9 +38,10 @@ struct PhysicState
 	Vector2 ballPosition;
 	Vector2 ballVelocity;
 	float   ballRotation;			// currently not serialized over network
+	float   ballAngularVelocity;
 
 	// equality comparision
-	bool operator==(const PhysicState& other) const;
+	bool operator==(const PhysicState& other) const __attribute__((deprecated));
 
 	void swapSides();
 };
