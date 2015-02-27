@@ -40,6 +40,7 @@ extern "C"
 #include "IUserConfigReader.h"
 #include "IScriptableComponent.h"
 #include "PlayerInput.h"
+#include "DuelMatchState.h"
 
 
 int lua_toint(lua_State* state, int index)
@@ -139,9 +140,12 @@ GameLogicState IGameLogic::getState() const
 	GameLogicState gls;
 	gls.leftScore = getScore(LEFT_PLAYER);
 	gls.rightScore = getScore(RIGHT_PLAYER);
+	gls.hitCount[LEFT_PLAYER] = getTouches(LEFT_PLAYER);
+	gls.hitCount[RIGHT_PLAYER] = getTouches(RIGHT_PLAYER);
 	gls.servingPlayer = getServingPlayer();
-	gls.leftSquish = mSquish[LEFT_PLAYER];
-	gls.rightSquish = mSquish[RIGHT_PLAYER];
+	gls.winningPlayer = getWinningPlayer();
+	gls.squish[LEFT_PLAYER] = mSquish[LEFT_PLAYER];
+	gls.squish[RIGHT_PLAYER] = mSquish[RIGHT_PLAYER];
 	gls.squishWall = mSquishWall;
 	gls.squishGround = mSquishGround;
 	gls.isGameRunning = mIsGameRunning;
@@ -155,8 +159,8 @@ void IGameLogic::setState(GameLogicState gls)
 	setScore(LEFT_PLAYER, gls.leftScore);
 	setScore(RIGHT_PLAYER, gls.rightScore);
 	setServingPlayer(gls.servingPlayer);
-	mSquish[LEFT_PLAYER] = gls.leftSquish;
-	mSquish[RIGHT_PLAYER] = gls.rightSquish;
+	mSquish[LEFT_PLAYER] = gls.squish[LEFT_PLAYER];
+	mSquish[RIGHT_PLAYER] = gls.squish[RIGHT_PLAYER];
 	mSquishWall = gls.squishWall;
 	mSquishGround = gls.squishGround;
 	mIsGameRunning = gls.isGameRunning;

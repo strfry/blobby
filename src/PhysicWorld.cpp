@@ -71,11 +71,6 @@ bool PhysicWorld::blobHitGround(PlayerSide player) const
 		return false;
 }
 
-void PhysicWorld::setLastHitIntensity(float intensity)
-{
-	mLastHitIntensity = intensity;
-}
-
 float PhysicWorld::getLastHitIntensity() const
 {
 	float intensity = mLastHitIntensity / 25.0;
@@ -248,9 +243,9 @@ void PhysicWorld::step(const PlayerInput& leftInput, const PlayerInput& rightInp
 	if(isBallValid)
 	{
 		if (handleBlobbyBallCollision(LEFT_PLAYER))
-			mCallback( MatchEvent{MatchEvent::BALL_HIT_BLOB, LEFT_PLAYER, mLastHitIntensity} );
+			mCallback( MatchEvent{MatchEvent::BALL_HIT_BLOB, LEFT_PLAYER, getLastHitIntensity()} );
 		if (handleBlobbyBallCollision(RIGHT_PLAYER))
-			mCallback( MatchEvent{MatchEvent::BALL_HIT_BLOB, RIGHT_PLAYER, mLastHitIntensity} );
+			mCallback( MatchEvent{MatchEvent::BALL_HIT_BLOB, RIGHT_PLAYER, getLastHitIntensity()} );
 	}
 	// Ball to ground Collision
 	if (mBallPosition.y + BALL_RADIUS > GROUND_PLANE_HEIGHT_MAX)

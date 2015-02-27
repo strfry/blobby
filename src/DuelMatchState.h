@@ -37,8 +37,14 @@ struct DuelMatchState
 
 	// logic
 	PlayerSide getServingPlayer() const;
+	PlayerSide getWinningPlayer() const;
 	bool getBallDown() const;
 	bool getBallActive() const;
+	int getHitcount(PlayerSide player) const;
+	int getScore(PlayerSide player) const;
+
+	// compound ( calculated )
+	bool blobHitGround(PlayerSide player) const;
 
 	void swapSides();
 

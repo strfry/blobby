@@ -100,6 +100,11 @@ PlayerSide DuelMatchState::getServingPlayer() const
 	return logicState.servingPlayer;
 }
 
+PlayerSide DuelMatchState::getWinningPlayer() const
+{
+	return logicState.winningPlayer;
+}
+
 bool DuelMatchState::getBallDown() const
 {
 	return !logicState.isBallValid;
@@ -108,4 +113,25 @@ bool DuelMatchState::getBallDown() const
 bool DuelMatchState::getBallActive() const
 {
 	return logicState.isGameRunning;
+}
+
+int DuelMatchState::getHitcount(PlayerSide player) const
+{
+	return logicState.hitCount[player];
+}
+
+int DuelMatchState::getScore(PlayerSide player) const
+{
+	assert( player == LEFT_PLAYER || player == RIGHT_PLAYER );
+	if( player == LEFT_PLAYER )
+		return logicState.leftScore;
+	if( player == RIGHT_PLAYER )
+		return logicState.rightScore;
+	// unreachable
+	return -1;
+}
+
+bool DuelMatchState::blobHitGround(PlayerSide player) const
+{
+	return (getBlobPosition(player).y >= GROUND_PLANE_HEIGHT);
 }

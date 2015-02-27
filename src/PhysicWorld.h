@@ -59,12 +59,6 @@ class PhysicWorld : public ObjectCounter<PhysicWorld>
         // this function calculates whether the player is on the ground
 		bool blobHitGround(PlayerSide player) const;
 
-
-		// Methods to set/get the intensity of the collision
-		// which was detected and also queried last.
-		void setLastHitIntensity(float intensity);
-		float getLastHitIntensity() const;
-
 		// Important: This assumes a fixed framerate of 60 FPS!
 		void step(const PlayerInput& leftInput, const PlayerInput& rightInput, bool isBallValid, bool isGameRunning);
 
@@ -78,6 +72,11 @@ class PhysicWorld : public ObjectCounter<PhysicWorld>
 		// Blobby animation methods
 		void blobbyStartAnimation(PlayerSide player);
 		void blobbyAnimationStep(PlayerSide player);
+
+		// Methods to set/get the intensity of the collision
+		// which was detected and also queried last.
+		// caps max intensity at 1
+		float getLastHitIntensity() const;
 
 		inline bool playerTopBallCollision(int player) const;
 		inline bool playerBottomBallCollision(int player) const;
