@@ -42,7 +42,9 @@ LocalGameState::~LocalGameState()
 }
 
 LocalGameState::LocalGameState()
-	: mRecorder(new ReplayRecorder()), mWinner(false)
+	: mRecorder(new ReplayRecorder()),
+		mWinner(false),
+		mLastState( new DuelMatchState )
 {
 	boost::shared_ptr<IUserConfigReader> config = IUserConfigReader::createUserConfigReader("config.xml");
 	PlayerIdentity leftPlayer = config->loadPlayerIdentity(LEFT_PLAYER, false);
@@ -103,7 +105,7 @@ void LocalGameState::step_impl()
 	}
 	else if (mWinner)
 	{
-		displayWinningPlayerScreen( mMatch->winningPlayer() );
+		displayWinningPlayerScreen( mLastState->getWinningPlayer() );
 		if (imgui.doButton(GEN_ID, Vector2(290, 350), TextManager::LBL_OK))
 		{
 			switchState(new MainMenuState());
@@ -137,20 +139,25 @@ void LocalGameState::step_impl()
 	}
 	else
 	{
-		mRecorder->record(mMatch->getState());
-		mMatch->step();
+		auto states = mMatch->fetchStates();
+		// record all states
+		for(auto& s : states)
+			mRecorder->record( *s );
 
-		if (mMatch->winningPlayer() != NO_PLAYER)
+		if(!states.empty())
+			*mLastState = *states.back();
+
+		if (mLastState->getWinningPlayer() != NO_PLAYER)
 		{
 			mWinner = true;
-			mRecorder->record(mMatch->getState());
-			mRecorder->finalize( mMatch->getScore(LEFT_PLAYER), mMatch->getScore(RIGHT_PLAYER) );
+			mRecorder->finalize( mLastState->getScore(LEFT_PLAYER), mLastState->getScore(RIGHT_PLAYER) );
 		}
 
-		presentGame();
+
+		presentGame( *mLastState );
 	}
 
-	presentGameUI();
+	presentGameUI( *mLastState );
 }
 
 const char* LocalGameState::getStateName() const

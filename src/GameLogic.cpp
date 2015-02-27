@@ -158,6 +158,8 @@ void IGameLogic::setState(GameLogicState gls)
 {
 	setScore(LEFT_PLAYER, gls.leftScore);
 	setScore(RIGHT_PLAYER, gls.rightScore);
+	mTouches[LEFT_PLAYER] = gls.hitCount[LEFT_PLAYER];
+	mTouches[RIGHT_PLAYER] = gls.hitCount[RIGHT_PLAYER];
 	setServingPlayer(gls.servingPlayer);
 	mSquish[LEFT_PLAYER] = gls.squish[LEFT_PLAYER];
 	mSquish[RIGHT_PLAYER] = gls.squish[RIGHT_PLAYER];
@@ -752,7 +754,7 @@ int LuaGameLogic::luaLaunched(lua_State* state)
 
 	PlayerSide side = (PlayerSide)lua_toint(state, -1);
 	lua_pop(state, 1);
-	lua_pushboolean(state, match->getBlobJump(side));
+	lua_pushboolean(state, !match->readCurrentState().blobHitGround(side));
 	return 1;
 }
 
@@ -762,7 +764,7 @@ int LuaGameLogic::luaBallX(lua_State* state)
 	DuelMatch* match = (DuelMatch*)lua_touserdata(state, -1);
 	lua_pop(state, 1);
 
-	float pos = match->getBallPosition().x;
+	float pos = match->readCurrentState().getBallPosition().x;
 	lua_pushnumber(state, pos);
 	return 1;
 }
@@ -773,7 +775,7 @@ int LuaGameLogic::luaBallY(lua_State* state)
 	DuelMatch* match = (DuelMatch*)lua_touserdata(state, -1);
 	lua_pop(state, 1);
 
-	float pos = match->getBallPosition().y;
+	float pos = match->readCurrentState().getBallPosition().y;
 	lua_pushnumber(state, pos);
 	return 1;
 }
@@ -784,7 +786,7 @@ int LuaGameLogic::luaBSpeedX(lua_State* state)
 	DuelMatch* match = (DuelMatch*)lua_touserdata(state, -1);
 	lua_pop(state, 1);
 
-	float vel = match->getBallVelocity().x;
+	float vel = match->readCurrentState().getBallVelocity().x;
 	lua_pushnumber(state, vel);
 	return 1;
 }
@@ -795,7 +797,7 @@ int LuaGameLogic::luaBSpeedY(lua_State* state)
 	DuelMatch* match = (DuelMatch*)lua_touserdata(state, -1);
 	lua_pop(state, 1);
 
-	float vel = match->getBallVelocity().y;
+	float vel = match->readCurrentState().getBallVelocity().y;
 	lua_pushnumber(state, vel);
 	return 1;
 }
@@ -808,7 +810,7 @@ int LuaGameLogic::luaPosX(lua_State* state)
 
 	PlayerSide side = (PlayerSide)lua_toint(state, -1);
 	lua_pop(state, 1);
-	float pos = match->getBlobPosition(side).x;
+	float pos = match->readCurrentState().getBlobPosition(side).x;
 	lua_pushnumber(state, pos);
 	return 1;
 }
@@ -821,7 +823,7 @@ int LuaGameLogic::luaPosY(lua_State* state)
 
 	PlayerSide side = (PlayerSide)lua_toint(state, -1);
 	lua_pop(state, 1);
-	float pos = match->getBlobPosition(side).y;
+	float pos = match->readCurrentState().getBlobPosition(side).y;
 	lua_pushnumber(state, pos);
 	return 1;
 }
@@ -834,7 +836,7 @@ int LuaGameLogic::luaSpeedX(lua_State* state)
 
 	PlayerSide side = (PlayerSide)lua_toint(state, -1);
 	lua_pop(state, 1);
-	float pos = match->getBlobVelocity(side).x;
+	float pos = match->readCurrentState().getBlobVelocity(side).x;
 	lua_pushnumber(state, pos);
 	return 1;
 }
@@ -847,7 +849,7 @@ int LuaGameLogic::luaSpeedY(lua_State* state)
 
 	PlayerSide side = (PlayerSide)lua_toint(state, -1);
 	lua_pop(state, 1);
-	float pos = match->getBlobVelocity(side).y;
+	float pos = match->readCurrentState().getBlobVelocity(side).y;
 	lua_pushnumber(state, pos);
 	return 1;
 }

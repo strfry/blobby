@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <string>
 #include <atomic>
 #include <mutex>
+#include <thread>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -64,6 +65,9 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 
 		void reset();
 
+		// this starts the match thread
+		void run();
+
 		// This steps through one frame
 		void step();
 
@@ -72,34 +76,17 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		void setScore(int left, int right);
 		void resetBall(PlayerSide side);
 
-		// This reports the index of the winning player and -1 if the
-		// game is still running
-		/// \todo not thread save
-		PlayerSide winningPlayer() const;
-
 		// This methods report the current game state and a useful for
 		// the input manager, which needs information about the blob
 		// positions and for lua export, which makes them accessable
 		// for scripted input sources
 
-		int getScore(PlayerSide player) const;
 		int getScoreToWin() const;
 		PlayerSide getServingPlayer() const;
-
-		int getHitcount(PlayerSide player) const;
-
-		Vector2 getBallPosition() const;
-		Vector2 getBallVelocity() const;
-		float getBallRotation() const;
-		Vector2 getBlobPosition(PlayerSide player) const;
-		Vector2 getBlobVelocity(PlayerSide player) const;
-		float getBlobState( PlayerSide player ) const;
 
 		const Clock& getClock() const;
 		Clock& getClock();
 
-		bool getBallDown() const;
-		bool getBallActive() const;
 		bool canStartRound(PlayerSide servingPlayer) const;
 
 		void pause();
@@ -107,16 +94,14 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 
 		bool isPaused() const{ return mPaused; }
 
-		// This functions returns true if the player launched
-		// and is jumping at the moment
-		// the function directly accesses the world, and thus is dangerous
-		bool getBlobJump(PlayerSide player) const __attribute__((deprecated));
-
 		/// Set a new state using a saved DuelMatchState
 		void setState(const DuelMatchState& state);
 
 		/// gets the current state
 		DuelMatchState getState() const;
+
+		/// reads the current state in a non thread-save way
+		const DuelMatchState& readCurrentState() const;
 
 		//Input stuff for recording and playing replays
 		boost::shared_ptr<InputSource> getInputSource(PlayerSide player) const;
@@ -127,7 +112,8 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		void setServingPlayer(PlayerSide side);
 
 		// copies the physic events into the target and resets.
-		void fetchEvents(std::vector<MatchEvent>& target);
+		std::vector<MatchEvent> fetchEvents( );
+		std::vector<boost::shared_ptr<const DuelMatchState>> fetchStates( );
 	private:
 		void physicEventCallback( MatchEvent event );
 		// update the internal last world state to the current physicworld
@@ -137,23 +123,25 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		PlayerIdentity mPlayers[MAX_PLAYERS];
 
 		bool mPaused;
-		bool mRemote;
+		const bool mRemote;
 
 		// data that is written to in the simulation thread
 		boost::scoped_ptr<PhysicWorld> mPhysicWorld;
 		GameLogic mLogic;
 		PlayerInput mTransformedInput[MAX_PLAYERS];
+
 		// accumulation of physic events in the current time step
 		std::vector<MatchEvent> mStepPhysicEvents;
 		// accumulation of physic events since they were fetched the last time
 		std::vector<MatchEvent> mPhysicEvents;
+		// ... and the same thing for states
+		std::vector<boost::shared_ptr<const DuelMatchState>> mLastStates;
+		boost::shared_ptr<const DuelMatchState> mLastState;
 		std::mutex mEventMutex;
 
-		// we need two memory locations to store the world state.
-		boost::scoped_ptr<PhysicState> mLastStateStorageA;
-		boost::scoped_ptr<PhysicState> mLastStateStorageB;
-		// we then can atomically set this pointer to the PhysicState
-		// that is currently active;
-		std::atomic<const PhysicState*> mLastState;
+		std::thread mMatchThread;
 
+		// this variable is used to tell the run thread to exit
+		std::atomic<bool> mIsRunning;
 };
+

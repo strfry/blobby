@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "State.h"
 
+class DuelMatchState;
+
 /*! \class GameState
 	\brief base class for any game related state (Local, Network, Replay)
 */
@@ -41,10 +43,10 @@ protected:
 	/// draws the game. It is in State because
 	/// this functionality is shared by
 	/// LocalGameState, NetworkGameState and ReplayState
-	void presentGame();
+	void presentGame( const DuelMatchState& );
 
 	/// this draws the ui in the game, i.e. clock, score and player names
-	void presentGameUI();
+	void presentGameUI( const DuelMatchState& );
 
 	// ui helpers
 	/// this function draws the save replay ui

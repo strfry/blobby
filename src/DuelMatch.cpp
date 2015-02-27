@@ -33,8 +33,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "GenericIO.h"
 #include "GameConstants.h"
 #include "InputSource.h"
+#include "SpeedController.h"
 
-#define thread_assert(x)
+// helper macro to check that non-threadsafe functions are only called from
+// within the match thread
+#define thread_assert()	assert( std::this_thread::get_id() == mMatchThread.get_id() );
 
 /* implementation */
 
@@ -43,8 +46,6 @@ DuelMatch::DuelMatch(bool remote, std::string rules) :
 		mLogic(createGameLogic(rules, this)),
 		mPaused(false),
 		mRemote(remote),
-		mLastStateStorageA( new PhysicState ),
-		mLastStateStorageB( new PhysicState ),
 		mPhysicWorld( new PhysicWorld() ),
 		mIsRunning( true )
 {
@@ -54,6 +55,38 @@ DuelMatch::DuelMatch(bool remote, std::string rules) :
 
 	// init
 	updateState();
+
+	/// \todo let other code start the running, to be able to set the data beforehand
+	run();
+}
+
+DuelMatch::~DuelMatch()
+{
+	mIsRunning = false;
+	if( mMatchThread.joinable() )
+		mMatchThread.join();
+}
+
+void DuelMatch::run()
+{
+	// end old thread if still running
+	mIsRunning = false;
+	if( mMatchThread.joinable() )
+		mMatchThread.join();
+
+	// start new thread
+	mIsRunning = true;
+	// start match thread
+	mMatchThread = std::thread([this]()
+	{
+		SpeedController ctrl(1000);
+		while(mIsRunning)
+		{
+			step();
+			ctrl.update();
+		}
+	}
+	);
 }
 
 void DuelMatch::setPlayers( PlayerIdentity lplayer, PlayerIdentity rplayer)
@@ -85,10 +118,6 @@ void DuelMatch::reset()
 	mLogic = mLogic->clone();
 }
 
-DuelMatch::~DuelMatch()
-{
-}
-
 void DuelMatch::setRules(std::string rulesFile)
 {
 	/// \todo review thread safety
@@ -100,7 +129,7 @@ void DuelMatch::step()
 {
 	/// \todo this should no longer be public, it is called only from the internal thread
 	// in pause mode, step does nothing. this should go to the framerate computation
-	if(mPaused || winningPlayer() != NO_PLAYER)
+	if(mPaused || mLogic->getWinningPlayer() != NO_PLAYER)
 		return;
 
 	// this calculates the new input, i.e. the input source functions are called from
@@ -189,88 +218,10 @@ void DuelMatch::unpause()
 	mPaused = false;
 }
 
-PlayerSide DuelMatch::winningPlayer() const
-{
-	thread_assert();
-	return mLogic->getWinningPlayer();
-}
-
-int DuelMatch::getHitcount(PlayerSide player) const
-{
-	thread_assert();
-	if (player == LEFT_PLAYER)
-		return mLogic->getTouches(LEFT_PLAYER);
-	else if (player == RIGHT_PLAYER)
-		return mLogic->getTouches(RIGHT_PLAYER);
-	else
-		return 0;
-}
-
-int DuelMatch::getScore(PlayerSide player) const
-{
-	thread_assert();
-	return mLogic->getScore(player);
-}
-
 int DuelMatch::getScoreToWin() const
 {
-	thread_assert();
+	/// \todo evaluate thread safety
 	return mLogic->getScoreToWin();
-}
-
-bool DuelMatch::getBallDown() const
-{
-	thread_assert();
-	return !mLogic->isBallValid();
-}
-
-bool DuelMatch::getBallActive() const
-{
-	thread_assert();
-	return mLogic->isGameRunning();
-}
-
-bool DuelMatch::getBlobJump(PlayerSide player) const
-{
-	thread_assert();
-	return !mPhysicWorld->blobHitGround(player);
-}
-
-Vector2 DuelMatch::getBlobPosition(PlayerSide player) const
-{
-	return mLastState.load()->blobPosition[player];
-}
-
-float DuelMatch::getBlobState( PlayerSide player ) const
-{
-	return mLastState.load()->blobState[player];
-}
-
-Vector2 DuelMatch::getBlobVelocity(PlayerSide player) const
-{
-	return mLastState.load()->blobVelocity[player];
-}
-
-Vector2 DuelMatch::getBallPosition() const
-{
-	return mLastState.load()->ballPosition;
-}
-
-Vector2 DuelMatch::getBallVelocity() const
-{
-	return mLastState.load()->ballVelocity;
-}
-
-float DuelMatch::getBallRotation() const
-{
-	return mLastState.load()->ballRotation;
-}
-
-PlayerSide DuelMatch::getServingPlayer() const
-{
-	thread_assert();
-	// NO_PLAYER hack was moved into ScriptedInpurSource.cpp
-	return mLogic->getServingPlayer();
 }
 
 void DuelMatch::setState(const DuelMatchState& state)
@@ -352,7 +303,6 @@ void DuelMatch::resetBall( PlayerSide side )
 
 	mPhysicWorld->setBallVelocity( Vector2(0, 0) );
 	mPhysicWorld->setBallAngularVelocity( (side == RIGHT_PLAYER ? -1 : 1) * STANDARD_BALL_ANGULAR_VELOCITY );
-	mPhysicWorld->setLastHitIntensity(0.0);
 }
 
 bool DuelMatch::canStartRound(PlayerSide servingPlayer) const
@@ -386,32 +336,38 @@ void DuelMatch::physicEventCallback( MatchEvent event )
 
 void DuelMatch::updateState()
 {
-	// cannot thread assert, because it is called once in the ctor
-	//thread_assert();
-
-	// update physic state, alternate storage positions
-	if(mLastState == mLastStateStorageB.get() )
-	{
-		*mLastStateStorageA = mPhysicWorld->getState();
-		mLastState.store( mLastStateStorageA.get() );
-	} else
-	{
-		*mLastStateStorageB = mPhysicWorld->getState();
-		mLastState.store( mLastStateStorageB.get() );
-	}
-
 	// lock
 	std::lock_guard<std::mutex> lock(mEventMutex);
 	// move all events to accumulating vector
 	for(auto&& data : mStepPhysicEvents)
 		mPhysicEvents.push_back( data );
 	mStepPhysicEvents.clear();
+
+	// update the state
+	mLastStates.push_back( boost::make_shared<DuelMatchState>(getState()) );
+	mLastState = mLastStates.back();
 }
 
-void DuelMatch::fetchEvents(std::vector<MatchEvent>& target)
+std::vector<MatchEvent> DuelMatch::fetchEvents()
 {
 	std::lock_guard<std::mutex> lock(mEventMutex);
-	target.swap( mPhysicEvents );
-
+	auto copy = mPhysicEvents;
 	mPhysicEvents.clear();
+
+	return copy;
+}
+
+std::vector<boost::shared_ptr<const DuelMatchState>> DuelMatch::fetchStates( )
+{
+	std::lock_guard<std::mutex> lock(mEventMutex);
+	auto copy = mLastStates;
+	mLastStates.clear();
+
+	return copy;
+}
+
+const DuelMatchState& DuelMatch::readCurrentState() const
+{
+	assert( mLastState );
+    return *mLastState;
 }

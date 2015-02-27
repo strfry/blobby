@@ -46,7 +46,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 const int WAITING_TIME = 1500;
 
 struct lua_State;
-class DuelMatch;
 
 class ScriptedInputSource : public InputSource, public IScriptableComponent
 {
@@ -66,7 +65,6 @@ class ScriptedInputSource : public InputSource, public IScriptableComponent
 		/// it would even be enough to set it once, but we may change this
 		/// for making bot tournaments^^, so the idea of setting it for each
 		/// bot seems better to me
-		static const DuelMatch* mMatch;
 		static ScriptedInputSource* mCurrentSource;
 
 		// helpers

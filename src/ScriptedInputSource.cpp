@@ -36,12 +36,14 @@ extern "C"
 }
 
 #include "DuelMatch.h"
+#include "DuelMatchState.h"
 #include "GameConstants.h"
 #include "BotAPICalculations.h"
 #include "FileRead.h"
 
 /* implementation */
-const DuelMatch* ScriptedInputSource::mMatch = 0;
+const DuelMatch* ActiveMatch = 0;
+const DuelMatchState* mMatchState = 0;
 ScriptedInputSource* ScriptedInputSource::mCurrentSource = 0;
 
 struct pos_x;
@@ -208,15 +210,15 @@ PlayerInputAbs ScriptedInputSource::getNextInput()
 	mJump = false;
 
 	mCurrentSource = this;
-	mMatch = getMatch();
-	if (mMatch == 0)
-	{
+	ActiveMatch = getMatch();
+	if (ActiveMatch == 0)
 		return PlayerInputAbs();
-	}
+
+	mMatchState = &getMatch()->readCurrentState();
 
 	// ball position and velocity update
-	mBallPositions.push_back(mMatch->getBallPosition());
-	mBallVelocities.push_back(mMatch->getBallVelocity());
+	mBallPositions.push_back(mMatchState->getBallPosition());
+	mBallVelocities.push_back(mMatchState->getBallVelocity());
 
 	// adapt current delay
 	char action = rand() % 8;
@@ -230,8 +232,8 @@ PlayerInputAbs ScriptedInputSource::getNextInput()
 			mCurDelay++;
 	}
 
-	if ( mLastBallSpeed != getMatch()->getBallVelocity().x ) {
-		mLastBallSpeed = getMatch()->getBallVelocity().x;
+	if ( mLastBallSpeed != mMatchState->getBallVelocity().x ) {
+		mLastBallSpeed = mMatchState->getBallVelocity().x;
 		// reaction time after bounce
 		mCurDelay += rand() % (mMaxDelay+1);
 	}
@@ -243,17 +245,17 @@ PlayerInputAbs ScriptedInputSource::getNextInput()
 
 	int error = 0;
 
-	if (!mMatch->getBallActive() && mSide ==
+	if (!mMatchState->getBallActive() && mSide ==
 			// if no player is serving player, assume the left one is
-			(mMatch->getServingPlayer() == NO_PLAYER ? LEFT_PLAYER : mMatch->getServingPlayer() ))
+			(mMatchState->getServingPlayer() == NO_PLAYER ? LEFT_PLAYER : mMatchState->getServingPlayer() ))
 	{
 		serving = true;
 		lua_getglobal(mState, "OnServe");
-		lua_pushboolean(mState, !mMatch->getBallDown());
+		lua_pushboolean(mState, !mMatchState->getBallDown());
 		error = lua_pcall(mState, 1, 0, 0);
 	}
-	else if (!mMatch->getBallActive() && mCurrentSource->mSide !=
-			(mMatch->getServingPlayer() == NO_PLAYER ? LEFT_PLAYER : mMatch->getServingPlayer() ))
+	else if (!mMatchState->getBallActive() && mCurrentSource->mSide !=
+			(mMatchState->getServingPlayer() == NO_PLAYER ? LEFT_PLAYER : mMatchState->getServingPlayer() ))
 	{
 		lua_getglobal(mState, "OnOpponentServe");
 		error = lua_pcall(mState, 0, 0, 0);
@@ -308,13 +310,13 @@ void ScriptedInputSource::setflags(lua_State* state) {
 
 int ScriptedInputSource::touches(lua_State* state)
 {
-	lua_pushnumber(state, mMatch->getHitcount(mCurrentSource->mSide));
+	lua_pushnumber(state, mMatchState->getHitcount(mCurrentSource->mSide));
 	return 1;
 }
 
 int ScriptedInputSource::launched(lua_State* state)
 {
-	lua_pushnumber(state, mMatch->getBlobJump(mCurrentSource->mSide));
+	lua_pushnumber(state, !mMatchState->blobHitGround(mCurrentSource->mSide));
 	return 1;
 }
 
@@ -348,7 +350,7 @@ int ScriptedInputSource::moveto(lua_State* state)
 {
 	float target = lua_tonumber(state, -1);
 	lua_pop(state, 1);
-	coordinate<pos_x> position = mMatch->getBlobPosition(mCurrentSource->mSide).x;
+	coordinate<pos_x> position = mMatchState->getBlobPosition(mCurrentSource->mSide).x;
 
 	if (position > target + 2)
 		mCurrentSource->mLeft = true;
@@ -394,14 +396,14 @@ int ScriptedInputSource::bspeedy(lua_State* state)
 
 int ScriptedInputSource::posx(lua_State* state)
 {
-	coordinate<pos_x> pos = mMatch->getBlobPosition(mCurrentSource->mSide).x;
+	coordinate<pos_x> pos = mMatchState->getBlobPosition(mCurrentSource->mSide).x;
 	lua_pushnumber(state, pos);
 	return 1;
 }
 
 int ScriptedInputSource::posy(lua_State* state)
 {
-	coordinate<pos_y> pos = mMatch->getBlobPosition(mCurrentSource->mSide).y;
+	coordinate<pos_y> pos = mMatchState->getBlobPosition(mCurrentSource->mSide).y;
 	lua_pushnumber(state, pos);
 	return 1;
 }
@@ -410,7 +412,7 @@ int ScriptedInputSource::oppx(lua_State* state)
 {
 	PlayerSide invPlayer =
 		mCurrentSource->mSide == LEFT_PLAYER ? RIGHT_PLAYER : LEFT_PLAYER;
-	coordinate<pos_x> pos = mMatch->getBlobPosition(invPlayer).x;
+	coordinate<pos_x> pos = mMatchState->getBlobPosition(invPlayer).x;
 	lua_pushnumber(state, pos);
 	return 1;
 }
@@ -419,7 +421,7 @@ int ScriptedInputSource::oppy(lua_State* state)
 {
 	PlayerSide invPlayer =
 		mCurrentSource->mSide == LEFT_PLAYER ? RIGHT_PLAYER : LEFT_PLAYER;
-	coordinate<pos_y> pos = mMatch->getBlobPosition(invPlayer).y;
+	coordinate<pos_y> pos = mMatchState->getBlobPosition(invPlayer).y;
 	lua_pushnumber(state, pos);
 	return 1;
 }
@@ -556,28 +558,28 @@ int ScriptedInputSource::nextevent(lua_State* state) {
 
 int ScriptedInputSource::getScore(lua_State* state)
 {
-	float score = mMatch->getScore( mCurrentSource->mSide );
+	float score = mMatchState->getScore( mCurrentSource->mSide );
 	lua_pushnumber(state, score);
 	return 1;
 }
 
 int ScriptedInputSource::getOppScore(lua_State* state)
 {
-	float score = mMatch->getScore( mCurrentSource->mSide == LEFT_PLAYER ? RIGHT_PLAYER: LEFT_PLAYER );
+	float score = mMatchState->getScore( mCurrentSource->mSide == LEFT_PLAYER ? RIGHT_PLAYER: LEFT_PLAYER );
 	lua_pushnumber(state, score);
 	return 1;
 }
 
 int ScriptedInputSource::getScoreToWin(lua_State* state)
 {
-	float score = mMatch->getScoreToWin();
+	float score = ActiveMatch->getScoreToWin();
 	lua_pushnumber(state, score);
 	return 1;
 }
 
 int ScriptedInputSource::getGameTime(lua_State* state)
 {
-	float time = mMatch->getClock().getTime();
+	float time = ActiveMatch->getClock().getTime();
 	lua_pushnumber(state, time);
 	return 1;
 }
@@ -585,7 +587,7 @@ int ScriptedInputSource::getGameTime(lua_State* state)
 int ScriptedInputSource::blobtimetox(lua_State* state)
 {
 	coordinate<pos_x> destination = lua_tonumber(state, -1);
-	coordinate<pos_x> pos = mMatch->getBlobPosition(mCurrentSource->mSide).x;
+	coordinate<pos_x> pos = mMatchState->getBlobPosition(mCurrentSource->mSide).x;
 	int time = std::abs(pos - destination) / BLOBBY_SPEED;
 	lua_pushnumber(state, time);
 	return 1;
@@ -594,9 +596,9 @@ int ScriptedInputSource::blobtimetox(lua_State* state)
 int ScriptedInputSource::blobtimetoy(lua_State* state)
 {
 	coordinate<pos_y> destination = lua_tonumber(state, -1);
-	coordinate<pos_y> pos = mMatch->getBlobPosition(mCurrentSource->mSide).y;
+	coordinate<pos_y> pos = mMatchState->getBlobPosition(mCurrentSource->mSide).y;
 
-	float vel = -mMatch->getBlobVelocity(mCurrentSource->mSide).y;
+	float vel = -mMatchState->getBlobVelocity(mCurrentSource->mSide).y;
 	float grav = -(GRAVITATION - BLOBBY_JUMP_BUFFER);
 
 	// if blobby stands on ground, assume we jump right now

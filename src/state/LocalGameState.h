@@ -43,5 +43,6 @@ class LocalGameState : public GameState
 		bool mWinner;
 
 		boost::scoped_ptr<ReplayRecorder> mRecorder;
+		boost::scoped_ptr<DuelMatchState> mLastState;
 };
 

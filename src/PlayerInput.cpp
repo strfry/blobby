@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "raknet/BitStream.h"
 
 #include "DuelMatch.h"
+#include "DuelMatchState.h"
 #include "GameConstants.h"
 
 /* implementation */
@@ -136,7 +137,7 @@ PlayerInput PlayerInputAbs::toPlayerInput( const DuelMatch* match ) const
 		PlayerSide side = mFlags & F_LEFT ? LEFT_PLAYER : RIGHT_PLAYER;
 
 		// here we load the current position of the player.
-		float blobpos = match->getBlobPosition(side).x;
+		float blobpos = match->readCurrentState().getBlobPosition(side).x;
 
 		float distance = std::abs(blobpos - mTarget);
 
