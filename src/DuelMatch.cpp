@@ -46,7 +46,9 @@ DuelMatch::DuelMatch(bool remote, std::string rules) :
 		mPaused(false),
 		mRemote(remote),
 		mPhysicWorld( new PhysicWorld() ),
-		mIsRunning( true )
+		mIsRunning( true ),
+		mHasInjection( false ),
+		mInjectionState( new DuelMatchState )
 {
 	mPhysicWorld->setEventCallback( std::bind(&DuelMatch::physicEventCallback, this, std::placeholders::_1) );
 
@@ -128,6 +130,16 @@ void DuelMatch::step()
 	// in pause mode, step does nothing. this should go to the framerate computation
 	if(mPaused || mLogic->getWinningPlayer() != NO_PLAYER)
 		return;
+
+	// get external events
+	if( mHasInjection )
+	{
+		std::lock_guard<std::mutex> lock(mInjectionMutex);
+		setState( *mInjectionState );
+		mStepPhysicEvents = mInjectionEvents;
+		mInjectionEvents.clear();
+		mHasInjection = false;
+	}
 
 	// this calculates the new input, i.e. the input source functions are called from
 	// within the match thread.
@@ -232,19 +244,6 @@ void DuelMatch::setState(const DuelMatchState& state)
 
 	mInputSources[LEFT_PLAYER]->setInput( mTransformedInput[LEFT_PLAYER] );
 	mInputSources[RIGHT_PLAYER]->setInput( mTransformedInput[RIGHT_PLAYER] );
-
-	/// \todo define loading events
-/*	events &= ~EVENT_ERROR;
-	switch (state.errorSide)
-	{
-		case LEFT_PLAYER:
-			events |= EVENT_ERROR_LEFT;
-			break;
-		case RIGHT_PLAYER:
-			events |= EVENT_ERROR_RIGHT;
-			break;
-	}
-*/
 }
 
 DuelMatchState DuelMatch::getState() const
@@ -255,9 +254,6 @@ DuelMatchState DuelMatch::getState() const
 	state.logicState = mLogic->getState();
 	state.playerInput[LEFT_PLAYER] = mTransformedInput[LEFT_PLAYER];
 	state.playerInput[RIGHT_PLAYER] = mTransformedInput[RIGHT_PLAYER];
-
-/// \todo reenable
-//	state.errorSide = (events & EVENT_ERROR_LEFT) ? LEFT_PLAYER : (events & EVENT_ERROR_RIGHT) ? RIGHT_PLAYER : NO_PLAYER;
 
 	return state;
 }
@@ -366,5 +362,14 @@ std::vector<boost::shared_ptr<const DuelMatchState>> DuelMatch::fetchStates( )
 const DuelMatchState& DuelMatch::readCurrentState() const
 {
 	assert( mLastState );
-    return *mLastState;
+	return *mLastState;
+}
+
+void DuelMatch::injectState( const DuelMatchState& state, std::vector<MatchEvent> events )
+{
+	std::lock_guard<std::mutex> lock(mInjectionMutex);
+	*mInjectionState = state;
+	for(auto& e : events)
+		mInjectionEvents.push_back(e);
+	mHasInjection = true;
 }

@@ -27,7 +27,7 @@ struct MatchEvent
 	enum EventType
 	{
 		// physic events
-		BALL_HIT_BLOB,
+		BALL_HIT_BLOB = 1,
 		BALL_HIT_WALL,
 		BALL_HIT_GROUND,
 		BALL_HIT_NET,

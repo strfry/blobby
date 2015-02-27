@@ -94,12 +94,6 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 
 		bool isPaused() const{ return mPaused; }
 
-		/// Set a new state using a saved DuelMatchState
-		void setState(const DuelMatchState& state);
-
-		/// gets the current state
-		DuelMatchState getState() const;
-
 		/// reads the current state in a non thread-save way
 		const DuelMatchState& readCurrentState() const;
 
@@ -111,6 +105,9 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 
 		void setServingPlayer(PlayerSide side);
 
+		// this prepares a state to be injected into the match before the next iteration starts
+		void injectState( const DuelMatchState& state, std::vector<MatchEvent> events );
+
 		// copies the physic events into the target and resets.
 		std::vector<MatchEvent> fetchEvents( );
 		std::vector<boost::shared_ptr<const DuelMatchState>> fetchStates( );
@@ -119,10 +116,15 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		// update the internal last world state to the current physicworld
 		void updateState();
 
+		/// gets the current state, not thread safe
+		DuelMatchState getState() const;
+		/// Set a new state using a saved DuelMatchState
+		void setState(const DuelMatchState& state);
+
 		boost::shared_ptr<InputSource> mInputSources[MAX_PLAYERS];
 		PlayerIdentity mPlayers[MAX_PLAYERS];
 
-		bool mPaused;
+		std::atomic<bool> mPaused;
 		const bool mRemote;
 
 		// data that is written to in the simulation thread
@@ -143,5 +145,11 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 
 		// this variable is used to tell the run thread to exit
 		std::atomic<bool> mIsRunning;
+
+		// state injectsion
+		boost::scoped_ptr<DuelMatchState> mInjectionState;
+		std::vector<MatchEvent> mInjectionEvents;
+		std::atomic<bool> mHasInjection;
+		std::mutex mInjectionMutex;
 };
 

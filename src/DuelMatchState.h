@@ -52,6 +52,4 @@ struct DuelMatchState
 	GameLogicState logicState;
 
 	PlayerInput playerInput[MAX_PLAYERS];
-
-	unsigned char errorSide;
 };
