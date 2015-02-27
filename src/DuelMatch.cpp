@@ -37,8 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // helper macro to check that non-threadsafe functions are only called from
 // within the match thread
-#define thread_assert()	assert( std::this_thread::get_id() == mMatchThread.get_id() );
-
+#define thread_assert()	assert( std::this_thread::get_id() == mMatchThread.get_id() || !mMatchThread.joinable() );
 /* implementation */
 
 DuelMatch::DuelMatch(bool remote, std::string rules) :
@@ -55,9 +54,6 @@ DuelMatch::DuelMatch(bool remote, std::string rules) :
 
 	// init
 	updateState();
-
-	/// \todo let other code start the running, to be able to set the data beforehand
-	run();
 }
 
 DuelMatch::~DuelMatch()
@@ -77,6 +73,7 @@ void DuelMatch::run()
 	// start new thread
 	mIsRunning = true;
 	// start match thread
+	std::cout << "START THREAD "<<mMatchThread.joinable() << "\n";
 	mMatchThread = std::thread([this]()
 	{
 		SpeedController ctrl(1000);

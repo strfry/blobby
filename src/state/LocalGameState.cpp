@@ -43,8 +43,7 @@ LocalGameState::~LocalGameState()
 
 LocalGameState::LocalGameState()
 	: mRecorder(new ReplayRecorder()),
-		mWinner(false),
-		mLastState( new DuelMatchState )
+		mWinner(false)
 {
 	boost::shared_ptr<IUserConfigReader> config = IUserConfigReader::createUserConfigReader("config.xml");
 	PlayerIdentity leftPlayer = config->loadPlayerIdentity(LEFT_PLAYER, false);
@@ -69,6 +68,8 @@ LocalGameState::LocalGameState()
 	mRecorder->setPlayerNames(leftPlayer.getName(), rightPlayer.getName());
 	mRecorder->setPlayerColors( leftPlayer.getStaticColor(), rightPlayer.getStaticColor() );
 	mRecorder->setGameSpeed((float)config->getInteger("gamefps"));
+
+	mMatch->run();
 }
 
 void LocalGameState::step_impl()
@@ -154,10 +155,10 @@ void LocalGameState::step_impl()
 		}
 
 
-		presentGame( *mLastState );
+		presentGame( );
 	}
 
-	presentGameUI( *mLastState );
+	presentGameUI( );
 }
 
 const char* LocalGameState::getStateName() const

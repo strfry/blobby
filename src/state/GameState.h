@@ -43,10 +43,10 @@ protected:
 	/// draws the game. It is in State because
 	/// this functionality is shared by
 	/// LocalGameState, NetworkGameState and ReplayState
-	void presentGame( const DuelMatchState& );
+	void presentGame( );
 
 	/// this draws the ui in the game, i.e. clock, score and player names
-	void presentGameUI( const DuelMatchState& );
+	void presentGameUI( );
 
 	// ui helpers
 	/// this function draws the save replay ui
@@ -70,6 +70,7 @@ protected:
 
 
 	boost::scoped_ptr<DuelMatch> mMatch;
+	boost::scoped_ptr<DuelMatchState> mLastState;
 
 	// ui helper variable for storing a filename
 	bool mSaveReplay;

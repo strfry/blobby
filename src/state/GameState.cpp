@@ -38,7 +38,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 /* implementation */
 
 
-GameState::GameState(DuelMatch* match) : mMatch( match ), mSaveReplay(false), mErrorMessage("")
+GameState::GameState(DuelMatch* match) :
+	mMatch( match ),
+	mLastState( new DuelMatchState ),
+	mSaveReplay(false),
+	mErrorMessage("")
 {
 }
 
@@ -48,7 +52,7 @@ GameState::~GameState()
 	RenderManager::getSingleton().drawGame(false);
 }
 
-void GameState::presentGame(const DuelMatchState& state)
+void GameState::presentGame()
 {
 	// enable game drawing
 	RenderManager::getSingleton().drawGame(true);
@@ -56,8 +60,8 @@ void GameState::presentGame(const DuelMatchState& state)
 	RenderManager& rmanager = RenderManager::getSingleton();
 	SoundManager& smanager = SoundManager::getSingleton();
 
-	rmanager.setBlob(LEFT_PLAYER, state.getBlobPosition(LEFT_PLAYER), state.getBlobState(LEFT_PLAYER));
-	rmanager.setBlob(RIGHT_PLAYER, state.getBlobPosition(RIGHT_PLAYER),	state.getBlobState(RIGHT_PLAYER));
+	rmanager.setBlob(LEFT_PLAYER, mLastState->getBlobPosition(LEFT_PLAYER), mLastState->getBlobState(LEFT_PLAYER));
+	rmanager.setBlob(RIGHT_PLAYER, mLastState->getBlobPosition(RIGHT_PLAYER),	mLastState->getBlobState(RIGHT_PLAYER));
 
 	if(mMatch->getPlayer(LEFT_PLAYER).getOscillating())
 	{
@@ -77,7 +81,7 @@ void GameState::presentGame(const DuelMatchState& state)
 		rmanager.setBlobColor(RIGHT_PLAYER, mMatch->getPlayer(RIGHT_PLAYER).getStaticColor());
 	}
 
-	rmanager.setBall(state.getBallPosition(), state.getBallRotation());
+	rmanager.setBall(mLastState->getBallPosition(), mLastState->getBallRotation());
 
 	auto physic_events = mMatch->fetchEvents( );
 	for(const auto& e : physic_events )
@@ -86,8 +90,8 @@ void GameState::presentGame(const DuelMatchState& state)
 		{
 			smanager.playSound("sounds/bums.wav", e.intensity + BALL_HIT_PLAYER_SOUND_VOLUME);
 			/// \todo save that position inside the event
-			Vector2 hitPos = state.getBallPosition() +
-					(state.getBlobPosition(e.side) - state.getBallPosition()).normalise().scale(31.5);
+			Vector2 hitPos = mLastState->getBallPosition() +
+					(mLastState->getBlobPosition(e.side) - mLastState->getBallPosition()).normalise().scale(31.5);
 			BloodManager::getSingleton().spillBlood(hitPos, e.intensity, 0);
 		}
 
@@ -96,15 +100,15 @@ void GameState::presentGame(const DuelMatchState& state)
 	}
 }
 
-void GameState::presentGameUI(const DuelMatchState& state)
+void GameState::presentGameUI()
 {
 	auto& imgui = IMGUI::getSingleton();
 
 	// Scores
 	char textBuffer[64];
-	snprintf(textBuffer, 8, state.getServingPlayer() == LEFT_PLAYER ? "%02d!" : "%02d ", state.getScore(LEFT_PLAYER));
+	snprintf(textBuffer, 8, mLastState->getServingPlayer() == LEFT_PLAYER ? "%02d!" : "%02d ", mLastState->getScore(LEFT_PLAYER));
 	imgui.doText(GEN_ID, Vector2(24, 24), textBuffer);
-	snprintf(textBuffer, 8, state.getServingPlayer() == RIGHT_PLAYER ? "%02d!" : "%02d ", state.getScore(RIGHT_PLAYER));
+	snprintf(textBuffer, 8, mLastState->getServingPlayer() == RIGHT_PLAYER ? "%02d!" : "%02d ", mLastState->getScore(RIGHT_PLAYER));
 	imgui.doText(GEN_ID, Vector2(800-24, 24), textBuffer, TF_ALIGN_RIGHT);
 
 	// blob name / time textfields

@@ -122,6 +122,7 @@ void ReplayState::step_impl()
 		{
 			mPaused = !mReplayPlayer->play(mMatch.get());
 			mSpeedTimer -= 8;
+			*mLastState = mMatch->readCurrentState();	// no thread, so safe
 			presentGame();
 		}
 		mSpeedTimer += mSpeedValue;
@@ -138,7 +139,7 @@ void ReplayState::step_impl()
 	PlayerSide side = NO_PLAYER;
 	if (mReplayPlayer->endOfFile())
 	{
-		int diff = mMatch->getScore(LEFT_PLAYER) - mMatch->getScore(RIGHT_PLAYER);
+		int diff = mMatch->readCurrentState().getScore(LEFT_PLAYER) - mMatch->readCurrentState().getScore(RIGHT_PLAYER);
 		if (diff > 0)
 		{
 			side = LEFT_PLAYER;
