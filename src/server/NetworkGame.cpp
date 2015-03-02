@@ -209,6 +209,7 @@ void NetworkGame::broadcastPhysicState()
 		return;
 	auto ms = *states.back();
 
+	/// \todo this required dynamic memory allocation! not good!
 	boost::shared_ptr<GenericOut> out = createGenericWriter( &stream );
 
 	if (mSwitchedSide == LEFT_PLAYER)
@@ -341,21 +342,21 @@ void NetworkGame::h_rules( packet_ptr packet )
 		// buffer for playernames
 		char name[16];
 
-		// writing data into leftStream
-		RakNet::BitStream leftStream;
-		leftStream.Write((unsigned char)ID_GAME_READY);
-		leftStream.Write((int)SpeedController::getMainInstance()->getGameSpeed());
-		strncpy(name, mMatch->getPlayer(RIGHT_PLAYER).getName().c_str(), sizeof(name));
-		leftStream.Write(name, sizeof(name));
-		leftStream.Write(mMatch->getPlayer(RIGHT_PLAYER).getStaticColor().toInt());
+		/// \param side: data of the player to write into the stream
+		auto makeStream = [](PlayerSide side)
+		{
+			RakNet::BitStream stream;
+			stream.Write((unsigned char)ID_GAME_READY);
+			stream.Write((int)SpeedController::getMainInstance()->getGameSpeed());
+			strncpy(name, mMatch->getPlayer(side).getName().c_str(), sizeof(name));
+			stream.Write(name, sizeof(name));
+			stream.Write(mMatch->getPlayer(side).getStaticColor().toInt());
+		}
 
+		// writing data into leftStream
+		RakNet::BitStream leftStream = makeStream( RIGHT_PLAYER );
 		// writing data into rightStream
-		RakNet::BitStream rightStream;
-		rightStream.Write((unsigned char)ID_GAME_READY);
-		rightStream.Write((int)SpeedController::getMainInstance()->getGameSpeed());
-		strncpy(name, mMatch->getPlayer(LEFT_PLAYER).getName().c_str(), sizeof(name));
-		rightStream.Write(name, sizeof(name));
-		rightStream.Write(mMatch->getPlayer(LEFT_PLAYER).getStaticColor().toInt());
+		RakNet::BitStream rightStream = makeStream( LEFT_PLAYER );
 
 		mServer.Send(&leftStream, HIGH_PRIORITY, RELIABLE_ORDERED, 0, mLeftPlayer, false);
 		mServer.Send(&rightStream, HIGH_PRIORITY, RELIABLE_ORDERED, 0, mRightPlayer, false);
@@ -371,6 +372,8 @@ void NetworkGame::h_input( packet_ptr packet )
 	stream.IgnoreBytes(1);
 	PlayerInputAbs newInput(stream);
 
+	/// \todo this accesses the input sources for the game,
+	/// thus it is currently not thread-safe
 	if (packet->playerId == mLeftPlayer)
 	{
 		if (mSwitchedSide == LEFT_PLAYER)
