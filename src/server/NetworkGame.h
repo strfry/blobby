@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "raknet/NetworkTypes.h"
 #include "raknet/BitStream.h"
 #include "SpeedController.h"
+#include "PacketHandler.h"
 #include "DuelMatch.h"
 #include "BlobbyDebug.h"
 
@@ -75,6 +76,7 @@ class NetworkGame : public ObjectCounter<NetworkGame>
 		void broadcastBitstream(const RakNet::BitStream& stream, const RakNet::BitStream& switchedstream);
 		void broadcastBitstream(const RakNet::BitStream& stream);
 		void broadcastPhysicState();
+		void writeEventToStream(RakNet::BitStream& stream, MatchEvent e, bool switchSides );
 		bool isGameStarted() { return mRulesSent[LEFT_PLAYER] && mRulesSent[RIGHT_PLAYER]; }
 
 		static int switchEventSides(int events);
@@ -98,5 +100,22 @@ class NetworkGame : public ObjectCounter<NetworkGame>
 		bool mRulesSent[MAX_PLAYERS];
 		int mRulesLength;
 		boost::shared_array<char> mRulesString;
+
+		// packet handling
+        PacketHandler mHandler;
+
+        // handler functions
+        // reacts to the disconnect packet: ends the game
+		void h_disconnect( );
+		// sends the replay to the requesting player
+		void h_replay( packet_ptr packet );
+		// processes pause/unpause events
+		void h_pause( packet_ptr packet );
+		// process chat message
+		void h_chat( packet_ptr packet );
+		// process the rules packet, set up game
+		void h_rules( packet_ptr packet );
+		// handle input update packets
+		void h_input( packet_ptr packet );
 };
 

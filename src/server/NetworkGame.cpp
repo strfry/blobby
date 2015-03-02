@@ -31,7 +31,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "raknet/RakServer.h"
 #include "raknet/BitStream.h"
-#include "raknet/GetTime.h"
 
 
 #include "NetworkMessage.h"
@@ -95,6 +94,16 @@ NetworkGame::NetworkGame(RakServer& server, boost::shared_ptr<NetworkPlayer> lef
 	stream.Write(checksum);
 	/// \todo write file author and title, too; maybe add a version number in scripts, too.
 	broadcastBitstream(stream);
+
+	mMatch->run();
+
+	// basic packet handling functions
+	mHandler.registerHandler({ID_CONNECTION_LOST, ID_DISCONNECTION_NOTIFICATION}, [this](packet_ptr) { h_disconnect(); });
+	mHandler.registerHandler({ID_REPLAY}, [this](packet_ptr p) { h_replay( p ); });
+	mHandler.registerHandler({ID_PAUSE, ID_UNPAUSE}, [this](packet_ptr p) { h_pause( p ); });
+	mHandler.registerHandler({ID_CHAT_MESSAGE}, [this](packet_ptr p) {h_chat(p);} );
+	mHandler.registerHandler({ID_RULES}, [this](packet_ptr p) {h_rules(p);} );
+	mHandler.registerHandler({ID_INPUT_UPDATE}, [this](packet_ptr p) {h_input(p);} );
 }
 
 NetworkGame::~NetworkGame()
@@ -142,156 +151,10 @@ void NetworkGame::processPackets()
 {
 	while (!mPacketQueue.empty())
 	{
+
 		packet_ptr packet = mPacketQueue.front();
 		mPacketQueue.pop_front();
-
-		switch(packet->data[0])
-		{
-			case ID_CONNECTION_LOST:
-			case ID_DISCONNECTION_NOTIFICATION:
-			{
-				RakNet::BitStream stream;
-				stream.Write((unsigned char)ID_OPPONENT_DISCONNECTED);
-				broadcastBitstream(stream);
-				mPausing = true;
-				mMatch->pause();
-				mGameValid = false;
-				break;
-			}
-
-			case ID_INPUT_UPDATE:
-			{
-
-				int ival;
-				RakNet::BitStream stream((char*)packet->data, packet->length, false);
-
-				// ignore ID_INPUT_UPDATE and ID_TIMESTAMP
-				stream.IgnoreBytes(1);
-				stream.IgnoreBytes(1);
-				stream.Read(ival);
-				PlayerInputAbs newInput(stream);
-
-				if (packet->playerId == mLeftPlayer)
-				{
-					if (mSwitchedSide == LEFT_PLAYER)
-						newInput.swapSides();
-					mLeftInput->setInput(newInput);
-				}
-				if (packet->playerId == mRightPlayer)
-				{
-					if (mSwitchedSide == RIGHT_PLAYER)
-						newInput.swapSides();
-					mRightInput->setInput(newInput);
-				}
-				break;
-			}
-
-			case ID_PAUSE:
-			{
-				RakNet::BitStream stream;
-				stream.Write((unsigned char)ID_PAUSE);
-				broadcastBitstream(stream);
-				mPausing = true;
-				mMatch->pause();
-				break;
-			}
-
-			case ID_UNPAUSE:
-			{
-				RakNet::BitStream stream;
-				stream.Write((unsigned char)ID_UNPAUSE);
-				broadcastBitstream(stream);
-				mPausing = false;
-				mMatch->unpause();
-				break;
-			}
-
-			case ID_CHAT_MESSAGE:
-			{	RakNet::BitStream stream((char*)packet->data,
-						packet->length, false);
-
-				stream.IgnoreBytes(1); // ID_CHAT_MESSAGE
-				char message[31];
-				/// \todo we need to acertain that this package contains at least 31 bytes!
-				///			otherwise, we send just uninitialized memory to the client
-				///			thats no real security problem but i think we should address
-				///			this nonetheless
-				stream.Read(message, sizeof(message));
-
-				RakNet::BitStream stream2;
-				stream2.Write((unsigned char)ID_CHAT_MESSAGE);
-				stream2.Write(message, sizeof(message));
-				if (mLeftPlayer == packet->playerId)
-					mServer.Send(&stream2, LOW_PRIORITY, RELIABLE_ORDERED, 0, mRightPlayer, false);
-				else
-					mServer.Send(&stream2, LOW_PRIORITY, RELIABLE_ORDERED, 0, mLeftPlayer, false);
-				break;
-			}
-
-			case ID_REPLAY:
-			{
-				RakNet::BitStream stream = RakNet::BitStream();
-				stream.Write((unsigned char)ID_REPLAY);
-				boost::shared_ptr<GenericOut> out = createGenericWriter( &stream );
-				mRecorder->send( out );
-				assert( stream.GetData()[0] == ID_REPLAY );
-
-				mServer.Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0, packet->playerId, false);
-
-				break;
-			}
-
-			case ID_RULES:
-			{
-				boost::shared_ptr<RakNet::BitStream> stream = boost::make_shared<RakNet::BitStream>();
-				bool needRules;
-				stream->Read(needRules);
-				mRulesSent[mLeftPlayer == packet->playerId ? LEFT_PLAYER : RIGHT_PLAYER] = true;
-
-				if (needRules)
-				{
-					stream = boost::make_shared<RakNet::BitStream>();
-					stream->Write((unsigned char)ID_RULES);
-					stream->Write(mRulesLength);
-					stream->Write(mRulesString.get(), mRulesLength);
-					assert( stream->GetData()[0] == ID_RULES );
-
-					mServer.Send(stream.get(), HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->playerId, false);
-				}
-
-				if (isGameStarted())
-				{
-					// buffer for playernames
-					char name[16];
-
-					// writing data into leftStream
-					RakNet::BitStream leftStream;
-					leftStream.Write((unsigned char)ID_GAME_READY);
-					leftStream.Write((int)SpeedController::getMainInstance()->getGameSpeed());
-					strncpy(name, mMatch->getPlayer(RIGHT_PLAYER).getName().c_str(), sizeof(name));
-					leftStream.Write(name, sizeof(name));
-					leftStream.Write(mMatch->getPlayer(RIGHT_PLAYER).getStaticColor().toInt());
-
-					// writing data into rightStream
-					RakNet::BitStream rightStream;
-					rightStream.Write((unsigned char)ID_GAME_READY);
-					rightStream.Write((int)SpeedController::getMainInstance()->getGameSpeed());
-					strncpy(name, mMatch->getPlayer(LEFT_PLAYER).getName().c_str(), sizeof(name));
-					rightStream.Write(name, sizeof(name));
-					rightStream.Write(mMatch->getPlayer(LEFT_PLAYER).getStaticColor().toInt());
-
-					mServer.Send(&leftStream, HIGH_PRIORITY, RELIABLE_ORDERED, 0, mLeftPlayer, false);
-					mServer.Send(&rightStream, HIGH_PRIORITY, RELIABLE_ORDERED, 0, mRightPlayer, false);
-				}
-
-				break;
-			}
-
-			default:
-				printf("unknown packet %d received\n",
-					int(packet->data[0]));
-				break;
-		}
+		mHandler.handlePacket( packet );
 	}
 }
 
@@ -308,81 +171,43 @@ void NetworkGame::step()
 
 	// don't record the pauses
 	if(!mMatch->isPaused())
-		mRecorder->record(mMatch->getState());
-
-	mMatch->step();
-
-/*	int events = mMatch->getEvents();
-	if(events & EVENT_COLLISION)
 	{
-		RakNet::BitStream stream;
-		stream.Write((unsigned char)ID_COLLISION);
-		stream.Write( events & EVENT_COLLISION );
-		stream.Write( mMatch->getLastHitIntensity() );
+		/// \todo rework recording!
+		/*mRecorder->record(mMatch->getState());
 
-		RakNet::BitStream switchStream;
-		switchStream.Write((unsigned char)ID_COLLISION);
-		switchStream.Write( switchEventSides( events & EVENT_COLLISION ) );
-		switchStream.Write( mMatch->getLastHitIntensity() );
-
-		broadcastBitstream(stream, switchStream);
-	}
-*/
-	if(!mPausing)
-	{
-		PlayerSide winning = mMatch->winningPlayer();
+		PlayerSide winning = mMatch->readCurrentState().getWinningPlayer();
 		if (winning != NO_PLAYER)
 		{
-			RakNet::BitStream stream;
-			stream.Write((unsigned char)ID_WIN_NOTIFICATION);
-			stream.Write(winning);
-
-			RakNet::BitStream switchStream;
-			switchStream.Write((unsigned char)ID_WIN_NOTIFICATION);
-			switchStream.Write(winning == LEFT_PLAYER ? RIGHT_PLAYER : LEFT_PLAYER);
-
-			broadcastBitstream(stream, switchStream);
-
 			// if someone has won, the game is paused
-			mPausing = true;
 			mMatch->pause();
 			mRecorder->record(mMatch->getState());
-			mRecorder->finalize( mMatch->getScore(LEFT_PLAYER), mMatch->getScore(RIGHT_PLAYER) );
-		}
-	}
+			mRecorder->finalize( mMatch->readCurrentState().getScore(LEFT_PLAYER), mMatch->readCurrentState().getScore(RIGHT_PLAYER) );
+		}*/
 
-/*	if (events & EVENT_RESET)
-	{
-		RakNet::BitStream stream;
-		stream.Write((unsigned char)ID_BALL_RESET);
-		stream.Write(mMatch->getServingPlayer());
-		stream.Write(mMatch->getScore(LEFT_PLAYER));
-		stream.Write(mMatch->getScore(RIGHT_PLAYER));
-		stream.Write(mMatch->getClock().getTime());
-
-		RakNet::BitStream switchStream;
-		switchStream.Write((unsigned char)ID_BALL_RESET);
-		switchStream.Write(mMatch->getServingPlayer() == LEFT_PLAYER ? RIGHT_PLAYER : LEFT_PLAYER);
-		switchStream.Write(mMatch->getScore(RIGHT_PLAYER));
-		switchStream.Write(mMatch->getScore(LEFT_PLAYER));
-		switchStream.Write(mMatch->getClock().getTime());
-
-		broadcastBitstream(stream, switchStream);
-	}
-*/
-	if (!mPausing)
-	{
 		broadcastPhysicState();
 	}
+}
+
+void NetworkGame::writeEventToStream(RakNet::BitStream& stream, MatchEvent e, bool switchSides )
+{
+	stream.Write((unsigned char)e.event);
+	if( switchSides )
+		stream.Write((unsigned char)(e.side == LEFT_PLAYER ? RIGHT_PLAYER : LEFT_PLAYER ) );
+	else
+		stream.Write((unsigned char)e.side);
+	if( e.event == MatchEvent::BALL_HIT_BLOB )
+		stream.Write( e.intensity );
 }
 
 void NetworkGame::broadcastPhysicState()
 {
 	RakNet::BitStream stream;
-	stream.Write((unsigned char)ID_PHYSIC_UPDATE);
-	stream.Write((unsigned char)ID_TIMESTAMP);
-	stream.Write(RakNet::GetTime());
-	DuelMatchState ms = mMatch->getState();
+	stream.Write((unsigned char)ID_GAME_UPDATE);
+	auto states = mMatch->fetchStates();
+	auto events = mMatch->fetchEvents();
+	if( states.empty() )
+		return;
+	auto ms = *states.back();
 
 	boost::shared_ptr<GenericOut> out = createGenericWriter( &stream );
 
@@ -391,21 +216,28 @@ void NetworkGame::broadcastPhysicState()
 
 	out->generic<DuelMatchState> (ms);
 
+	// add all the events to the stream
+	for(auto& e : events)
+		writeEventToStream(stream, e, mSwitchedSide == LEFT_PLAYER );
+	stream.Write((char)0);
+
 	mServer.Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, mLeftPlayer, false);
 
 	// reset state and stream
-	ms = mMatch->getState();
 	stream.Reset();
-	stream.Write((unsigned char)ID_PHYSIC_UPDATE);
-	stream.Write((unsigned char)ID_TIMESTAMP);
-	stream.Write(RakNet::GetTime());
+	stream.Write((unsigned char)ID_GAME_UPDATE);
 
 	out = createGenericWriter( &stream );
 
-	if (mSwitchedSide == RIGHT_PLAYER)
+	// either switch back, or perform switching for right side
+	if (mSwitchedSide == LEFT_PLAYER || mSwitchedSide == RIGHT_PLAYER)
 		ms.swapSides();
 
 	out->generic<DuelMatchState> (ms);
+
+	for(auto& e : events)
+		writeEventToStream(stream, e, mSwitchedSide == RIGHT_PLAYER );
+	stream.Write((char)0);
 
 	mServer.Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, mRightPlayer, false);
 }
@@ -425,34 +257,130 @@ PlayerID NetworkGame::getPlayerID( PlayerSide side ) const
 	assert(0);
 }
 
-// helper function for NetworkGame::switchEventSides
-void setEventIf(int& events, int original, int trigger, int event)
+// -----------------------------------------------------------------------------------------
+//							packet handling functions
+// -----------------------------------------------------------------------------------------
+void NetworkGame::h_disconnect( )
 {
-	if( original & trigger )
-		events |= event;
+	RakNet::BitStream stream;
+	stream.Write((unsigned char)ID_OPPONENT_DISCONNECTED);
+	broadcastBitstream(stream);
+	mMatch->pause();
+	mGameValid = false;
+}
+
+void NetworkGame::h_replay( packet_ptr packet )
+{
+	RakNet::BitStream stream = RakNet::BitStream();
+	stream.Write((unsigned char)ID_REPLAY);
+	boost::shared_ptr<GenericOut> out = createGenericWriter( &stream );
+	mRecorder->send( out );
+	assert( stream.GetData()[0] == ID_REPLAY );
+
+	mServer.Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0, packet->playerId, false);
+}
+
+void NetworkGame::h_pause( packet_ptr packet )
+{
+	unsigned char pause = packet->data[0];
+	assert( pause == ID_PAUSE || pause == ID_UNPAUSE );
+
+	// set pause mode
+	if( pause == ID_PAUSE )
+		mMatch->pause();
 	else
-		events &= ~event;
+		mMatch->unpause();
+
+	// and broadcast to the clients
+	RakNet::BitStream stream;
+	stream.Write( pause );
+	broadcastBitstream( stream );
 }
 
-int NetworkGame::switchEventSides(int events)
+void NetworkGame::h_chat( packet_ptr packet )
 {
-	int new_events = events;
+	RakNet::BitStream stream((char*)packet->data, packet->length, false);
 
-/*	setEventIf(new_events, events, EVENT_LEFT_BLOBBY_HIT, EVENT_RIGHT_BLOBBY_HIT);
-	setEventIf(new_events, events, EVENT_RIGHT_BLOBBY_HIT, EVENT_LEFT_BLOBBY_HIT);
+	stream.IgnoreBytes(1); // ID_CHAT_MESSAGE
+	char message[31];
+	/// \todo we need to acertain that this package contains at least 31 bytes!
+	///			otherwise, we send just uninitialized memory to the client
+	///			thats no real security problem but i think we should address
+	///			this nonetheless
+	stream.Read(message, sizeof(message));
 
-	setEventIf(new_events, events, EVENT_BALL_HIT_LEFT_GROUND, EVENT_BALL_HIT_RIGHT_GROUND);
-	setEventIf(new_events, events, EVENT_BALL_HIT_RIGHT_GROUND, EVENT_BALL_HIT_LEFT_GROUND);
-
-	setEventIf(new_events, events, EVENT_BALL_HIT_LEFT_WALL, EVENT_BALL_HIT_RIGHT_WALL);
-	setEventIf(new_events, events, EVENT_BALL_HIT_RIGHT_WALL, EVENT_BALL_HIT_LEFT_WALL);
-
-	setEventIf(new_events, events, EVENT_BALL_HIT_NET_LEFT, EVENT_BALL_HIT_NET_RIGHT);
-	setEventIf(new_events, events, EVENT_BALL_HIT_NET_RIGHT, EVENT_BALL_HIT_NET_LEFT);
-
-	setEventIf(new_events, events, EVENT_ERROR_LEFT, EVENT_ERROR_RIGHT);
-	setEventIf(new_events, events, EVENT_ERROR_RIGHT, EVENT_ERROR_LEFT);
-*/
-	return new_events;
+	RakNet::BitStream stream2;
+	stream2.Write((unsigned char)ID_CHAT_MESSAGE);
+	stream2.Write(message, sizeof(message));
+	if (mLeftPlayer == packet->playerId)
+		mServer.Send(&stream2, LOW_PRIORITY, RELIABLE_ORDERED, 0, mRightPlayer, false);
+	else
+		mServer.Send(&stream2, LOW_PRIORITY, RELIABLE_ORDERED, 0, mLeftPlayer, false);
 }
 
+void NetworkGame::h_rules( packet_ptr packet )
+{
+	boost::shared_ptr<RakNet::BitStream> stream = boost::make_shared<RakNet::BitStream>();
+	bool needRules;
+	stream->Read(needRules);
+	mRulesSent[mLeftPlayer == packet->playerId ? LEFT_PLAYER : RIGHT_PLAYER] = true;
+
+	if (needRules)
+	{
+		stream = boost::make_shared<RakNet::BitStream>();
+		stream->Write((unsigned char)ID_RULES);
+		stream->Write(mRulesLength);
+		stream->Write(mRulesString.get(), mRulesLength);
+		assert( stream->GetData()[0] == ID_RULES );
+
+		mServer.Send(stream.get(), HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->playerId, false);
+	}
+
+	if (isGameStarted())
+	{
+		// buffer for playernames
+		char name[16];
+
+		// writing data into leftStream
+		RakNet::BitStream leftStream;
+		leftStream.Write((unsigned char)ID_GAME_READY);
+		leftStream.Write((int)SpeedController::getMainInstance()->getGameSpeed());
+		strncpy(name, mMatch->getPlayer(RIGHT_PLAYER).getName().c_str(), sizeof(name));
+		leftStream.Write(name, sizeof(name));
+		leftStream.Write(mMatch->getPlayer(RIGHT_PLAYER).getStaticColor().toInt());
+
+		// writing data into rightStream
+		RakNet::BitStream rightStream;
+		rightStream.Write((unsigned char)ID_GAME_READY);
+		rightStream.Write((int)SpeedController::getMainInstance()->getGameSpeed());
+		strncpy(name, mMatch->getPlayer(LEFT_PLAYER).getName().c_str(), sizeof(name));
+		rightStream.Write(name, sizeof(name));
+		rightStream.Write(mMatch->getPlayer(LEFT_PLAYER).getStaticColor().toInt());
+
+		mServer.Send(&leftStream, HIGH_PRIORITY, RELIABLE_ORDERED, 0, mLeftPlayer, false);
+		mServer.Send(&rightStream, HIGH_PRIORITY, RELIABLE_ORDERED, 0, mRightPlayer, false);
+	}
+}
+
+void NetworkGame::h_input( packet_ptr packet )
+{
+	int ival;
+	RakNet::BitStream stream((char*)packet->data, packet->length, false);
+
+	// ignore ID_INPUT_UPDATE
+	stream.IgnoreBytes(1);
+	PlayerInputAbs newInput(stream);
+
+	if (packet->playerId == mLeftPlayer)
+	{
+		if (mSwitchedSide == LEFT_PLAYER)
+			newInput.swapSides();
+		mLeftInput->setInput(newInput);
+	}
+	if (packet->playerId == mRightPlayer)
+	{
+		if (mSwitchedSide == RIGHT_PLAYER)
+			newInput.swapSides();
+		mRightInput->setInput(newInput);
+	}
+}
