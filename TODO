@@ -25,17 +25,18 @@ data:
 
 MULTI-THREAD primary:
  * extensive network checks
- * move game speed controller into duelmatch/game logic/clock
- * review thread safety of DuelMatch functions (e.g. currently, getClock is unsafe)
  * check that server still works as expected
- * fix network and gfx fps to 60
  * rework NetworkGameState
  
  MULTI-THREAD secondary:
  * fix all replay related stuff [we might have to break compatibiltiy]
  * replay recording in DuelMatch
- * fix blood gfx effects
  * add lag compensation to network [this is now an easy bonus, so go for it]
- * delag events [e.g. whistle] in a safe manner, i.e. prevent skipping/doubling events 
+
+ 
+ MULTI-THREAD tertiary:
+ * fix blood gfx effects
  * allow multiple game speeds on the server
  * remove singleton SpeedController
+ * delag events [e.g. whistle] in a safe manner, i.e. prevent skipping/doubling events 
+ * frame interpolation

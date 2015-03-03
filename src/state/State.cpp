@@ -103,7 +103,7 @@ void State::switchState(State* newState)
 MainMenuState::MainMenuState()
 {
 	// set main menu fps
-	SpeedController::getMainInstance()->setGameSpeed(75);
+	SpeedController::getMainInstance()->setGameSpeed(60);
 }
 
 MainMenuState::~MainMenuState()

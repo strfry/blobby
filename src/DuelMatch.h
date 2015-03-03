@@ -38,6 +38,7 @@ struct DuelMatchState;
 class PhysicWorld;
 class PhysicState;
 class MatchEvent;
+class SpeedController;
 
 /*! \class DuelMatch
 	\brief class representing a blobby game.
@@ -62,6 +63,7 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		~DuelMatch();
 
 		void setRules(std::string rulesFile);
+		void setGameSpeed( int fps );
 
 		/// \todo remove the necessity for this function!
 		void reset();
@@ -131,6 +133,7 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		std::mutex mEventMutex;
 
 		std::thread mMatchThread;
+		boost::shared_ptr<SpeedController> mSpeedController;
 
 		// this variable is used to tell the run thread to exit
 		std::atomic<bool> mIsRunning;

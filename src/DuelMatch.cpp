@@ -49,7 +49,8 @@ DuelMatch::DuelMatch(bool remote, std::string rules) :
 		mPhysicWorld( new PhysicWorld() ),
 		mIsRunning( true ),
 		mHasInjection( false ),
-		mInjectionState( new DuelMatchState )
+		mInjectionState( new DuelMatchState ),
+		mSpeedController( boost::make_shared<SpeedController>(60) )
 {
 	mPhysicWorld->setEventCallback( std::bind(&DuelMatch::physicEventCallback, this, std::placeholders::_1) );
 
@@ -80,11 +81,10 @@ void DuelMatch::run()
 	// start match thread
 	mMatchThread = std::thread([this]()
 	{
-		SpeedController ctrl(1000);
 		while(mIsRunning)
 		{
 			step();
-			ctrl.update();
+			mSpeedController->update();
 		}
 	}
 	);
@@ -130,6 +130,12 @@ void DuelMatch::setRules(std::string rulesFile)
 	mLogic = createGameLogic(rulesFile, this);
 }
 
+void DuelMatch::setGameSpeed( int fps )
+{
+	no_parallel_assert();
+
+	mSpeedController->setGameSpeed( fps );
+}
 
 void DuelMatch::step()
 {
@@ -234,7 +240,7 @@ int DuelMatch::getScoreToWin() const
 
 void DuelMatch::setState(const DuelMatchState& state)
 {
-	/// \todo review thread safety
+	// only called from the step function, thus safe
 	mPhysicWorld->setState(state.worldState);
 	mLogic->setState(state.logicState);
 
@@ -247,7 +253,7 @@ void DuelMatch::setState(const DuelMatchState& state)
 
 DuelMatchState DuelMatch::getState() const
 {
-	/// \todo review thread safety
+	// only used inside the match thread
 	DuelMatchState state;
 	state.worldState = mPhysicWorld->getState();
 	state.logicState = mLogic->getState();
@@ -259,12 +265,14 @@ DuelMatchState DuelMatch::getState() const
 
 bool DuelMatch::isPaused() const
 {
+	// atomic, thus thread safe
 	return !mLogic->getClock().isRunning();
 }
 
 boost::shared_ptr<InputSource> DuelMatch::getInputSource(PlayerSide player) const
 {
-	/// \todo review thread safety
+	no_parallel_assert();
+
 	// this function is currently only needed for the ReplayPlayer
 	return mInputSources[player];
 }
@@ -293,13 +301,11 @@ bool DuelMatch::canStartRound(PlayerSide servingPlayer) const
 
 PlayerIdentity DuelMatch::getPlayer(PlayerSide player) const
 {
-	/// \todo review thread safety
 	return mPlayers[player];
 }
 
 PlayerIdentity& DuelMatch::getPlayer(PlayerSide player)
 {
-	/// \todo review thread safety
 	return mPlayers[player];
 }
 

@@ -55,15 +55,12 @@ LocalGameState::LocalGameState()
 	// create default replay name
 	setDefaultReplayName(leftPlayer.getName(), rightPlayer.getName());
 
-	// set speed
-	SpeedController::getMainInstance()->setGameSpeed( (float)config->getInteger("gamefps") );
-
-
 	SoundManager::getSingleton().playSound("sounds/pfiff.wav", ROUND_START_SOUND_VOLUME);
 
 	mMatch.reset(new DuelMatch( false, config->getString("rules")));
 	mMatch->setPlayers(leftPlayer, rightPlayer);
 	mMatch->setInputSources(leftInput, rightInput);
+	mMatch->setGameSpeed( (float)config->getInteger("gamefps") );
 
 	mRecorder->setPlayerNames(leftPlayer.getName(), rightPlayer.getName());
 	mRecorder->setPlayerColors( leftPlayer.getStaticColor(), rightPlayer.getStaticColor() );

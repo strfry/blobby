@@ -362,7 +362,7 @@ void NetworkGameState::h_game_ready( RakNet::BitStream stream )
 	// read gamespeed
 	int speed;
 	stream.Read(speed);
-	SpeedController::getMainInstance()->setGameSpeed(speed);
+	mMatch->setGameSpeed(speed);
 
 	// read playername
 	char charName[16];
