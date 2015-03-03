@@ -38,6 +38,8 @@ USER_SERIALIZER_IMPLEMENTATION_HELPER(GameLogicState)
 	io.uint32(value.squishGround);
 	io.boolean(value.isGameRunning);
 	io.boolean(value.isBallValid);
+	io.uint32( value.time );
+	io.uint32( value.steps );
 }
 
 void GameLogicState::swapSides()
@@ -61,6 +63,6 @@ std::ostream& operator<<(std::ostream& stream, const GameLogicState& state)
 	stream << "GAME LOGIC STATE [ " << state.leftScore << " : " << state.rightScore << " "
 			<< state.hitCount[LEFT_PLAYER] << " " << state.hitCount[RIGHT_PLAYER] << "  " << state.servingPlayer
 			<< "  " << state.squish[LEFT_PLAYER] << " " << state.squish[RIGHT_PLAYER] << "  " << state.squishWall
-			<< "  " << state.squishGround << "  " << state.isGameRunning << "  " << state.isBallValid << "]";
+			<< "  " << state.squishGround << "  " << state.isGameRunning << "  " << state.isBallValid << " " << state.time << " " << state.steps << "]";
 	return stream;
 }

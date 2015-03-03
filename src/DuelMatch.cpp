@@ -45,7 +45,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 DuelMatch::DuelMatch(bool remote, std::string rules) :
 		// we send a pointer to an unconstructed object here!
 		mLogic(createGameLogic(rules, this)),
-		mPaused(false),
 		mRemote(remote),
 		mPhysicWorld( new PhysicWorld() ),
 		mIsRunning( true ),
@@ -136,7 +135,7 @@ void DuelMatch::step()
 {
 	/// \todo this should no longer be public, it is called only from the internal thread
 	// in pause mode, step does nothing. this should go to the framerate computation
-	if(mPaused || mLogic->getWinningPlayer() != NO_PLAYER)
+	if(isPaused() || mLogic->getWinningPlayer() != NO_PLAYER)
 		return;
 
 	// get external events
@@ -216,18 +215,12 @@ void DuelMatch::step()
 
 void DuelMatch::pause()
 {
-	/// \todo we now have pausing on three levels: the DuelMatch, the GameLogic[Clock] and the game state.
-	///										simplify that!
-	/// \todo review thread safety
 	mLogic->onPause();
-	mPaused = true;
 }
 
 void DuelMatch::unpause()
 {
-	/// \todo review thread safety
 	mLogic->onUnPause();
-	mPaused = false;
 }
 
 int DuelMatch::getScoreToWin() const
@@ -264,24 +257,9 @@ DuelMatchState DuelMatch::getState() const
 	return state;
 }
 
-void DuelMatch::setServingPlayer(PlayerSide side)
+bool DuelMatch::isPaused() const
 {
-	/// \todo review thread safety
-	mLogic->setServingPlayer( side );
-	resetBall( side );
-	mLogic->onServe( );
-}
-
-const Clock& DuelMatch::getClock() const
-{
-	/// \todo review thread safety
-	return mLogic->getClock();
-}
-
-Clock& DuelMatch::getClock()
-{
-	/// \todo review thread safety
-	return mLogic->getClock();
+	return !mLogic->getClock().isRunning();
 }
 
 boost::shared_ptr<InputSource> DuelMatch::getInputSource(PlayerSide player) const

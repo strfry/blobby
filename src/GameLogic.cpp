@@ -70,8 +70,8 @@ IGameLogic::IGameLogic()
 , mWinningPlayer(NO_PLAYER)
 {
 	// init clock
-	clock.reset();
-	clock.start();
+	mClock.reset();
+	mClock.start();
 	mScores[LEFT_PLAYER] = 0;
 	mScores[RIGHT_PLAYER] = 0;
 	mTouches[LEFT_PLAYER] = 0;
@@ -123,7 +123,7 @@ PlayerSide IGameLogic::getWinningPlayer() const
 
 Clock& IGameLogic::getClock()
 {
-	return clock;
+	return mClock;
 }
 
 PlayerSide IGameLogic::getLastErrorSide()
@@ -150,6 +150,8 @@ GameLogicState IGameLogic::getState() const
 	gls.squishGround = mSquishGround;
 	gls.isGameRunning = mIsGameRunning;
 	gls.isBallValid = mIsBallValid;
+	gls.time = mClock.getTime();
+	gls.steps = mClock.getTimeSteps();
 
 	return gls;
 }
@@ -167,6 +169,8 @@ void IGameLogic::setState(GameLogicState gls)
 	mSquishGround = gls.squishGround;
 	mIsGameRunning = gls.isGameRunning;
 	mIsBallValid = gls.isBallValid;
+	mClock.setTime( gls.time );
+	mClock.setTimeSteps( gls.steps );
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -174,9 +178,9 @@ void IGameLogic::setState(GameLogicState gls)
 // -------------------------------------------------------------------------------------------------
 void IGameLogic::step()
 {
-	clock.step();
+	mClock.step();
 
-	if(clock.isRunning())
+	if(mClock.isRunning())
 	{
 		--mSquish[0];
 		--mSquish[1];
@@ -190,12 +194,13 @@ void IGameLogic::step()
 void IGameLogic::onPause()
 {
 	/// pausing for now only means stopping the clock
-	clock.stop();
+	// pausing is saved into an atomic variable, so this is safe
+	mClock.stop();
 }
 
 void IGameLogic::onUnPause()
 {
-	clock.start();
+	mClock.start();
 }
 
 PlayerInput IGameLogic::transformInput(PlayerInput ip, PlayerSide player)

@@ -129,8 +129,6 @@ void ReplayState::step_impl()
 
 	}
 
-	mMatch->getClock().setTime( mReplayPlayer->getReplayPosition() / mReplayPlayer->getGameSpeed() );
-
 	// draw the progress bar
 	Vector2 prog_pos = Vector2(50, 600-22);
 	imgui.doOverlay(GEN_ID, prog_pos, Vector2(750, 600-3), Color(0,0,0));

@@ -22,15 +22,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Clock.h"
 
 /* includes */
-#include <sstream>
-
 #include "SDL2/SDL.h"
 
 /* implementation */
 
 Clock::Clock() : mRunning(false), mGameTime(0), mLastTime(0)
 {
-	
+
 }
 
 void Clock::reset()
@@ -38,6 +36,7 @@ void Clock::reset()
 	// set all variables to their default values
 	mRunning = false;
 	mGameTime = 0;
+	mTimeSteps = 0;
 	mLastTime = SDL_GetTicks();
 }
 
@@ -47,59 +46,33 @@ void Clock::start()
 	mRunning = true;
 }
 
-void Clock::stop() 
+void Clock::stop()
 {
 	mRunning = false;
 }
 
-bool Clock::isRunning() const 
+bool Clock::isRunning() const
 {
 	return mRunning;
 }
 
-int Clock::getTime() const 
+int Clock::getTime() const
 {
 	return mGameTime / 1000;
 }
-void Clock::setTime(int newTime) 
+void Clock::setTime(int newTime)
 {
 	mGameTime = newTime * 1000;
 }
 
-std::string Clock::getTimeString() const
+int Clock::getTimeSteps() const
 {
-	/// \todo maybe it makes sense to cache this value. we call this function ~75times a seconds
-	///			when the string changes only once. guest it does not make that much of a difference, but still...
-	// calculate seconds, minutes and hours as integers
-	int time_sec = mGameTime / 1000;
-	
-	int seconds = time_sec % 60;
-	int minutes = ((time_sec - seconds) / 60) % 60;
-	int hours = ((time_sec - 60 * minutes - seconds) / 3600) % 60;
-	
-	// now convert to string via stringstream
-	std::stringstream stream;
-	
-	// only write hours if already player more than 1h
-	if(hours > 0)
-		stream << hours << ":";
-		
-	// write minutes
-	// leading 0 if minutes < 10
-	if(minutes < 10)
-		stream << "0";
-	
-	stream << minutes << ":";
-	
-	// write seconds
-	// leading 0 if seconds < 10
-	if(seconds < 10)
-		stream << "0";
-	
-	stream << seconds;
-	
-	// convert stringstream to string and return
-	return stream.str();
+	return mTimeSteps;
+}
+
+void Clock::setTimeSteps( int steps )
+{
+	mTimeSteps = steps;
 }
 
 void Clock::step()
@@ -112,5 +85,6 @@ void Clock::step()
 			mGameTime += newTime - mLastTime;
 		}
 		mLastTime = newTime;
+		++mTimeSteps;
 	}
 }

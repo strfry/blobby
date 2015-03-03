@@ -41,6 +41,9 @@ struct GameLogicState
 	bool isGameRunning;
 	bool isBallValid;
 
+	unsigned int time;
+	unsigned int steps;
+
 	void swapSides();
 
 	void serialize(GenericOut* io) const;

@@ -42,6 +42,7 @@ struct DuelMatchState
 	bool getBallActive() const;
 	int getHitcount(PlayerSide player) const;
 	int getScore(PlayerSide player) const;
+	int getGameTime() const;
 
 	// compound ( calculated )
 	bool blobHitGround(PlayerSide player) const;

@@ -21,52 +21,59 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #pragma once
 
 #include <string>
+#include <atomic>
 
 /*! \class Clock
 	\brief Game Timing Management
-	\details This class represents a clock. It can be started, paused, resetted,
-			and it is possible to get the time in a string for in-game representation
+	\details This class represents a clock. It can be started, paused, resetted.
+			It counts the time in seconds and game frames.
 */
 class Clock
 {
 	public:
 		/// default c'tor
 		Clock();
-		
+
 		/// starts/unpauses the clock
 		void start();
 		/// pauses the clock
 		void stop();
-				
+
 		/// resets the clock. after this, the clock is paused.
 		void reset();
-		
+
 		/// gets whether the clock is currently running
 		bool isRunning() const;
-		
+
 		/// this function has to be called each frame. It calculates
 		///	the passed time;
 		void step();
-		
+
 		/// gets the time in seconds as an integer
 		int getTime() const;
-		
+
 		/// set the time to a specified value
 		/// \param newTime: new time in seconds
 		void setTime(int newTime);
-		
-		/// returns the time as a string
-		std::string getTimeString() const;
-		
+
+		/// gets the number of time steps
+		int getTimeSteps() const;
+
+		/// sets the number of time steps (use i.e. for network sync)
+		void setTimeSteps( int steps );
+
 	private:
 		/// is the clock currently running?
-		bool mRunning;
-		
+		std::atomic<bool> mRunning;
+
 		/// recorded time in seconds
-		time_t mGameTime;
-		
-		/// last time that step was called. 
+		std::atomic<unsigned int> mGameTime;
+
+		/// number of recorded time steps
+		std::atomic<unsigned int> mTimeSteps;
+
+		/// last time that step was called.
 		/// needed to calculate the time difference.
 		time_t mLastTime;
-		
+
 };

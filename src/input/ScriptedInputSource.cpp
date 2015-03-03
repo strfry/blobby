@@ -579,7 +579,7 @@ int ScriptedInputSource::getScoreToWin(lua_State* state)
 
 int ScriptedInputSource::getGameTime(lua_State* state)
 {
-	float time = ActiveMatch->getClock().getTime();
+	float time = mMatchState->getGameTime();
 	lua_pushnumber(state, time);
 	return 1;
 }

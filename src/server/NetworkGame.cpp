@@ -377,7 +377,6 @@ void NetworkGame::h_rules( packet_ptr packet )
 
 void NetworkGame::h_input( packet_ptr packet )
 {
-	int ival;
 	RakNet::BitStream stream((char*)packet->data, packet->length, false);
 
 	// ignore ID_INPUT_UPDATE

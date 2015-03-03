@@ -123,3 +123,8 @@ bool DuelMatchState::blobHitGround(PlayerSide player) const
 {
 	return (getBlobPosition(player).y >= GROUND_PLANE_HEIGHT);
 }
+
+int DuelMatchState::getGameTime() const
+{
+	return logicState.time;
+}

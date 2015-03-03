@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "GameState.h"
 
 /* includes */
+#include <cstdio>
+
 #include <boost/make_shared.hpp>
 
 #include "ReplayRecorder.h"
@@ -114,7 +116,33 @@ void GameState::presentGameUI()
 	// blob name / time textfields
 	imgui.doText(GEN_ID, Vector2(12, 550), mMatch->getPlayer(LEFT_PLAYER).getName());
 	imgui.doText(GEN_ID, Vector2(788, 550), mMatch->getPlayer(RIGHT_PLAYER).getName(), TF_ALIGN_RIGHT);
-	imgui.doText(GEN_ID, Vector2(400, 24), mMatch->getClock().getTimeString(), TF_ALIGN_CENTER);
+
+	// clock
+	// calculate seconds, minutes and hours as integers
+	int time_sec = mLastState->getGameTime();
+	// cache: only recalculate when time changes
+	static int old_time = -1;
+	static std::string time_string = "";
+
+	if( old_time != time_sec )
+	{
+		int seconds = time_sec % 60;
+		int minutes = ((time_sec - seconds) / 60) % 60;
+		int hours = ((time_sec - 60 * minutes - seconds) / 3600) % 60;
+
+		char time_buffer[32];
+		if( hours > 0 )
+			assert(snprintf(time_buffer, sizeof(time_buffer), "%d:%02d:%02d", hours, minutes, seconds) > 0);
+		else
+			assert(snprintf(time_buffer, sizeof(time_buffer), "%02d:%02d", minutes, seconds) > 0);
+		/// \todo i guess some sprintf would be
+
+		time_string = time_buffer;
+		old_time = time_sec;
+
+	}
+
+	imgui.doText(GEN_ID, Vector2(400, 24), time_string, TF_ALIGN_CENTER);
 }
 
 bool GameState::displaySaveReplayPrompt()

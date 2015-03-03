@@ -63,6 +63,7 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 
 		void setRules(std::string rulesFile);
 
+		/// \todo remove the necessity for this function!
 		void reset();
 
 		// this starts the match thread
@@ -71,23 +72,15 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		// This steps through one frame
 		void step();
 
-		// This methods report the current game state and a useful for
-		// the input manager, which needs information about the blob
-		// positions and for lua export, which makes them accessable
-		// for scripted input sources
-
+		/// gets the score required to win the game
+		/// as this is a read-only value, this function
+		/// is thread_save
 		int getScoreToWin() const;
-		PlayerSide getServingPlayer() const;
 
-		const Clock& getClock() const;
-		Clock& getClock();
-
-		bool canStartRound(PlayerSide servingPlayer) const;
-
+		// pause control
 		void pause();
 		void unpause();
-
-		bool isPaused() const{ return mPaused; }
+		bool isPaused() const;
 
 		/// reads the current state in a non thread-save way
 		const DuelMatchState& readCurrentState() const;
@@ -97,8 +90,6 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 
 		PlayerIdentity getPlayer(PlayerSide player) const;
 		PlayerIdentity& getPlayer(PlayerSide player);
-
-		void setServingPlayer(PlayerSide side);
 
 		// this prepares a state to be injected into the match before the next iteration starts
 		void injectState( const DuelMatchState& state, std::vector<MatchEvent> events );
@@ -112,6 +103,7 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		void updateState();
 		// resets the ball for next serve
 		void resetBall(PlayerSide side);
+		bool canStartRound(PlayerSide servingPlayer) const;
 
 
 		/// gets the current state, not thread safe
@@ -122,7 +114,6 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		boost::shared_ptr<InputSource> mInputSources[MAX_PLAYERS];
 		PlayerIdentity mPlayers[MAX_PLAYERS];
 
-		std::atomic<bool> mPaused;
 		const bool mRemote;
 
 		// data that is written to in the simulation thread
