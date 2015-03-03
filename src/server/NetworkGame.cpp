@@ -217,11 +217,6 @@ void NetworkGame::broadcastPhysicState()
 
 	out->generic<DuelMatchState> (ms);
 
-	// add all the events to the stream
-	for(auto& e : events)
-		writeEventToStream(stream, e, mSwitchedSide == LEFT_PLAYER );
-	stream.Write((char)0);
-
 	mServer.Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, mLeftPlayer, false);
 
 	// reset state and stream
@@ -236,11 +231,24 @@ void NetworkGame::broadcastPhysicState()
 
 	out->generic<DuelMatchState> (ms);
 
+	mServer.Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, mRightPlayer, false);
+
+	// send the events
+	if( events.empty() )
+		return;
+	// add all the events to the stream
+	stream.Reset();
+	stream.Write( (unsigned char)ID_GAME_EVENTS );
+	for(auto& e : events)
+		writeEventToStream(stream, e, mSwitchedSide == LEFT_PLAYER );
+	stream.Write((char)0);
+	mServer.Send( &stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0, mLeftPlayer, false);
+
+	stream.Reset();
 	for(auto& e : events)
 		writeEventToStream(stream, e, mSwitchedSide == RIGHT_PLAYER );
 	stream.Write((char)0);
-
-	mServer.Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, mRightPlayer, false);
+	mServer.Send( &stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0, mRightPlayer, false);
 }
 
 

@@ -214,15 +214,10 @@ void DuelMatch::step()
 	updateState();
 }
 
-void DuelMatch::setScore(int left, int right)
-{
-	/// \todo review thread safety
-	mLogic->setScore(LEFT_PLAYER, left);
-	mLogic->setScore(RIGHT_PLAYER, right);
-}
-
 void DuelMatch::pause()
 {
+	/// \todo we now have pausing on three levels: the DuelMatch, the GameLogic[Clock] and the game state.
+	///										simplify that!
 	/// \todo review thread safety
 	mLogic->onPause();
 	mPaused = true;
@@ -237,7 +232,10 @@ void DuelMatch::unpause()
 
 int DuelMatch::getScoreToWin() const
 {
-	/// \todo evaluate thread safety
+	// this function reads a variable from mLogic which is not supposed to change during
+	// gameplay, so it is thread save.
+	// do we actually need this, though? in the current it is only called synchronously
+	// by the AI
 	return mLogic->getScoreToWin();
 }
 
@@ -289,6 +287,7 @@ Clock& DuelMatch::getClock()
 boost::shared_ptr<InputSource> DuelMatch::getInputSource(PlayerSide player) const
 {
 	/// \todo review thread safety
+	// this function is currently only needed for the ReplayPlayer
 	return mInputSources[player];
 }
 

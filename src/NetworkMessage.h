@@ -33,7 +33,8 @@ enum MessageType
 {
 	ID_GENERIC_MESSAGE = ID_RESERVED9 + 1,
 	ID_INPUT_UPDATE,	// send input data from client to server
-	ID_GAME_UPDATE,		// send game status from server to client
+	ID_GAME_UPDATE,		// send game status from server to client [unreliable]
+	ID_GAME_EVENTS,		// send game events from server to client [reliable]
 	ID_OPPONENT_DISCONNECTED,
 	ID_GAME_READY,
 	ID_ENTER_SERVER = ID_RESERVED9 + 10,
@@ -79,39 +80,6 @@ enum MessageType
 // 		timestamp (int)
 //		packet_number (unsigned char)
 // 		Physic data (analysed by PhysicWorld)
-//
-// ID_WIN_NOTIFICATION
-// 	Description:
-// 		Message sent from server to all clients when a player
-// 		won the game. The appended enum tells the client which
-// 		player won.
-// 	Structure:
-// 		ID_WIN_NOTIFICATION
-// 		winning player (PlayerSide)
-//
-// ID_BALL_RESET
-// 	Description:
-// 		 Message sent from server to all clients when the ball
-// 		 is reset to the starting position. It includes an information
-// 		 about the current point state and is used to synchronize
-//		 the clocks.
-// 	Structure:
-// 		ID_BALL_RESET
-// 		serving player (PlayerSide)
-// 		left score (int)
-// 		right score (int)
-//		time (int)
-//
-// ID_COLLISION
-// 	Description:
-// 		Message sent from server to all clients when the ball
-// 		hits a player or the ground.  It is the only valid reason for a player
-// 		collision sound. The event attribute contains the DuelMatch Event that
-//		caused the packet to be sent, intensity contains the hit intensity (only valid for player collisions)
-// 	Structure:
-// 		ID_BALL_PLAYER_COLLISION
-//		event (int)
-// 		intensity (float)
 //
 // ID_GAME_READY
 // 	Description:

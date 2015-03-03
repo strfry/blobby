@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "UserConfig.h"
 #include "RenderManager.h"
 #include "InputDevice.h"
-#include "input_device/JoystickPool.h"
+#include "input/JoystickPool.h"
 
 /* implementation */
 

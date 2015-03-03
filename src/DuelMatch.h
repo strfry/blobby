@@ -71,11 +71,6 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		// This steps through one frame
 		void step();
 
-		// this methods allow external input
-		// events triggered by the network
-		void setScore(int left, int right);
-		void resetBall(PlayerSide side);
-
 		// This methods report the current game state and a useful for
 		// the input manager, which needs information about the blob
 		// positions and for lua export, which makes them accessable
@@ -115,6 +110,9 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		void physicEventCallback( MatchEvent event );
 		// update the internal last world state to the current physicworld
 		void updateState();
+		// resets the ball for next serve
+		void resetBall(PlayerSide side);
+
 
 		/// gets the current state, not thread safe
 		DuelMatchState getState() const;

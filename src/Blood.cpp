@@ -51,7 +51,7 @@ void Blood::step()
 	int diff = SDL_GetTicks() - mLastFrame;
 	RenderManager::getSingleton().drawParticle(mPos, mPlayer);
 	const int SPEED = 45;
-	
+
 	//this calculation is NOT based on physical rules
 	mDir.y += GRAVITY / SPEED * diff;
 	mPos.x += mDir.x / SPEED * diff;
@@ -73,22 +73,22 @@ void BloodManager::step()
 	// don't do any processing if there are no particles
 	if ( !mEnabled || mParticles.empty() )
 		return;
-	
+
 	// start drawing
 	RenderManager::getSingleton().startDrawParticles();
-	
+
 	// iterate over all particles
 	std::list<Blood>::iterator it = mParticles.begin();
 	while (it != mParticles.end())
 	{
 		std::list<Blood>::iterator it2 = it;
-		++it;	
+		++it;
 		it2->step();
 		// delete particles below lower screen border
 		if (it2->getPosition().y > 600)
 			mParticles.erase(it2);
 	}
-	
+
 	// finish drawing
 	RenderManager::getSingleton().endDrawParticles();
 }
@@ -104,10 +104,10 @@ void BloodManager::spillBlood(Vector2 pos, float intensity, int player)
 		///		so it doesn't look that much like a square.
 		int x = random(int(-EL_X_AXIS * intensity), int(EL_X_AXIS * intensity));
 		int y = random(int(-EL_Y_AXIS * intensity), 3);
-		
+
 		if( ( y * y / (EL_Y_AXIS * EL_Y_AXIS) + x * x / (EL_X_AXIS * EL_X_AXIS) ) > intensity * intensity)
 			continue;
-		
+
 		mParticles.push_front( Blood(pos, Vector2(x, y), player) );
 	}
 }

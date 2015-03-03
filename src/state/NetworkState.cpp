@@ -41,7 +41,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DuelMatch.h"
 #include "IMGUI.h"
 #include "SoundManager.h"
-#include "LocalInputSource.h"
+#include "input/LocalInputSource.h"
 #include "UserConfig.h"
 #include "FileExceptions.h"
 #include "GenericIO.h"
@@ -76,6 +76,7 @@ NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client):
 
 	// game is not started until two players are connected
 	mMatch->pause();
+	mMatch->run();
 
 	// load/init players
 
@@ -114,33 +115,36 @@ void NetworkGameState::step_impl()
 	{
 		switch(packet->data[0])
 		{
-			case ID_PHYSIC_UPDATE:
+			case ID_GAME_UPDATE:
 			{
 				RakNet::BitStream stream((char*)packet->data, packet->length, false);
-				int ival;
-				stream.IgnoreBytes(1);	//ID_PHYSIC_UPDATE
-				stream.IgnoreBytes(1);	//ID_TIMESTAMP
-				stream.Read(ival);	//TODO: un-lag based on timestamp delta
+				stream.IgnoreBytes(1);	//ID_GAME_UPDATE
 				//printf("Physic packet received. Time: %d\n", ival);
 				DuelMatchState ms;
+				/// \todo this is a performance nightmare: we create a new reader for every packet!
+				///			there should be a better way to do that
 				boost::shared_ptr<GenericIn> in = createGenericReader(&stream);
 				in->generic<DuelMatchState> (ms);
-				mMatch->setState(ms);
+				*mRemoteState = ms;
 				break;
 			}
-			case ID_WIN_NOTIFICATION:
+			case ID_GAME_EVENTS:
 			{
 				RakNet::BitStream stream((char*)packet->data, packet->length, false);
-				stream.IgnoreBytes(1);	//ID_WIN_NOTIFICATION
-				stream.Read((int&)mWinningPlayer);
-
-				// last point must not be added anymore, because
-				// the score is also simulated local so it is already
-				// right. under strange circumstances this need not
-				// be true, but then the score is set to the correy value
-				// by ID_BALL_RESET
-
-				mNetworkState = PLAYER_WON;
+				stream.IgnoreBytes(1);	//ID_GAME_EVENTS
+				//printf("Physic packet received. Time: %d\n", ival);
+				// read events
+				char event = 0;
+				for(stream.Read(event); event != 0; stream.Read(event))
+				{
+					char side;
+					float intensity = -1;
+					stream.Read(side);
+					if( event == MatchEvent::BALL_HIT_BLOB )
+						stream.Read(intensity);
+					MatchEvent me{ MatchEvent::EventType(event), (PlayerSide)side, intensity };
+					mRemoteEvents.push_back( me );
+				}
 				break;
 			}
 			case ID_OPPONENT_DISCONNECTED:
@@ -150,56 +154,6 @@ void NetworkGameState::step_impl()
 					mNetworkState = OPPONENT_DISCONNECTED;
 				break;
 			}
-			case ID_BALL_RESET:
-			{
-				PlayerSide servingPlayer;
-				RakNet::BitStream stream((char*)packet->data, packet->length, false);
-				stream.IgnoreBytes(1);	//ID_BALL_RESET
-				stream.Read((int&)servingPlayer);
-
-				// read and set new score
-				int nLeftScore;
-				int nRightScore;
-				int time;
-				stream.Read(nLeftScore);
-				stream.Read(nRightScore);
-				stream.Read(time);
-				mMatch->setScore(nLeftScore, nRightScore);
-				mMatch->setServingPlayer(servingPlayer);
-				// sync the clocks... normally, they should not differ
-				mMatch->getClock().setTime(time);
-
-/// \todo FIGURE OUT EVENT HANDLING
-
-				/// \attention
-				/// we can get a problem here:
-				/// assume the packet informing about the game event which lead to this
-				///	either BALL_GROUND_COLLISION or BALL_PLAYER_COLLISION got stalled
-				/// and arrives at the same time time as this packet. Then we get the following behaviour:
-				/// we set the score to the right value... the event causing the score to happen gets processed
-				///  -> that player scores -> score is off!
-				///
-				/// i don't have a clean fix for this right now, so we'll have to live with a workaround for now
-				/// we just order the game to reset all triggered events.
-///				mMatch->resetTriggeredEvents();
-				/// \todo a good fix would involve ensuring we process all events in the right order
-
-
-				break;
-			}/*
-			case ID_COLLISION:
-			{
-				int event;
-				float intensity;
-				RakNet::BitStream stream((char*)packet->data, packet->length, false);
-				stream.IgnoreBytes(1);	//ID_COLLISION
-				stream.Read(event);
-				stream.Read(intensity);
-
-				mMatch->setLastHitIntensity(intensity);
-				mMatch->trigger( event );
-				break;
-			}*/
 			case ID_PAUSE:
 				if (mNetworkState == PLAYING)
 				{
@@ -400,8 +354,15 @@ void NetworkGameState::step_impl()
 		}
 	}
 
+	// inject network data into game
+	mMatch->injectState( *mRemoteState, mRemoteEvents );
+	mRemoteEvents.clear();
+
 	// does this generate any problems if we pause at the exact moment an event is set ( i.e. the ball hit sound
 	// could be played in a loop)?
+	auto states = mMatch->fetchStates();
+	if(!states.empty())
+		*mLastState = *states.back();
 	presentGame();
 	presentGameUI();
 
@@ -524,8 +485,6 @@ void NetworkGameState::step_impl()
 		}
 		case PLAYING:
 		{
-			mMatch->step();
-
 			mLocalInput->updateInput();
 			PlayerInputAbs input = mLocalInput->getRealInput();
 
@@ -537,8 +496,6 @@ void NetworkGameState::step_impl()
 			}
 			RakNet::BitStream stream;
 			stream.Write((unsigned char)ID_INPUT_UPDATE);
-			stream.Write((unsigned char)ID_TIMESTAMP);	///! \todo do we really need this time stamps?
-			stream.Write(RakNet::GetTime());
 			input.writeTo(stream);
 			mClient->Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0);
 			break;

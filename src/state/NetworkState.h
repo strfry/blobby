@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "GameState.h"
 #include "NetworkMessage.h"
 #include "PlayerIdentity.h"
+#include "MatchEvents.h"
 
 #include <vector>
 #include <boost/scoped_ptr.hpp>
@@ -78,12 +79,19 @@ private:
 	PlayerSide mOwnSide;
 	PlayerSide mWinningPlayer;
 
+	// cached network data to inject into game
+	boost::shared_ptr<DuelMatchState> mRemoteState;
+	std::vector<MatchEvent> mRemoteEvents;
+
 	// Chat Vars
 	std::vector<std::string> mChatlog;
 	std::vector<bool > mChatOrigin;
 	unsigned mSelectedChatmessage;
 	unsigned mChatCursorPosition;
 	std::string mChattext;
+
+	// internal helper function that contains all the handling of server connection related states
+	void doNonGameNetworkState();
 };
 
 

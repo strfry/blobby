@@ -24,9 +24,6 @@
 				<Compiler>
 					<Add option="-O3" />
 				</Compiler>
-				<Linker>
-					<Add option="-s" />
-				</Linker>
 			</Target>
 			<Target title="D Server">
 				<Option output="bin/Debug/Blobby Server" prefix_auto="1" extension_auto="1" />
@@ -116,26 +113,15 @@
 		<Unit filename="src/IScriptableComponent.h" />
 		<Unit filename="src/IUserConfigReader.h" />
 		<Unit filename="src/InputDevice.h" />
-		<Unit filename="src/InputManager.cpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-		</Unit>
+		<Unit filename="src/InputManager.cpp" />
 		<Unit filename="src/InputManager.h" />
 		<Unit filename="src/InputSource.cpp" />
 		<Unit filename="src/InputSource.h" />
-		<Unit filename="src/InputSourceFactory.cpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-		</Unit>
-		<Unit filename="src/InputSourceFactory.h" />
-		<Unit filename="src/LocalInputSource.cpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-		</Unit>
-		<Unit filename="src/LocalInputSource.h" />
 		<Unit filename="src/MatchEvents.h" />
 		<Unit filename="src/NetworkMessage.cpp" />
 		<Unit filename="src/NetworkMessage.h" />
+		<Unit filename="src/PacketHandler.cpp" />
+		<Unit filename="src/PacketHandler.h" />
 		<Unit filename="src/PhysicState.cpp" />
 		<Unit filename="src/PhysicState.h" />
 		<Unit filename="src/PhysicWorld.cpp" />
@@ -178,11 +164,6 @@
 		<Unit filename="src/ReplayRecorder.h" />
 		<Unit filename="src/ReplaySavePoint.cpp" />
 		<Unit filename="src/ReplaySavePoint.h" />
-		<Unit filename="src/ScriptedInputSource.cpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-		</Unit>
-		<Unit filename="src/ScriptedInputSource.h" />
 		<Unit filename="src/SoundManager.cpp">
 			<Option target="Debug" />
 			<Option target="Release" />
@@ -204,30 +185,20 @@
 		<Unit filename="src/blobnet/layer/Http.cpp" />
 		<Unit filename="src/blobnet/layer/Http.hpp" />
 		<Unit filename="src/doxyfile" />
-		<Unit filename="src/input_device/JoystickInput.cpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-		</Unit>
-		<Unit filename="src/input_device/JoystickPool.cpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-		</Unit>
-		<Unit filename="src/input_device/JoystickPool.h">
-			<Option target="Debug" />
-			<Option target="Release" />
-		</Unit>
-		<Unit filename="src/input_device/KeyboardInput.cpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-		</Unit>
-		<Unit filename="src/input_device/MouseInput.cpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-		</Unit>
-		<Unit filename="src/input_device/TouchInput.cpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-		</Unit>
+		<Unit filename="src/input/AsyncInputSource.cpp" />
+		<Unit filename="src/input/AsyncInputSource.h" />
+		<Unit filename="src/input/InputSourceFactory.cpp" />
+		<Unit filename="src/input/InputSourceFactory.h" />
+		<Unit filename="src/input/JoystickInput.cpp" />
+		<Unit filename="src/input/JoystickPool.cpp" />
+		<Unit filename="src/input/JoystickPool.h" />
+		<Unit filename="src/input/KeyboardInput.cpp" />
+		<Unit filename="src/input/LocalInputSource.cpp" />
+		<Unit filename="src/input/LocalInputSource.h" />
+		<Unit filename="src/input/MouseInput.cpp" />
+		<Unit filename="src/input/ScriptedInputSource.cpp" />
+		<Unit filename="src/input/ScriptedInputSource.h" />
+		<Unit filename="src/input/TouchInput.cpp" />
 		<Unit filename="src/lua/lapi.c">
 			<Option compilerVar="CC" />
 		</Unit>
