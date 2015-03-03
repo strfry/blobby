@@ -55,7 +55,7 @@ class InputSource : public ObjectCounter<InputSource>
 
 		/// set input which is returned on next call
 		/// of getInput
-		void setInput(PlayerInputAbs ip);
+		virtual void setInput(PlayerInputAbs ip);
 
 		/// gets  match associated with this InputSource
 		const DuelMatch* getMatch() const;

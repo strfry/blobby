@@ -38,7 +38,7 @@ InputSource::~InputSource()
 
 PlayerInput InputSource::getInput() const
 {
-	return mInput.toPlayerInput( this->getMatch() );;
+	return mInput.toPlayerInput( this->getMatch() );
 }
 
 PlayerInput InputSource::updateInput()
@@ -49,7 +49,8 @@ PlayerInput InputSource::updateInput()
 
 void InputSource::setInput(PlayerInput ip)
 {
-	mInput = PlayerInputAbs(ip.left, ip.right, ip.up);
+	// relay to virtual function
+	setInput(PlayerInputAbs(ip.left, ip.right, ip.up));
 }
 
 void InputSource::setInput(PlayerInputAbs ip)
