@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "GenericIO.h"
 #include "MatchEvents.h"
 #include "NetworkPlayer.h"
-#include "InputSource.h"
+#include "input/AsyncInputSource.h"
 
 
 /* implementation */
@@ -49,8 +49,8 @@ NetworkGame::NetworkGame(RakServer& server, boost::shared_ptr<NetworkPlayer> lef
 			PlayerSide switchedSide, std::string rules)
 : mServer(server)
 , mMatch(new DuelMatch(false, rules))
-, mLeftInput (new InputSource())
-, mRightInput(new InputSource())
+, mLeftInput (new AsyncInputSource())
+, mRightInput(new AsyncInputSource())
 , mRecorder(new ReplayRecorder())
 , mPausing(false)
 , mGameValid(true)
@@ -339,19 +339,20 @@ void NetworkGame::h_rules( packet_ptr packet )
 
 	if (isGameStarted())
 	{
-		// buffer for playernames
-		char name[16];
-
 		/// \param side: data of the player to write into the stream
-		auto makeStream = [](PlayerSide side)
+		auto makeStream = [this](PlayerSide side)
 		{
+			// buffer for playernames
+			char name[16];
+
 			RakNet::BitStream stream;
 			stream.Write((unsigned char)ID_GAME_READY);
 			stream.Write((int)SpeedController::getMainInstance()->getGameSpeed());
 			strncpy(name, mMatch->getPlayer(side).getName().c_str(), sizeof(name));
 			stream.Write(name, sizeof(name));
 			stream.Write(mMatch->getPlayer(side).getStaticColor().toInt());
-		}
+			return stream;
+		};
 
 		// writing data into leftStream
 		RakNet::BitStream leftStream = makeStream( RIGHT_PLAYER );

@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "State.h"
 #include "RenderManager.h"
 #include "InputManager.h"
-#include "LocalInputSource.h"
+#include "input/LocalInputSource.h"
 #include "SpeedController.h"
 #include "SoundManager.h"
 #include "Blood.h"

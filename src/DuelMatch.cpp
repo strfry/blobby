@@ -38,6 +38,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // helper macro to check that non-threadsafe functions are only called from
 // within the match thread
 #define thread_assert()	assert( std::this_thread::get_id() == mMatchThread.get_id() || !mMatchThread.joinable() );
+// do not allow execution of this function while the game thread is running
+#define no_parallel_assert() assert( !mMatchThread.joinable() );
 /* implementation */
 
 DuelMatch::DuelMatch(bool remote, std::string rules) :
@@ -52,6 +54,7 @@ DuelMatch::DuelMatch(bool remote, std::string rules) :
 {
 	mPhysicWorld->setEventCallback( std::bind(&DuelMatch::physicEventCallback, this, std::placeholders::_1) );
 
+	// set dummy input
 	setInputSources(boost::make_shared<InputSource>(), boost::make_shared<InputSource>());
 
 	// init
@@ -74,8 +77,8 @@ void DuelMatch::run()
 
 	// start new thread
 	mIsRunning = true;
+
 	// start match thread
-	std::cout << "START THREAD "<<mMatchThread.joinable() << "\n";
 	mMatchThread = std::thread([this]()
 	{
 		SpeedController ctrl(1000);
@@ -90,14 +93,16 @@ void DuelMatch::run()
 
 void DuelMatch::setPlayers( PlayerIdentity lplayer, PlayerIdentity rplayer)
 {
-	/// \todo review thread safety
+	no_parallel_assert();
+
 	mPlayers[LEFT_PLAYER] = lplayer;
 	mPlayers[RIGHT_PLAYER] = rplayer;
 }
 
 void DuelMatch::setInputSources(boost::shared_ptr<InputSource> linput, boost::shared_ptr<InputSource> rinput )
 {
-	/// \todo review thread safety
+	no_parallel_assert();
+
 	if(linput)
 		mInputSources[LEFT_PLAYER] = linput;
 
@@ -110,7 +115,9 @@ void DuelMatch::setInputSources(boost::shared_ptr<InputSource> linput, boost::sh
 
 void DuelMatch::reset()
 {
-	/// \todo review thread safety
+	/// \todo we probably should not need this function!
+	no_parallel_assert();
+
 	mPhysicWorld.reset(new PhysicWorld());
 	mPhysicWorld->setEventCallback( std::bind(&DuelMatch::physicEventCallback, this, std::placeholders::_1) );
 
@@ -119,7 +126,8 @@ void DuelMatch::reset()
 
 void DuelMatch::setRules(std::string rulesFile)
 {
-	/// \todo review thread safety
+	no_parallel_assert();
+
 	mLogic = createGameLogic(rulesFile, this);
 }
 
