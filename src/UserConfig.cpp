@@ -33,8 +33,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "FileRead.h"
 #include "FileWrite.h"
 #include "PlayerIdentity.h"
-#include "LocalInputSource.h"
-#include "ScriptedInputSource.h"
+#include "input/LocalInputSource.h"
+#include "input/ScriptedInputSource.h"
 
 
 /* implementation */

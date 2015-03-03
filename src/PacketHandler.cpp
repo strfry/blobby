@@ -47,7 +47,6 @@ void PacketHandler::registerHandler( std::initializer_list<unsigned char> packet
 	auto hf = [handler]( packet_ptr p )
 	{
 		RakNet::BitStream stream( p->getStream() );
-		stream.IgnoreBytes(1);	//ID_BLOBBY_SERVER_PRESENT
 		handler( stream );
 	};
 	registerHandler( packet_ids, hf );

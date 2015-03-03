@@ -40,8 +40,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "GenericIO.h"
 #include "MatchEvents.h"
 #include "NetworkPlayer.h"
+#include "PacketHandler.h"
 #include "input/AsyncInputSource.h"
 
+// macro to bind functions for packet handler
+#define BIND_MF(F) std::bind(&NetworkGame::F, this, std::placeholders::_1)
 
 /* implementation */
 
@@ -54,6 +57,7 @@ NetworkGame::NetworkGame(RakServer& server, boost::shared_ptr<NetworkPlayer> lef
 , mRecorder(new ReplayRecorder())
 , mPausing(false)
 , mGameValid(true)
+, mHandler( new PacketHandler )
 {
 	// check that both players don't have an active game
 	if(leftPlayer->getGame())
@@ -98,12 +102,12 @@ NetworkGame::NetworkGame(RakServer& server, boost::shared_ptr<NetworkPlayer> lef
 	mMatch->run();
 
 	// basic packet handling functions
-	mHandler.registerHandler({ID_CONNECTION_LOST, ID_DISCONNECTION_NOTIFICATION}, [this](packet_ptr) { h_disconnect(); });
-	mHandler.registerHandler({ID_REPLAY}, [this](packet_ptr p) { h_replay( p ); });
-	mHandler.registerHandler({ID_PAUSE, ID_UNPAUSE}, [this](packet_ptr p) { h_pause( p ); });
-	mHandler.registerHandler({ID_CHAT_MESSAGE}, [this](packet_ptr p) {h_chat(p);} );
-	mHandler.registerHandler({ID_RULES}, [this](packet_ptr p) {h_rules(p);} );
-	mHandler.registerHandler({ID_INPUT_UPDATE}, [this](packet_ptr p) {h_input(p);} );
+	mHandler->registerHandler({ID_CONNECTION_LOST, ID_DISCONNECTION_NOTIFICATION}, [this](packet_ptr){h_disconnect();});
+	mHandler->registerHandler({ID_REPLAY}, BIND_MF(h_replay));
+	mHandler->registerHandler({ID_PAUSE, ID_UNPAUSE}, BIND_MF(h_pause));
+	mHandler->registerHandler({ID_CHAT_MESSAGE}, BIND_MF(h_chat) );
+	mHandler->registerHandler({ID_RULES}, BIND_MF(h_rules) );
+	mHandler->registerHandler({ID_INPUT_UPDATE}, BIND_MF(h_input) );
 }
 
 NetworkGame::~NetworkGame()
@@ -151,10 +155,9 @@ void NetworkGame::processPackets()
 {
 	while (!mPacketQueue.empty())
 	{
-
 		packet_ptr packet = mPacketQueue.front();
 		mPacketQueue.pop_front();
-		mHandler.handlePacket( packet );
+		mHandler->handlePacket( packet );
 	}
 }
 

@@ -50,3 +50,4 @@ private:
 	/// them afterwards, and also to catch cases when the user supplies a non.callable function.
 	handler_fn mErrorHandler;
 };
+

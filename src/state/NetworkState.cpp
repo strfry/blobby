@@ -52,7 +52,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "server/DedicatedServer.h"
 #include "LobbyState.h"
 #include "InputManager.h"
+#include "PacketHandler.h"
 
+// helper macro to bind the members to the packet handler
+#define BIND_MF(F) std::bind(&NetworkGameState::F, this, std::placeholders::_1)
 
 /* implementation */
 NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client):
@@ -63,7 +66,8 @@ NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client):
 	 mWaitingForReplay(false),
 	 mSelectedChatmessage(0),
 	 mChatCursorPosition(0),
-	 mChattext("")
+	 mChattext(""),
+	 mHandler( new PacketHandler )
 {
 	boost::shared_ptr<IUserConfigReader> config = IUserConfigReader::createUserConfigReader("config.xml");
 	mOwnSide = (PlayerSide)config->getInteger("network_side");
@@ -98,6 +102,34 @@ NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client):
 	}
 
 	mRemotePlayer->setName("");
+
+	using namespace std::placeholders;
+
+	mHandler->ignorePackets({ID_REMOTE_CONNECTION_LOST, ID_REMOTE_DISCONNECTION_NOTIFICATION, ID_SERVER_STATUS, ID_CHALLENGE, ID_REMOTE_NEW_INCOMING_CONNECTION, ID_REMOTE_EXISTING_CONNECTION});
+	mHandler->registerHandler({ID_OPPONENT_DISCONNECTED}, [this](packet_ptr) {if (mNetworkState != PLAYER_WON) mNetworkState = OPPONENT_DISCONNECTED;} );
+	mHandler->registerHandler({ID_GAME_READY}, BIND_MF(h_game_ready));
+	// pausing
+	mHandler->registerHandler({ID_PAUSE}, [this](packet_ptr){
+							if (mNetworkState == PLAYING){
+								mNetworkState = PAUSING;
+								mMatch->pause();
+							} });
+	mHandler->registerHandler({ID_UNPAUSE}, [this](packet_ptr){
+							if (mNetworkState == PAUSING) {
+								SDL_StopTextInput();
+								mNetworkState = PLAYING;
+								mMatch->unpause();
+							} });
+	// unexpected packets
+	// we never do anything that should cause such a packet to be received!
+	mHandler->registerHandler({ID_CONNECTION_REQUEST_ACCEPTED, ID_CONNECTION_ATTEMPT_FAILED}, [](packet_ptr) { assert(0); });
+	mHandler->registerHandler({ID_DISCONNECTION_NOTIFICATION, ID_CONNECTION_LOST}, [this](packet_ptr) { if (mNetworkState != PLAYER_WON) mNetworkState = DISCONNECTED; });
+	mHandler->registerHandler({ID_NO_FREE_INCOMING_CONNECTIONS}, [this](packet_ptr) { mNetworkState = SERVER_FULL; });
+	mHandler->registerHandler({ID_REPLAY},BIND_MF(h_replay));
+	mHandler->registerHandler({ID_CHAT_MESSAGE}, BIND_MF(h_chat));
+	mHandler->registerHandler({ID_GAME_EVENTS}, BIND_MF(h_events));
+	mHandler->registerHandler({ID_GAME_UPDATE}, BIND_MF(h_game_update));
+	mHandler->registerHandler({ID_BLOBBY_SERVER_PRESENT}, BIND_MF(h_server_present));
 }
 
 NetworkGameState::~NetworkGameState()
@@ -108,250 +140,11 @@ NetworkGameState::~NetworkGameState()
 void NetworkGameState::step_impl()
 {
 	IMGUI& imgui = IMGUI::getSingleton();
-	RenderManager* rmanager = &RenderManager::getSingleton();
 
 	packet_ptr packet;
 	while (packet = mClient->Receive())
 	{
-		switch(packet->data[0])
-		{
-			case ID_GAME_UPDATE:
-			{
-				RakNet::BitStream stream((char*)packet->data, packet->length, false);
-				stream.IgnoreBytes(1);	//ID_GAME_UPDATE
-				//printf("Physic packet received. Time: %d\n", ival);
-				DuelMatchState ms;
-				/// \todo this is a performance nightmare: we create a new reader for every packet!
-				///			there should be a better way to do that
-				boost::shared_ptr<GenericIn> in = createGenericReader(&stream);
-				in->generic<DuelMatchState> (ms);
-				*mRemoteState = ms;
-				break;
-			}
-			case ID_GAME_EVENTS:
-			{
-				RakNet::BitStream stream((char*)packet->data, packet->length, false);
-				stream.IgnoreBytes(1);	//ID_GAME_EVENTS
-				//printf("Physic packet received. Time: %d\n", ival);
-				// read events
-				char event = 0;
-				for(stream.Read(event); event != 0; stream.Read(event))
-				{
-					char side;
-					float intensity = -1;
-					stream.Read(side);
-					if( event == MatchEvent::BALL_HIT_BLOB )
-						stream.Read(intensity);
-					MatchEvent me{ MatchEvent::EventType(event), (PlayerSide)side, intensity };
-					mRemoteEvents.push_back( me );
-				}
-				break;
-			}
-			case ID_OPPONENT_DISCONNECTED:
-			{
-				// In this state, a leaving opponent would not be very surprising
-				if (mNetworkState != PLAYER_WON)
-					mNetworkState = OPPONENT_DISCONNECTED;
-				break;
-			}
-			case ID_PAUSE:
-				if (mNetworkState == PLAYING)
-				{
-					mNetworkState = PAUSING;
-					mMatch->pause();
-				}
-				break;
-			case ID_UNPAUSE:
-				if (mNetworkState == PAUSING)
-				{
-					SDL_StopTextInput();
-					mNetworkState = PLAYING;
-					mMatch->unpause();
-				}
-				break;
-			case ID_GAME_READY:
-			{
-				char charName[16];
-				RakNet::BitStream stream((char*)packet->data, packet->length, false);
-
-				stream.IgnoreBytes(1);	// ignore ID_GAME_READY
-
-				// read gamespeed
-				int speed;
-				stream.Read(speed);
-				SpeedController::getMainInstance()->setGameSpeed(speed);
-
-				// read playername
-				stream.Read(charName, sizeof(charName));
-
-				// ensures that charName is null terminated
-				charName[sizeof(charName)-1] = '\0';
-
-				// read colors
-				int temp;
-				stream.Read(temp);
-				Color ncolor = temp;
-
-				mRemotePlayer->setName(charName);
-
-				setDefaultReplayName(mLocalPlayer->getName(), mRemotePlayer->getName());
-
-				// check whether to use remote player color
-				if(mUseRemoteColor)
-				{
-					mRemotePlayer->setStaticColor(ncolor);
-					RenderManager::getSingleton().redraw();
-				}
-
-				// Workarround for SDL-Renderer
-				// Hides the GUI when networkgame starts
-				rmanager->redraw();
-
-				mNetworkState = PLAYING;
-				// start game
-				mMatch->unpause();
-
-				// game ready whistle
-				SoundManager::getSingleton().playSound("sounds/pfiff.wav", ROUND_START_SOUND_VOLUME);
-				break;
-			}
-			case ID_RULES_CHECKSUM:
-			{
-				RakNet::BitStream stream((char*)packet->data, packet->length, false);
-
-				stream.IgnoreBytes(1);	// ignore ID_RULES_CHECKSUM
-
-				int serverChecksum;
-				stream.Read(serverChecksum);
-				int ourChecksum = 0;
-				if (serverChecksum != 0)
-				{
-					try
-					{
-						FileRead rulesFile("server_rules.lua");
-						ourChecksum = rulesFile.calcChecksum(0);
-						rulesFile.close();
-					}
-					catch( FileLoadException& ex )
-					{
-						// file doesn't exist - nothing to do here
-					}
-				}
-
-				RakNet::BitStream stream2;
-				stream2.Write((unsigned char)ID_RULES);
-				stream2.Write(bool(serverChecksum != 0 && serverChecksum != ourChecksum));
-				mClient->Send(&stream2, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
-
-				break;
-			}
-			case ID_RULES:
-			{
-				RakNet::BitStream stream((char*)packet->data, packet->length, false);
-
-				stream.IgnoreBytes(1);	// ignore ID_RULES
-
-				int rulesLength;
-				stream.Read(rulesLength);
-				if (rulesLength)
-				{
-					boost::shared_array<char>  rulesString( new char[rulesLength + 1] );
-					stream.Read(rulesString.get(), rulesLength);
-					// null terminate
-					rulesString[rulesLength] = 0;
-					FileWrite rulesFile("server_rules.lua");
-					rulesFile.write(rulesString.get(), rulesLength);
-					rulesFile.close();
-					mMatch->setRules("server_rules.lua");
-				}
-				else
-				{
-					// either old server, or we have to use fallback ruleset
-					mMatch->setRules( FALLBACK_RULES_NAME );
-				}
-
-				break;
-			}
-			// status messages we don't care about
-			case ID_REMOTE_DISCONNECTION_NOTIFICATION:
-			case ID_REMOTE_CONNECTION_LOST:
-			case ID_SERVER_STATUS:
-			case ID_CHALLENGE:
-			case ID_REMOTE_NEW_INCOMING_CONNECTION:
-			case ID_REMOTE_EXISTING_CONNECTION:
-				break;
-			case ID_DISCONNECTION_NOTIFICATION:
-			case ID_CONNECTION_LOST:
-				if (mNetworkState != PLAYER_WON)
-					mNetworkState = DISCONNECTED;
-				break;
-			case ID_NO_FREE_INCOMING_CONNECTIONS:
-				mNetworkState = SERVER_FULL;
-				break;
-			case ID_CHAT_MESSAGE:
-			{
-				RakNet::BitStream stream((char*)packet->data, packet->length, false);
-				stream.IgnoreBytes(1);	// ID_CHAT_MESSAGE
-				// Insert Message in the log and focus the last element
-				char message[31];
-				stream.Read(message, sizeof(message));
-				message[30] = '\0';
-
-				// Insert Message in the log and focus the last element
-				mChatlog.push_back((std::string) message);
-				mChatOrigin.push_back(false);
-				mSelectedChatmessage = mChatlog.size() - 1;
-				SoundManager::getSingleton().playSound("sounds/chat.wav", ROUND_START_SOUND_VOLUME);
-				break;
-			}
-			case ID_REPLAY:
-			{
-				/// \todo we should take more action if server sends replay
-				///		even if not requested!
-				if(!mWaitingForReplay)
-					break;
-
-				RakNet::BitStream stream = RakNet::BitStream((char*)packet->data, packet->length, false);
-				stream.IgnoreBytes(1);	// ID_REPLAY
-
-				// read stream into a dummy replay recorder
-				boost::shared_ptr<GenericIn> reader = createGenericReader( &stream );
-				ReplayRecorder dummyRec;
-				dummyRec.receive( reader );
-				// and save that
-				saveReplay(dummyRec);
-
-				// mWaitingForReplay will be set to false even if replay could not be saved because
-				// the server won't send it again.
-				mWaitingForReplay = false;
-
-				break;
-			}
-
-			// we never do anything that should cause such a packet to be received!
-			case ID_CONNECTION_REQUEST_ACCEPTED:
-			case ID_CONNECTION_ATTEMPT_FAILED:
-				assert( 0 );
-				break;
-
-			case ID_BLOBBY_SERVER_PRESENT:
-			{
-				// this should only be called if we use the stay on server option
-				RakNet::BitStream stream( packet->getStream() );
-				stream.IgnoreBytes(1);	//ID_BLOBBY_SERVER_PRESENT
-				ServerInfo info(stream,	mClient->PlayerIDToDottedIP(packet->playerId), packet->playerId.port);
-
-				if (packet->length == ServerInfo::BLOBBY_SERVER_PRESENT_PACKET_SIZE )
-				{
-					switchState(new LobbyState(info));
-				}
-				break;
-			}
-			default:
-				printf("Received unknown Packet %d\n", packet->data[0]);
-				std::cout<<packet->data<<"\n";
-				break;
-		}
+		mHandler->handlePacket( packet );
 	}
 
 	// inject network data into game
@@ -558,6 +351,183 @@ void NetworkGameState::step_impl()
 			}
 			imgui.doCursor();
 		}
+	}
+}
+
+void NetworkGameState::h_game_ready( RakNet::BitStream stream )
+{
+
+	stream.IgnoreBytes(1);	// ignore ID_GAME_READY
+
+	// read gamespeed
+	int speed;
+	stream.Read(speed);
+	SpeedController::getMainInstance()->setGameSpeed(speed);
+
+	// read playername
+	char charName[16];
+	stream.Read(charName, sizeof(charName));
+	// ensures that charName is null terminated
+	charName[sizeof(charName)-1] = '\0';
+	mRemotePlayer->setName(charName);
+
+	// read colors
+	int temp;
+	stream.Read(temp);
+	Color ncolor = temp;
+
+	setDefaultReplayName(mLocalPlayer->getName(), mRemotePlayer->getName());
+
+	// check whether to use remote player color
+	if(mUseRemoteColor)
+	{
+		mRemotePlayer->setStaticColor(ncolor);
+		RenderManager::getSingleton().redraw();
+	}
+
+	// Workarround for SDL-Renderer
+	// Hides the GUI when networkgame starts
+	RenderManager* rmanager = &RenderManager::getSingleton();
+	rmanager->redraw();
+
+	mNetworkState = PLAYING;
+	// start game
+	mMatch->unpause();
+
+	// game ready whistle
+	SoundManager::getSingleton().playSound("sounds/pfiff.wav", ROUND_START_SOUND_VOLUME);
+}
+
+void NetworkGameState::h_rules( RakNet::BitStream stream )
+{
+	unsigned char type;
+	stream.Read(type);
+	if( type == ID_RULES_CHECKSUM )
+	{
+		int serverChecksum;
+		stream.Read(serverChecksum);
+		int ourChecksum = 0;
+		if (serverChecksum != 0)
+		{
+			try
+			{
+				FileRead rulesFile("server_rules.lua");
+				ourChecksum = rulesFile.calcChecksum(0);
+				rulesFile.close();
+			}
+			catch( FileLoadException& ex )
+			{
+				// file doesn't exist - nothing to do here
+			}
+		}
+
+		RakNet::BitStream stream2;
+		stream2.Write((unsigned char)ID_RULES);
+		stream2.Write(bool(serverChecksum != 0 && serverChecksum != ourChecksum));
+		mClient->Send(&stream2, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
+	}
+	 else if( type == ID_RULES )
+	{
+		int rulesLength;
+		stream.Read(rulesLength);
+		if (rulesLength)
+		{
+			boost::shared_array<char>  rulesString( new char[rulesLength + 1] );
+			stream.Read(rulesString.get(), rulesLength);
+			// null terminate
+			rulesString[rulesLength] = 0;
+			FileWrite rulesFile("server_rules.lua");
+			rulesFile.write(rulesString.get(), rulesLength);
+			rulesFile.close();
+			mMatch->setRules("server_rules.lua");
+		}
+		else
+		{
+			// either old server, or we have to use fallback ruleset
+			mMatch->setRules( FALLBACK_RULES_NAME );
+		}
+	} else
+	{
+		assert(0);
+	}
+}
+
+void NetworkGameState::h_replay( RakNet::BitStream stream )
+{
+	/// \todo we should take more action if server sends replay
+	///		even if not requested!
+	if(!mWaitingForReplay)
+		return;
+
+	stream.IgnoreBytes(1);	// ID_REPLAY
+
+	// read stream into a dummy replay recorder
+	boost::shared_ptr<GenericIn> reader = createGenericReader( &stream );
+	ReplayRecorder dummyRec;
+	dummyRec.receive( reader );
+	// and save that
+	saveReplay(dummyRec);
+
+	// mWaitingForReplay will be set to false even if replay could not be saved because
+	// the server won't send it again.
+	mWaitingForReplay = false;
+}
+
+void NetworkGameState::h_chat( RakNet::BitStream stream )
+{
+	stream.IgnoreBytes(1);	// ID_CHAT_MESSAGE
+	// Insert Message in the log and focus the last element
+	char message[31];
+	stream.Read(message, sizeof(message));
+	message[30] = '\0';
+
+	// Insert Message in the log and focus the last element
+	mChatlog.push_back((std::string) message);
+	mChatOrigin.push_back(false);
+	mSelectedChatmessage = mChatlog.size() - 1;
+	SoundManager::getSingleton().playSound("sounds/chat.wav", ROUND_START_SOUND_VOLUME);
+}
+
+void NetworkGameState::h_game_update( RakNet::BitStream stream )
+{
+	stream.IgnoreBytes(1);	//ID_GAME_UPDATE
+	//printf("Physic packet received. Time: %d\n", ival);
+	DuelMatchState ms;
+	/// \todo this is a performance nightmare: we create a new reader for every packet!
+	///			there should be a better way to do that
+	boost::shared_ptr<GenericIn> in = createGenericReader(&stream);
+	in->generic<DuelMatchState> (ms);
+	*mRemoteState = ms;
+}
+
+void NetworkGameState::h_events( RakNet::BitStream stream )
+{
+	stream.IgnoreBytes(1);	//ID_GAME_EVENTS
+	//printf("Physic packet received. Time: %d\n", ival);
+	// read events
+	char event = 0;
+	for(stream.Read(event); event != 0; stream.Read(event))
+	{
+		char side;
+		float intensity = -1;
+		stream.Read(side);
+		if( event == MatchEvent::BALL_HIT_BLOB )
+			stream.Read(intensity);
+		MatchEvent me{ MatchEvent::EventType(event), (PlayerSide)side, intensity };
+		mRemoteEvents.push_back( me );
+	}
+}
+
+void NetworkGameState::h_server_present( packet_ptr packet )
+{
+	// this should only be called if we use the stay on server option
+	RakNet::BitStream stream( packet->getStream() );
+	stream.IgnoreBytes(1);	//ID_BLOBBY_SERVER_PRESENT
+	ServerInfo info(stream,	mClient->PlayerIDToDottedIP(packet->playerId), packet->playerId.port);
+
+	if (packet->length == ServerInfo::BLOBBY_SERVER_PRESENT_PACKET_SIZE )
+	{
+		switchState(new LobbyState(info));
 	}
 }
 

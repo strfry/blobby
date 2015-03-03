@@ -36,6 +36,7 @@ class InputSource;
 class NetworkGame;
 class PlayerIdentity;
 class DedicatedServer;
+class PacketHandler;
 
 /*! \class NetworkGameState
 	\brief State for Network Game
@@ -90,8 +91,19 @@ private:
 	unsigned mChatCursorPosition;
 	std::string mChattext;
 
+	boost::scoped_ptr<PacketHandler> mHandler;
+
 	// internal helper function that contains all the handling of server connection related states
 	void doNonGameNetworkState();
+
+	// packet handlers
+	void h_game_ready( RakNet::BitStream stream );	// process game ready packet
+	void h_rules( RakNet::BitStream stream );		// process rules and rules checksum packets
+	void h_replay( RakNet::BitStream stream );		// gets a replay
+	void h_chat( RakNet::BitStream stream );		// chatting
+	void h_game_update( RakNet::BitStream stream);	// game update packet
+	void h_events( RakNet::BitStream stream);		// game events
+	void h_server_present( packet_ptr packet ); 	// blobby server present packet
 };
 
 

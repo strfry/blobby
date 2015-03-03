@@ -28,7 +28,7 @@ MULTI-THREAD primary:
  * move game speed controller into duelmatch/game logic/clock
  * review thread safety of DuelMatch functions (e.g. currently, getClock is unsafe)
  * check that server still works as expected
- * fix network and gfx fps to 50
+ * fix network and gfx fps to 60
  * rework NetworkGameState
  
  MULTI-THREAD secondary:

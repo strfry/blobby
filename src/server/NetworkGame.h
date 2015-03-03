@@ -29,13 +29,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "raknet/NetworkTypes.h"
 #include "raknet/BitStream.h"
 #include "SpeedController.h"
-#include "PacketHandler.h"
 #include "DuelMatch.h"
 #include "BlobbyDebug.h"
 
 class RakServer;
 class ReplayRecorder;
 class NetworkPlayer;
+class PacketHandler;
 
 typedef std::list<packet_ptr> PacketQueue;
 
@@ -102,9 +102,9 @@ class NetworkGame : public ObjectCounter<NetworkGame>
 		boost::shared_array<char> mRulesString;
 
 		// packet handling
-        PacketHandler mHandler;
+		boost::scoped_ptr<PacketHandler> mHandler;
 
-        // handler functions
+		// handler functions
         // reacts to the disconnect packet: ends the game
 		void h_disconnect( );
 		// sends the replay to the requesting player
