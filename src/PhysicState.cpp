@@ -39,8 +39,8 @@ USER_SERIALIZER_IMPLEMENTATION_HELPER(PhysicState)
 	io.number( value.blobState[LEFT_PLAYER] );
 	io.number( value.blobState[RIGHT_PLAYER] );
 
-	io.number( value.blobPosition[RIGHT_PLAYER].x );
-	io.number( value.blobPosition[RIGHT_PLAYER].y );
+	io.number( value.blobVelocity[RIGHT_PLAYER].x );
+	io.number( value.blobVelocity[RIGHT_PLAYER].y );
 
 	io.number( value.ballPosition.x );
 	io.number( value.ballPosition.y );

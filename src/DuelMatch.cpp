@@ -251,9 +251,8 @@ void DuelMatch::setState(const DuelMatchState& state)
 
 	mTransformedInput[LEFT_PLAYER] = state.playerInput[LEFT_PLAYER];
 	mTransformedInput[RIGHT_PLAYER] = state.playerInput[RIGHT_PLAYER];
-
-	mInputSources[LEFT_PLAYER]->setInput( mTransformedInput[LEFT_PLAYER] );
-	mInputSources[RIGHT_PLAYER]->setInput( mTransformedInput[RIGHT_PLAYER] );
+	// we do not update the input sources here, because the input data inside the state represent the input during that state.
+	// the newly set input source would be useless, as the data had to be updated anyway before the next timestep.
 }
 
 DuelMatchState DuelMatch::getState() const
