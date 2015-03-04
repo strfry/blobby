@@ -51,6 +51,7 @@ class ReplayPlayer : public ObjectCounter<ReplayPlayer>
 		~ReplayPlayer();
 
 		void load(const std::string& filename);
+		void setReplaySpeed( int fps );
 
 		// -----------------------------------------------------------------------------------------
 		// 							Replay Attributes

@@ -151,5 +151,10 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 
 		// step callback
 		match_step_callback_fn_type mStepCallback;
+
+		// push functions to this vector, when they have to be executed inside the game thread.
+		std::mutex mCachedFnMutex;
+		std::vector<std::function<void()>> mCachedThreadFunctions;
+		std::atomic<int> mCachedFnSize;
 };
 

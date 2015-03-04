@@ -52,6 +52,8 @@ DuelMatch::DuelMatch(bool remote, std::string rules) :
 		mInjectionState( new DuelMatchState ),
 		mSpeedController( boost::make_shared<SpeedController>(60) )
 {
+	mCachedFnSize = 0;
+
 	mPhysicWorld->setEventCallback( std::bind(&DuelMatch::physicEventCallback, this, std::placeholders::_1) );
 
 	// set dummy input
@@ -137,13 +139,36 @@ void DuelMatch::setRules(std::string rulesFile)
 
 void DuelMatch::setGameSpeed( int fps )
 {
-	no_parallel_assert();
+	auto func = [this, fps]()
+	{
+		mSpeedController->setGameSpeed( fps );
+	};
 
-	mSpeedController->setGameSpeed( fps );
+	if( mMatchThread.joinable() )
+	{
+		std::lock_guard<std::mutex> lock (mCachedFnMutex);
+		mCachedThreadFunctions.push_back( func );
+		++mCachedFnSize;
+	}
+	 else
+	{
+		func();
+	}
+
 }
 
 void DuelMatch::step()
 {
+	// check if we are sure that functions have to be executed, only then lock
+	if( mCachedFnSize != 0 )
+	{
+		std::lock_guard<std::mutex> lock (mCachedFnMutex);
+		for( auto& f : mCachedThreadFunctions)
+			f();
+		mCachedThreadFunctions.clear();
+		mCachedFnSize = 0;
+	}
+
 	/// \todo this should no longer be public, it is called only from the internal thread
 	// in pause mode, step does nothing. this should go to the framerate computation
 	if(isPaused() || mLogic->getWinningPlayer() != NO_PLAYER)

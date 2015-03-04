@@ -99,8 +99,13 @@ void ReplayPlayer::play()
 
 	// initial input
 	loader->getInputAt(mPosition, mLeftInput.get(), mRightInput.get() );
-	mMatch->setGameSpeed(120);
+	mMatch->setGameSpeed( loader->getSpeed() );
 	mMatch->run();
+}
+
+void ReplayPlayer::setReplaySpeed( int fps )
+{
+	mMatch->setGameSpeed( fps );
 }
 
 void ReplayPlayer::onMatchStep(const DuelMatchState& state, const std::vector<MatchEvent>& events)

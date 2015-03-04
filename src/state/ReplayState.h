@@ -54,6 +54,5 @@ private:
 	bool mPaused;
 
 	// replay speed control
-	int mSpeedValue;
-	int mSpeedTimer;
+	float mSpeedValue;
 };

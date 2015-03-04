@@ -46,8 +46,7 @@ ReplayState::ReplayState() : GameState( boost::make_shared<DuelMatch>(false, DUM
 	mPositionJump = -1;
 	mPaused = false;
 
-	mSpeedValue = 8;
-	mSpeedTimer = 0;
+	mSpeedValue = 1.0;
 }
 
 ReplayState::~ReplayState()
@@ -162,15 +161,17 @@ void ReplayState::step_impl()
 		if (fast_click)
 		{
 			mSpeedValue *= 2;
-			if(mSpeedValue > 64)
-				mSpeedValue = 64;
+			if(mSpeedValue > 8)
+				mSpeedValue = 8;
+			mReplayPlayer->setReplaySpeed( mReplayPlayer->getGameSpeed() * mSpeedValue  );
 		}
 
 		if (slow_click)
 		{
 			mSpeedValue /= 2;
-			if(mSpeedValue < 1)
-				mSpeedValue = 1;
+			if(mSpeedValue < 1.0/8)
+				mSpeedValue = 1.0/8;
+			mReplayPlayer->setReplaySpeed( mReplayPlayer->getGameSpeed() * mSpeedValue  );
 		}
 
 		if ((InputManager::getSingleton()->exit()))
