@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "PacketHandler.h"
 #include "raknet/BitStream.h"
+#include "NetworkMessage.h"
 #include <iostream>
 
 PacketHandler::PacketHandler()
@@ -27,16 +28,16 @@ PacketHandler::PacketHandler()
 	mErrorHandler= []( packet_ptr packet )
 	{
 		/// \todo print more info!
-		std::cerr << "Received unknown Packet " << (int)packet->data[0] << "\n";
+		std::cerr << "Received unexpected Packet " << (int)packet->data[0] << "["  << packet_names[packet->data[0]] << "]\n";
 	};
 }
 
 void PacketHandler::handlePacket( packet_ptr packet )
 {
-    unsigned char pid = packet->data[0];
-    auto handler = mHandlers[pid];
-    // if handler is undefined
-    if( handler )
+	unsigned char pid = packet->data[0];
+	auto handler = mHandlers[pid];
+	// if handler is undefined
+	if( handler )
 		handler( packet );
 	else
 		mErrorHandler( packet );

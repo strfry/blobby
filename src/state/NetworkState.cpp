@@ -67,7 +67,8 @@ NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client):
 	 mSelectedChatmessage(0),
 	 mChatCursorPosition(0),
 	 mChattext(""),
-	 mHandler( new PacketHandler )
+	 mHandler( new PacketHandler ),
+	 mRemoteState( new DuelMatchState )
 {
 	boost::shared_ptr<IUserConfigReader> config = IUserConfigReader::createUserConfigReader("config.xml");
 	mOwnSide = (PlayerSide)config->getInteger("network_side");
@@ -77,10 +78,6 @@ NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client):
 
 	/// \todo why do we need this here?
 	RenderManager::getSingleton().redraw();
-
-	// game is not started until two players are connected
-	mMatch->pause();
-	mMatch->run();
 
 	// load/init players
 
@@ -129,7 +126,11 @@ NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client):
 	mHandler->registerHandler({ID_CHAT_MESSAGE}, BIND_MF(h_chat));
 	mHandler->registerHandler({ID_GAME_EVENTS}, BIND_MF(h_events));
 	mHandler->registerHandler({ID_GAME_UPDATE}, BIND_MF(h_game_update));
+	mHandler->registerHandler({ID_RULES, ID_RULES_CHECKSUM}, BIND_MF(h_rules));
 	mHandler->registerHandler({ID_BLOBBY_SERVER_PRESENT}, BIND_MF(h_server_present));
+
+	// start game paused
+	mMatch->pause();
 }
 
 NetworkGameState::~NetworkGameState()
@@ -146,6 +147,7 @@ void NetworkGameState::step_impl()
 	{
 		mHandler->handlePacket( packet );
 	}
+
 
 	// inject network data into game
 	mMatch->injectState( *mRemoteState, mRemoteEvents );
@@ -393,6 +395,7 @@ void NetworkGameState::h_game_ready( RakNet::BitStream stream )
 	mNetworkState = PLAYING;
 	// start game
 	mMatch->unpause();
+	mMatch->run();
 
 	// game ready whistle
 	SoundManager::getSingleton().playSound("sounds/pfiff.wav", ROUND_START_SOUND_VOLUME);
