@@ -33,15 +33,12 @@ struct PhysicState
 {
 	Vector2 blobPosition[MAX_PLAYERS];
 	Vector2 blobVelocity[MAX_PLAYERS];
-	float   blobState[MAX_PLAYERS];	// currently not serialized over network
+	float   blobState[MAX_PLAYERS];
 
 	Vector2 ballPosition;
 	Vector2 ballVelocity;
-	float   ballRotation;			// currently not serialized over network
+	float   ballRotation;
 	float   ballAngularVelocity;
-
-	// equality comparision
-	bool operator==(const PhysicState& other) const __attribute__((deprecated));
 
 	void swapSides();
 };

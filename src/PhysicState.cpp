@@ -36,8 +36,11 @@ USER_SERIALIZER_IMPLEMENTATION_HELPER(PhysicState)
 	io.number( value.blobPosition[RIGHT_PLAYER].x );
 	io.number( value.blobPosition[RIGHT_PLAYER].y );
 
-	io.number( value.blobVelocity[RIGHT_PLAYER].x );
-	io.number( value.blobVelocity[RIGHT_PLAYER].y );
+	io.number( value.blobState[LEFT_PLAYER] );
+	io.number( value.blobState[RIGHT_PLAYER] );
+
+	io.number( value.blobPosition[RIGHT_PLAYER].x );
+	io.number( value.blobPosition[RIGHT_PLAYER].y );
 
 	io.number( value.ballPosition.x );
 	io.number( value.ballPosition.y );
@@ -45,6 +48,7 @@ USER_SERIALIZER_IMPLEMENTATION_HELPER(PhysicState)
 	io.number( value.ballVelocity.x );
 	io.number( value.ballVelocity.y );
 
+	io.number( value.ballRotation );
 	io.number( value.ballAngularVelocity );
 }
 
@@ -62,16 +66,4 @@ void PhysicState::swapSides()
 	ballVelocity.x = -ballVelocity.x;
 	ballAngularVelocity = -ballAngularVelocity;
 	ballRotation = -ballRotation;	/// \todo save or 2pi-.?
-}
-
-bool PhysicState::operator==(const PhysicState& other) const
-{
-	return
-		blobPosition[LEFT_PLAYER] == other.blobPosition[LEFT_PLAYER] &&
-		blobPosition[RIGHT_PLAYER] == other.blobPosition[RIGHT_PLAYER] &&
-		blobVelocity[LEFT_PLAYER] == other.blobVelocity[LEFT_PLAYER] &&
-		blobVelocity[RIGHT_PLAYER] == other.blobVelocity[RIGHT_PLAYER] &&
-		ballPosition == other.ballPosition &&
-		ballVelocity == other.ballVelocity &&
-		ballAngularVelocity == other.ballAngularVelocity;
 }
