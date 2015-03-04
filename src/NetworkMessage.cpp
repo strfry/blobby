@@ -113,3 +113,39 @@ std::ostream& operator<<(std::ostream& stream, const ServerInfo& val)
 	return stream << val.name << " (" << val.hostname << ":" << val.port << ")";
 }
 
+// raknet packet names for debug
+const char* packet_names[255];
+
+struct SetUpPacketNames
+{
+	SetUpPacketNames()
+	{
+		// let them all point to unknown
+		for( auto p : packet_names )
+			p = "unknown";
+		packet_names[ID_INPUT_UPDATE] = "ID_INPUT_UPDATE";
+		packet_names[ID_GAME_UPDATE] = "ID_GAME_UPDATE";
+		packet_names[ID_GAME_EVENTS] = "ID_GAME_EVENTS";
+		packet_names[ID_OPPONENT_DISCONNECTED] = "ID_OPPONENT_DISCONNECTED";
+		packet_names[ID_GAME_READY] = "ID_GAME_READY";
+		packet_names[ID_ENTER_SERVER] = "ID_ENTER_SERVER";
+		packet_names[ID_PAUSE] = "ID_PAUSE";
+		packet_names[ID_UNPAUSE] = "ID_UNPAUSE";
+		packet_names[ID_BLOBBY_SERVER_PRESENT] = "ID_BLOBBY_SERVER_PRESENT";
+		packet_names[ID_VERSION_MISMATCH] = "ID_VERSION_MISMATCH";
+		packet_names[ID_REPLAY] = "ID_REPLAY";
+		packet_names[ID_CHAT_MESSAGE] = "ID_CHAT_MESSAGE";
+		packet_names[ID_RULES_CHECKSUM] = "ID_RULES_CHECKSUM";
+		packet_names[ID_SERVER_STATUS] = "ID_SERVER_STATUS";
+		packet_names[ID_RULES] = "ID_RULES";
+		packet_names[ID_CHALLENGE] = "ID_CHALLENGE";
+
+		// a few raknet default packets
+		packet_names[ID_DISCONNECTION_NOTIFICATION] = "ID_DISCONNECTION_NOTIFICATION";
+		packet_names[ID_CONNECTION_LOST] = "ID_CONNECTION_LOST";
+		packet_names[ID_CONNECTION_REQUEST] = "ID_CONNECTION_REQUEST";
+		packet_names[ID_CONNECTION_REQUEST_ACCEPTED] = "ID_CONNECTION_REQUEST_ACCEPTED";
+	}
+} object;
+
+
