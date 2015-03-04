@@ -332,8 +332,7 @@ void DuelMatch::updateState()
 		mPhysicEvents.push_back( data );
 
 	// update the state
-	mLastStates.push_back( boost::make_shared<DuelMatchState>(getState()) );
-	mLastState = mLastStates.back();
+	mLastState = boost::make_shared<DuelMatchState>(getState());
 
 	if(mStepCallback)
 		mStepCallback( *mLastState, mStepPhysicEvents );
@@ -351,12 +350,13 @@ std::vector<MatchEvent> DuelMatch::fetchEvents()
 	return copy;
 }
 
-std::vector<boost::shared_ptr<const DuelMatchState>> DuelMatch::fetchStates( )
+boost::shared_ptr<const DuelMatchState> DuelMatch::fetchState( )
 {
+	// need this lock because shared_ptr operator= is not atomic
+	// since the pointed-to object of mLastState is never changed, we can safely create a new shared ptr here,
+	// because the refcount is guaranteed to be thread-safe.
 	std::lock_guard<std::mutex> lock(mEventMutex);
-	auto copy = mLastStates;
-	mLastStates.clear();
-
+	auto copy = mLastState;
 	return copy;
 }
 

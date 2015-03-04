@@ -137,10 +137,7 @@ void LocalGameState::step_impl()
 	}
 	else
 	{
-		auto states = mMatch->fetchStates();
-		if(!states.empty())
-			*mLastState = *states.back();
-
+		*mLastState = *mMatch->fetchState();
 		presentGame( );
 	}
 

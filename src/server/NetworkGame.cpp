@@ -206,11 +206,9 @@ void NetworkGame::broadcastPhysicState()
 {
 	RakNet::BitStream stream;
 	stream.Write((unsigned char)ID_GAME_UPDATE);
-	auto states = mMatch->fetchStates();
+	auto state = mMatch->fetchState();
 	auto events = mMatch->fetchEvents();
-	if( states.empty() )
-		return;
-	auto ms = *states.back();
+	auto ms = *state;	// not guaranteed to be a new state, so we might broadcast the same state twice
 
 	/// \todo this required dynamic memory allocation! not good!
 	boost::shared_ptr<GenericOut> out = createGenericWriter( &stream );

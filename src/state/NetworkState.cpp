@@ -155,9 +155,7 @@ void NetworkGameState::step_impl()
 
 	// does this generate any problems if we pause at the exact moment an event is set ( i.e. the ball hit sound
 	// could be played in a loop)?
-	auto states = mMatch->fetchStates();
-	if(!states.empty())
-		*mLastState = *states.back();
+	*mLastState = *mMatch->fetchState();
 	presentGame();
 	presentGameUI();
 
@@ -494,7 +492,6 @@ void NetworkGameState::h_chat( RakNet::BitStream stream )
 void NetworkGameState::h_game_update( RakNet::BitStream stream )
 {
 	stream.IgnoreBytes(1);	//ID_GAME_UPDATE
-	//printf("Physic packet received. Time: %d\n", ival);
 	DuelMatchState ms;
 	/// \todo this is a performance nightmare: we create a new reader for every packet!
 	///			there should be a better way to do that

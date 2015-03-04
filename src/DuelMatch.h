@@ -104,7 +104,7 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 
 		// copies the physic events into the target and resets.
 		std::vector<MatchEvent> fetchEvents( );
-		std::vector<boost::shared_ptr<const DuelMatchState>> fetchStates( );
+		boost::shared_ptr<const DuelMatchState> fetchState( );
 	private:
 		void physicEventCallback( MatchEvent event );
 		// update the internal last world state to the current physicworld
@@ -134,7 +134,6 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		// accumulation of physic events since they were fetched the last time
 		std::vector<MatchEvent> mPhysicEvents;
 		// ... and the same thing for states
-		std::vector<boost::shared_ptr<const DuelMatchState>> mLastStates;
 		boost::shared_ptr<const DuelMatchState> mLastState;
 		std::mutex mEventMutex;
 

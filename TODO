@@ -25,18 +25,20 @@ data:
 
 MULTI-THREAD primary:
  * extensive network checks
- * check that server still works as expected
- * rework NetworkGameState
- 
- MULTI-THREAD secondary:
- * fix all replay related stuff [we might have to break compatibiltiy]
  * replay recording in DuelMatch
- * add lag compensation to network [this is now an easy bonus, so go for it]
+ * fix all replay related stuff [we might have to break compatibiltiy]
 
+MULTI-THREAD secondary:
+ * add lag compensation to network [this is now an easy bonus, so go for it]
+ * remove threading related lag
+ * frame interpolation
  
- MULTI-THREAD tertiary:
+MULTI-THREAD tertiary:
  * fix blood gfx effects
  * allow multiple game speeds on the server
  * remove singleton SpeedController
  * delag events [e.g. whistle] in a safe manner, i.e. prevent skipping/doubling events 
- * frame interpolation
+ 
+MULTI-THREAD BUGS:
+ * the blobby animation [speed] is not sent over network, and thus can cause jittering
+ * once a impact sound was not played
