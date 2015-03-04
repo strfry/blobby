@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 /* implementation */
 
 
-GameState::GameState(DuelMatch* match) :
+GameState::GameState( boost::shared_ptr<DuelMatch> match) :
 	mMatch( match ),
 	mLastState( new DuelMatchState ),
 	mSaveReplay(false),

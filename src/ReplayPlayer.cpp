@@ -23,13 +23,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* includes */
 #include <cassert>
+#include <iostream>
 
 #include "IReplayLoader.h"
 #include "DuelMatch.h"
 #include "MatchEvents.h"
+#include "InputSource.h" // for debug
 
 /* implementation */
-ReplayPlayer::ReplayPlayer()
+ReplayPlayer::ReplayPlayer( boost::shared_ptr<DuelMatch> match ) : mMatch( match )
 {
 }
 
@@ -51,6 +53,12 @@ void ReplayPlayer::load(const std::string& filename)
 
 	mPosition = 0;
 	mLength = loader->getLength();
+
+	// set data in match
+	mMatch->setPlayers(getPlayerName(LEFT_PLAYER), getPlayerName(RIGHT_PLAYER));
+
+	mMatch->getPlayer(LEFT_PLAYER).setStaticColor(getBlobColor(LEFT_PLAYER));
+	mMatch->getPlayer(RIGHT_PLAYER).setStaticColor(getBlobColor(RIGHT_PLAYER));
 }
 
 std::string ReplayPlayer::getPlayerName(const PlayerSide side) const
@@ -83,36 +91,48 @@ int ReplayPlayer::getReplayLength() const
 	return mLength;
 }
 
-bool ReplayPlayer::play(DuelMatch* virtual_match)
+void ReplayPlayer::play()
+{;
+	mMatch->setStepCallback( std::bind( &ReplayPlayer::onMatchStep, this, std::placeholders::_1, std::placeholders::_2) );
+	mLeftInput = mMatch->getInputSource( LEFT_PLAYER );
+	mRightInput = mMatch->getInputSource( RIGHT_PLAYER );
+
+	// initial input
+	loader->getInputAt(mPosition, mLeftInput.get(), mRightInput.get() );
+	mMatch->setGameSpeed(120);
+	mMatch->run();
+}
+
+void ReplayPlayer::onMatchStep(const DuelMatchState& state, const std::vector<MatchEvent>& events)
 {
-	mPosition++;
-	if( mPosition < mLength )
+	// now the old implementation would perform a step. we would have to wait for mPosition to increase once more
+	// to fulfill the condition for having a safepoint reached
+	int point;
+	if(loader->isSavePoint(mPosition, point))
 	{
-
-		PlayerInput left;
-		PlayerInput right;
-		loader->getInputAt(mPosition, virtual_match->getInputSource( LEFT_PLAYER ).get(), virtual_match->getInputSource( RIGHT_PLAYER ).get() );
-		virtual_match->step();
-
-		int point;
-		if(loader->isSavePoint(mPosition, point))
-		{
-			ReplaySavePoint reference;
-			loader->readSavePoint(point, reference);
-			virtual_match->injectState(reference.state, std::vector<MatchEvent>());
-		}
-
-
-		// everything was as expected
-		return true;
+		ReplaySavePoint reference;
+		loader->readSavePoint(point, reference);
+		// current state and savepoint should always be identical
+		// this would override our next input. Thus we make sure the next input actually is what we want
+		mMatch->injectState(reference.state, std::vector<MatchEvent>());	// inject state is synchronized... deadlock?
 	}
 
-	// error or end of file
-	return false;
+	// mPosition is atomic, so this is save
+	++mPosition;
+
+	if( mPosition >= mLength )
+	{
+		mMatch->pause(); /// \todo we want to end, which is more than pause?
+		return;
+	}
+	// update input
+	// only read accesses to loader, so this is save
+	loader->getInputAt(mPosition, mLeftInput.get(), mRightInput.get() );
 }
 
 bool ReplayPlayer::gotoPlayingPosition(int rep_position, DuelMatch* virtual_match)
 {
+	/*
 	/// \todo add validity check for rep_position
 	/// \todo replay clock does not work!
 
@@ -159,5 +179,5 @@ bool ReplayPlayer::gotoPlayingPosition(int rep_position, DuelMatch* virtual_matc
 
 	}
 
-	return false;
+	return false;*/
 }

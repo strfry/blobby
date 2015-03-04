@@ -21,16 +21,21 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #pragma once
 
 #include <string>
+#include <atomic>
 
 #include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include "Global.h"
 #include "ReplayDefs.h"
 #include "PlayerInput.h"
 #include "BlobbyDebug.h"
+#include "MatchEvents.h"
 
 class DuelMatch;
 class IReplayLoader;
+class DuelMatchState;
+class InputSource;
 
 /// \class ReplayPlayer
 /// \brief Manages playing of replays.
@@ -41,7 +46,8 @@ class IReplayLoader;
 class ReplayPlayer : public ObjectCounter<ReplayPlayer>
 {
 	public:
-		ReplayPlayer();
+		/// \param match: pointer to the match object that is used to present this game.
+		ReplayPlayer( boost::shared_ptr<DuelMatch> match);
 		~ReplayPlayer();
 
 		void load(const std::string& filename);
@@ -82,8 +88,8 @@ class ReplayPlayer : public ObjectCounter<ReplayPlayer>
 		// 							replaying interface
 		// -----------------------------------------------------------------------------------------
 
-		/// \brief advances the game one step
-		bool play(DuelMatch* virtual_match);
+		/// \brief starts to replay the match
+		void play();
 
 		/// \brief Jumps to a position in replay.
 		/// \details Goes to a certain position in replay. Simulates at most 100 steps per call
@@ -95,9 +101,18 @@ class ReplayPlayer : public ObjectCounter<ReplayPlayer>
 
 	private:
 
-		int mPosition;
+		// playback step function
+		void onMatchStep(const DuelMatchState& state, const std::vector<MatchEvent>& events);
+
+		std::atomic<int> mPosition;
 		int mLength;
 		boost::scoped_ptr<IReplayLoader> loader;
+
+		// caching the inputs for left/right player
+		boost::shared_ptr<InputSource> mLeftInput;
+		boost::shared_ptr<InputSource> mRightInput;
+
+		boost::shared_ptr<DuelMatch> mMatch;
 
 		std::string mPlayerNames[MAX_PLAYERS];
 };

@@ -25,7 +25,6 @@ data:
 
 MULTI-THREAD primary:
  * extensive network checks
- * replay recording in DuelMatch
  * fix all replay related stuff [we might have to break compatibiltiy]
 
 MULTI-THREAD secondary:

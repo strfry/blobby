@@ -59,7 +59,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* implementation */
 NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client):
-	 GameState(new DuelMatch(true, DEFAULT_RULES_FILE)),
+	 GameState( boost::make_shared<DuelMatch>(true, DEFAULT_RULES_FILE)),
 	 mClient( client ),
 	 mWinningPlayer(NO_PLAYER),
 	 mNetworkState(WAITING_FOR_OPPONENT),

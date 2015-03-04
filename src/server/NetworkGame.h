@@ -79,6 +79,9 @@ class NetworkGame : public ObjectCounter<NetworkGame>
 		void writeEventToStream(RakNet::BitStream& stream, MatchEvent e, bool switchSides );
 		bool isGameStarted() { return mRulesSent[LEFT_PLAYER] && mRulesSent[RIGHT_PLAYER]; }
 
+		// recording function
+		void onMatchStep(const DuelMatchState& state, const std::vector<MatchEvent>& events);
+
 		static int switchEventSides(int events);
 
 		RakServer& mServer;

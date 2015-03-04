@@ -43,7 +43,7 @@ LocalGameState::~LocalGameState()
 }
 
 LocalGameState::LocalGameState()
-	: mRecorder(new ReplayRecorder())
+	: GameState( boost::make_shared<DuelMatch>(false, "") ), mRecorder(new ReplayRecorder())
 {
 	boost::shared_ptr<IUserConfigReader> config = IUserConfigReader::createUserConfigReader("config.xml");
 	PlayerIdentity leftPlayer = config->loadPlayerIdentity(LEFT_PLAYER, false);
@@ -57,10 +57,11 @@ LocalGameState::LocalGameState()
 
 	SoundManager::getSingleton().playSound("sounds/pfiff.wav", ROUND_START_SOUND_VOLUME);
 
-	mMatch.reset(new DuelMatch( false, config->getString("rules")));
+	mMatch->setRules( config->getString("rules") );
 	mMatch->setPlayers(leftPlayer, rightPlayer);
 	mMatch->setInputSources(leftInput, rightInput);
 	mMatch->setGameSpeed( (float)config->getInteger("gamefps") );
+	mMatch->setStepCallback( std::bind(&LocalGameState::onMatchStep, this, std::placeholders::_1, std::placeholders::_2) );
 
 	mRecorder->setPlayerNames(leftPlayer.getName(), rightPlayer.getName());
 	mRecorder->setPlayerColors( leftPlayer.getStaticColor(), rightPlayer.getStaticColor() );
@@ -154,6 +155,9 @@ void LocalGameState::onMatchStep(const DuelMatchState& state, const std::vector<
 	mRecorder->record( state );
 	if (state.getWinningPlayer() != NO_PLAYER)
 	{
+		// duplicate last state
+		/// \todo why is this necessary?
+		mRecorder->record( state );
 		mRecorder->finalize( state.getScore(LEFT_PLAYER), state.getScore(RIGHT_PLAYER) );
 	}
 }

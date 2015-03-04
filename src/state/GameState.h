@@ -22,7 +22,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "State.h"
 
+#include <boost/shared_ptr.hpp>
+
 class DuelMatchState;
+class DuelMatch;
 
 /*! \class GameState
 	\brief base class for any game related state (Local, Network, Replay)
@@ -31,7 +34,7 @@ class DuelMatchState;
 class GameState : public State
 {
 public:
-	GameState(DuelMatch* match = nullptr);
+	GameState( boost::shared_ptr<DuelMatch> match );
 	virtual ~GameState();
 
 	// step function defines the steps actual work
@@ -69,7 +72,7 @@ protected:
 	void saveReplay(ReplayRecorder& recorder);
 
 
-	boost::scoped_ptr<DuelMatch> mMatch;
+	boost::shared_ptr<DuelMatch> mMatch;
 	boost::scoped_ptr<DuelMatchState> mLastState;
 
 	// ui helper variable for storing a filename

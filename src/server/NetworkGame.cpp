@@ -175,19 +175,19 @@ void NetworkGame::step()
 	// don't record the pauses
 	if(!mMatch->isPaused())
 	{
-		/// \todo rework recording!
-		/*mRecorder->record(mMatch->getState());
-
-		PlayerSide winning = mMatch->readCurrentState().getWinningPlayer();
-		if (winning != NO_PLAYER)
-		{
-			// if someone has won, the game is paused
-			mMatch->pause();
-			mRecorder->record(mMatch->getState());
-			mRecorder->finalize( mMatch->readCurrentState().getScore(LEFT_PLAYER), mMatch->readCurrentState().getScore(RIGHT_PLAYER) );
-		}*/
-
 		broadcastPhysicState();
+	}
+}
+
+void NetworkGame::onMatchStep(const DuelMatchState& state, const std::vector<MatchEvent>& events)
+{
+	mRecorder->record( state );
+	if (state.getWinningPlayer() != NO_PLAYER)
+	{
+		// duplicate last state
+		/// \todo why is this necessary?
+		mRecorder->record( state );
+		mRecorder->finalize( state.getScore(LEFT_PLAYER), state.getScore(RIGHT_PLAYER) );
 	}
 }
 
@@ -206,9 +206,8 @@ void NetworkGame::broadcastPhysicState()
 {
 	RakNet::BitStream stream;
 	stream.Write((unsigned char)ID_GAME_UPDATE);
-	auto state = mMatch->fetchState();
 	auto events = mMatch->fetchEvents();
-	auto ms = *state;	// not guaranteed to be a new state, so we might broadcast the same state twice
+	auto ms = *mMatch->fetchState();	// not guaranteed to be a new state, so we might broadcast the same state twice
 
 	/// \todo this required dynamic memory allocation! not good!
 	boost::shared_ptr<GenericOut> out = createGenericWriter( &stream );
