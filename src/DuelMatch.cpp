@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // within the match thread
 #define thread_assert()	assert( std::this_thread::get_id() == mMatchThread.get_id() || !mMatchThread.joinable() );
 // do not allow execution of this function while the game thread is running
-#define no_parallel_assert() assert( !mMatchThread.joinable() );
+#define no_parallel_assert() std::cout << __PRETTY_FUNCTION__ << std::endl; assert( !mMatchThread.joinable() );
 /* implementation */
 
 DuelMatch::DuelMatch(bool remote, std::string rules) :
@@ -96,6 +96,11 @@ void DuelMatch::setPlayers( PlayerIdentity lplayer, PlayerIdentity rplayer)
 
 	mPlayers[LEFT_PLAYER] = lplayer;
 	mPlayers[RIGHT_PLAYER] = rplayer;
+}
+
+void DuelMatch::setStepCallback( match_step_callback_fn_type callback )
+{
+	mStepCallback = callback;
 }
 
 void DuelMatch::setInputSources(boost::shared_ptr<InputSource> linput, boost::shared_ptr<InputSource> rinput )
@@ -325,11 +330,16 @@ void DuelMatch::updateState()
 	// move all events to accumulating vector
 	for(auto&& data : mStepPhysicEvents)
 		mPhysicEvents.push_back( data );
-	mStepPhysicEvents.clear();
 
 	// update the state
 	mLastStates.push_back( boost::make_shared<DuelMatchState>(getState()) );
 	mLastState = mLastStates.back();
+
+	if(mStepCallback)
+		mStepCallback( *mLastState, mStepPhysicEvents );
+
+	// now we can clear the step events
+	mStepPhysicEvents.clear();
 }
 
 std::vector<MatchEvent> DuelMatch::fetchEvents()

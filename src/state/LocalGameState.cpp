@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* includes */
 #include <ctime>
+#include <iostream>
 
 #include <boost/make_shared.hpp>
 
@@ -42,8 +43,7 @@ LocalGameState::~LocalGameState()
 }
 
 LocalGameState::LocalGameState()
-	: mRecorder(new ReplayRecorder()),
-		mWinner(false)
+	: mRecorder(new ReplayRecorder())
 {
 	boost::shared_ptr<IUserConfigReader> config = IUserConfigReader::createUserConfigReader("config.xml");
 	PlayerIdentity leftPlayer = config->loadPlayerIdentity(LEFT_PLAYER, false);
@@ -101,7 +101,7 @@ void LocalGameState::step_impl()
 		}
 		imgui.doCursor();
 	}
-	else if (mWinner)
+	else if (mLastState->getWinningPlayer() != NO_PLAYER )
 	{
 		displayWinningPlayerScreen( mLastState->getWinningPlayer() );
 		if (imgui.doButton(GEN_ID, Vector2(290, 350), TextManager::LBL_OK))
@@ -138,19 +138,8 @@ void LocalGameState::step_impl()
 	else
 	{
 		auto states = mMatch->fetchStates();
-		// record all states
-		for(auto& s : states)
-			mRecorder->record( *s );
-
 		if(!states.empty())
 			*mLastState = *states.back();
-
-		if (mLastState->getWinningPlayer() != NO_PLAYER)
-		{
-			mWinner = true;
-			mRecorder->finalize( mLastState->getScore(LEFT_PLAYER), mLastState->getScore(RIGHT_PLAYER) );
-		}
-
 
 		presentGame( );
 	}
@@ -161,5 +150,14 @@ void LocalGameState::step_impl()
 const char* LocalGameState::getStateName() const
 {
 	return "LocalGameState";
+}
+
+void LocalGameState::onMatchStep(const DuelMatchState& state, const std::vector<MatchEvent>& events)
+{
+	mRecorder->record( state );
+	if (state.getWinningPlayer() != NO_PLAYER)
+	{
+		mRecorder->finalize( state.getScore(LEFT_PLAYER), state.getScore(RIGHT_PLAYER) );
+	}
 }
 

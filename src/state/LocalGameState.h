@@ -22,9 +22,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "GameState.h"
 
+#include <vector>
+
 #include <boost/scoped_ptr.hpp>
 
+
 class ReplayRecorder;
+class DuelMatchState;
+class MatchEvent;
 
 /*! \class LocalGameState
 	\brief state for singleplayer game
@@ -40,7 +45,8 @@ class LocalGameState : public GameState
 		virtual const char* getStateName() const;
 
 	private:
-		bool mWinner;
+		// called for each duel match step. record the replay.
+		void onMatchStep(const DuelMatchState& state, const std::vector<MatchEvent>& events);
 
 		boost::scoped_ptr<ReplayRecorder> mRecorder;
 };

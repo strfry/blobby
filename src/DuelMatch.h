@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <atomic>
 #include <mutex>
 #include <thread>
+#include <functional>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -39,6 +40,8 @@ class PhysicWorld;
 class PhysicState;
 class MatchEvent;
 class SpeedController;
+
+typedef std::function<void(const DuelMatchState&, const std::vector<MatchEvent>&)> match_step_callback_fn_type;
 
 /*! \class DuelMatch
 	\brief class representing a blobby game.
@@ -59,6 +62,9 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 
 		void setPlayers( PlayerIdentity lplayer, PlayerIdentity rplayer);
 		void setInputSources(boost::shared_ptr<InputSource> linput, boost::shared_ptr<InputSource> rinput );
+		/// sets the step callback. this function is called every time the match state is updated and receives the new state
+		/// and all events that happened in the corresponding timestep.
+		void setStepCallback( match_step_callback_fn_type callback );
 
 		~DuelMatch();
 
@@ -143,5 +149,8 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		std::vector<MatchEvent> mInjectionEvents;
 		std::atomic<bool> mHasInjection;
 		std::mutex mInjectionMutex;
+
+		// step callback
+		match_step_callback_fn_type mStepCallback;
 };
 
