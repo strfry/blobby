@@ -67,3 +67,12 @@ void PhysicState::swapSides()
 	ballAngularVelocity = -ballAngularVelocity;
 	ballRotation = -ballRotation;	/// \todo save or 2pi-.?
 }
+
+void PhysicState::interpolate( float dt )
+{
+	ballPosition += ballVelocity * dt;
+	ballRotation += ballAngularVelocity * dt;
+	blobPosition[LEFT_PLAYER] += blobVelocity[LEFT_PLAYER] * dt;
+	blobPosition[RIGHT_PLAYER] += blobVelocity[RIGHT_PLAYER] * dt;
+
+}

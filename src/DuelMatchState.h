@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "PhysicState.h"
 #include "GameLogicState.h"
 #include "PlayerInput.h"
+#include "BlobbyDebug.h"
 
 struct DuelMatchState
 {
@@ -46,6 +47,9 @@ struct DuelMatchState
 
 	// compound ( calculated )
 	bool blobHitGround(PlayerSide player) const;
+
+	// interpolate a future state
+	void interpolate( float dt );
 
 	void swapSides();
 

@@ -128,3 +128,9 @@ int DuelMatchState::getGameTime() const
 {
 	return logicState.time;
 }
+
+void DuelMatchState::interpolate( float dt )
+{
+	// move ball
+	worldState.interpolate( dt );
+}

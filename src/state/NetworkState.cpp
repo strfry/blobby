@@ -155,7 +155,6 @@ void NetworkGameState::step_impl()
 
 	// does this generate any problems if we pause at the exact moment an event is set ( i.e. the ball hit sound
 	// could be played in a loop)?
-	*mLastState = *mMatch->fetchState();
 	presentGame();
 	presentGameUI();
 

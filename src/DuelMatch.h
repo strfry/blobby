@@ -84,6 +84,9 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		/// as this is a read-only value, this function
 		/// is thread_save
 		int getScoreToWin() const;
+		int getGameSpeed() const;
+		/// \todo automate this
+		float getSubFrameSince( int steps );
 
 		// pause control
 		void pause();

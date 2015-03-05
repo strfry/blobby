@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* includes */
 #include <cstdio>
+#include <iostream>
 
 #include <boost/make_shared.hpp>
 
@@ -56,14 +57,23 @@ GameState::~GameState()
 
 void GameState::presentGame()
 {
+	// read the last state
+	*mLastState = *mMatch->fetchState();
+
 	// enable game drawing
 	RenderManager::getSingleton().drawGame(true);
+
+	// find delay
+	//std::cout << mLastState->logicState.steps << "\n";
+	//std::cout << mMatch->getSubFrameSince( mLastState->logicState.steps ) << "\n";
+	DuelMatchState state = *mLastState;
+	state.interpolate( mMatch->getSubFrameSince( mLastState->logicState.steps ) );
 
 	RenderManager& rmanager = RenderManager::getSingleton();
 	SoundManager& smanager = SoundManager::getSingleton();
 
-	rmanager.setBlob(LEFT_PLAYER, mLastState->getBlobPosition(LEFT_PLAYER), mLastState->getBlobState(LEFT_PLAYER));
-	rmanager.setBlob(RIGHT_PLAYER, mLastState->getBlobPosition(RIGHT_PLAYER),	mLastState->getBlobState(RIGHT_PLAYER));
+	rmanager.setBlob(LEFT_PLAYER, state.getBlobPosition(LEFT_PLAYER), state.getBlobState(LEFT_PLAYER));
+	rmanager.setBlob(RIGHT_PLAYER, state.getBlobPosition(RIGHT_PLAYER),	state.getBlobState(RIGHT_PLAYER));
 
 	if(mMatch->getPlayer(LEFT_PLAYER).getOscillating())
 	{
@@ -83,7 +93,7 @@ void GameState::presentGame()
 		rmanager.setBlobColor(RIGHT_PLAYER, mMatch->getPlayer(RIGHT_PLAYER).getStaticColor());
 	}
 
-	rmanager.setBall(mLastState->getBallPosition(), mLastState->getBallRotation());
+	rmanager.setBall(state.getBallPosition(), state.getBallRotation());
 
 	auto physic_events = mMatch->fetchEvents( );
 	for(const auto& e : physic_events )
@@ -92,8 +102,8 @@ void GameState::presentGame()
 		{
 			smanager.playSound("sounds/bums.wav", e.intensity + BALL_HIT_PLAYER_SOUND_VOLUME);
 			/// \todo save that position inside the event
-			Vector2 hitPos = mLastState->getBallPosition() +
-					(mLastState->getBlobPosition(e.side) - mLastState->getBallPosition()).normalise().scale(31.5);
+			Vector2 hitPos = state.getBallPosition() +
+					(state.getBlobPosition(e.side) - state.getBallPosition()).normalise().scale(31.5);
 			BloodManager::getSingleton().spillBlood(hitPos, e.intensity, 0);
 		}
 

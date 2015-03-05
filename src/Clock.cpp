@@ -88,3 +88,14 @@ void Clock::step()
 		++mTimeSteps;
 	}
 }
+
+float Clock::getSubFramesSince( int step, int fps )
+{
+	float frame_duration = 1000.f / fps;
+	int ctime = SDL_GetTicks();				// current time
+	int step_count = mTimeSteps - step;		// number of steps that have passed
+	// at mTimeSteps, it was mLastTime
+	int stime = mLastTime - step_count * frame_duration;
+	float dsteps = (ctime - stime) / frame_duration;
+	return dsteps;
+}

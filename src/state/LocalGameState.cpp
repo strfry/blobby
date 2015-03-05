@@ -138,7 +138,6 @@ void LocalGameState::step_impl()
 	}
 	else
 	{
-		*mLastState = *mMatch->fetchState();
 		presentGame( );
 	}
 

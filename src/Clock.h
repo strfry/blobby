@@ -62,6 +62,9 @@ class Clock
 		/// sets the number of time steps (use i.e. for network sync)
 		void setTimeSteps( int steps );
 
+		/// calculates how many frames have past since time step \p step
+		float getSubFramesSince( int step, int fps );
+
 	private:
 		/// is the clock currently running?
 		std::atomic<bool> mRunning;

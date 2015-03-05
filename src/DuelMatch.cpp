@@ -157,6 +157,16 @@ void DuelMatch::setGameSpeed( int fps )
 
 }
 
+int DuelMatch::getGameSpeed() const
+{
+	return mSpeedController->getGameSpeed();
+}
+
+float DuelMatch::getSubFrameSince( int steps )
+{
+	return mLogic->getClock().getSubFramesSince( steps, mSpeedController->getGameSpeed() );
+}
+
 void DuelMatch::step()
 {
 	// check if we are sure that functions have to be executed, only then lock

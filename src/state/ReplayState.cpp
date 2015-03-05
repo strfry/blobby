@@ -205,7 +205,6 @@ void ReplayState::step_impl()
 		imgui.doCursor();
 	}
 
-	*mLastState = mMatch->readCurrentState();	// no thread, so safe
 	presentGame();
 	// show the game ui
 	presentGameUI();

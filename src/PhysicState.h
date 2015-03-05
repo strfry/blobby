@@ -40,5 +40,8 @@ struct PhysicState
 	float   ballRotation;
 	float   ballAngularVelocity;
 
+	// simulate a partial physic steps
+	void interpolate( float dt );
+
 	void swapSides();
 };
