@@ -51,7 +51,6 @@ private:
 
 	// controls
 	int mPositionJump;
-	bool mPaused;
 
 	// replay speed control
 	float mSpeedValue;

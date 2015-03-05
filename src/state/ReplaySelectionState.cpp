@@ -48,8 +48,6 @@ ReplaySelectionState::ReplaySelectionState()
 	if (mReplayFiles.size() == 0)
 		mSelectedReplay = -1;
 	std::sort(mReplayFiles.rbegin(), mReplayFiles.rend());
-
-	SpeedController::getMainInstance()->setGameSpeed(75);
 }
 
 void ReplaySelectionState::step_impl()

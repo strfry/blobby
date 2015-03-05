@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* includes */
 #include <sstream>
+#include <iostream>
 
 #include <boost/make_shared.hpp>
 
@@ -44,7 +45,6 @@ ReplayState::ReplayState() : GameState( boost::make_shared<DuelMatch>(false, DUM
 	IMGUI::getSingleton().resetSelection();
 
 	mPositionJump = -1;
-	mPaused = false;
 
 	mSpeedValue = 1.0;
 }
@@ -101,10 +101,10 @@ void ReplayState::step_impl()
 	mLastMousePosition = InputManager::getSingleton()->position();
 
 
-	if(mPositionJump != -1)
+	if(mPositionJump >= 0)
 	{
-		if(mReplayPlayer->gotoPlayingPosition(mPositionJump, mMatch.get()))
-			mPositionJump = -1;
+		mReplayPlayer->gotoPlayingPosition(mPositionJump);
+		mPositionJump = -1;
 	}
 
 	// draw the progress bar
@@ -128,7 +128,7 @@ void ReplayState::step_impl()
 
 	// play/pause button
 	imgui.doOverlay(GEN_ID, Vector2(350, 535.0), Vector2(450, 575.0));
-	bool pause_click = imgui.doImageButton(GEN_ID, Vector2(400, 555), Vector2(24, 24), mPaused ? "gfx/btn_play.bmp" : "gfx/btn_pause.bmp");
+	bool pause_click = imgui.doImageButton(GEN_ID, Vector2(400, 555), Vector2(24, 24), mMatch->isPaused() ? "gfx/btn_play.bmp" : "gfx/btn_pause.bmp");
 	bool fast_click = imgui.doImageButton(GEN_ID, Vector2(430, 555), Vector2(24, 24),  "gfx/btn_fast.bmp");
 	bool slow_click = imgui.doImageButton(GEN_ID, Vector2(370, 555), Vector2(24, 24),  "gfx/btn_slow.bmp");
 
@@ -150,12 +150,15 @@ void ReplayState::step_impl()
 
 		if (pause_click)
 		{
-			if(mPaused)
+			if(mMatch->isPaused())
 			{
+				mMatch->unpause();
 				if(mReplayPlayer->endOfFile())
 					mPositionJump = 0;
+			} else
+			{
+				mMatch->pause();
 			}
-			mPaused = !mPaused;
 		}
 
 		if (fast_click)
@@ -183,6 +186,7 @@ void ReplayState::step_impl()
 	else
 	{
 		displayWinningPlayerScreen(side);
+		mMatch->pause();
 
 		if (imgui.doButton(GEN_ID, Vector2(290, 350), TextManager::LBL_OK))
 		{
@@ -193,10 +197,9 @@ void ReplayState::step_impl()
 		{
 			// we don't have to reset the match, cause we don't use lua rules
 			// we just have to jump to the beginning
-			SoundManager::getSingleton().playSound(
-					"sounds/pfiff.wav", ROUND_START_SOUND_VOLUME);
+			SoundManager::getSingleton().playSound("sounds/pfiff.wav", ROUND_START_SOUND_VOLUME);
 
-			mPaused = false;
+			mMatch->unpause();
 			mPositionJump = 0;
 		}
 		imgui.doCursor();

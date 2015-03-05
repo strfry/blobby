@@ -25,15 +25,15 @@ data:
 
 MULTI-THREAD primary:
  * extensive network checks
- * fix all replay related stuff [we might have to break compatibiltiy]
+ * frame interpolation
+ * add debug system for measuring display and network lag
 
 MULTI-THREAD secondary:
  * add lag compensation to network [this is now an easy bonus, so go for it]
  * remove threading related lag
- * frame interpolation
+ * fix blood gfx effects
  
 MULTI-THREAD tertiary:
- * fix blood gfx effects
  * allow multiple game speeds on the server
  * remove singleton SpeedController
  * delag events [e.g. whistle] in a safe manner, i.e. prevent skipping/doubling events 

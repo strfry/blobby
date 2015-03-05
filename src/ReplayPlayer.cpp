@@ -110,6 +110,7 @@ void ReplayPlayer::setReplaySpeed( int fps )
 
 void ReplayPlayer::onMatchStep(const DuelMatchState& state, const std::vector<MatchEvent>& events)
 {
+	std::lock_guard<std::mutex> lock(mExclusive);
 	// now the old implementation would perform a step. we would have to wait for mPosition to increase once more
 	// to fulfill the condition for having a safepoint reached
 	int point;
@@ -124,10 +125,9 @@ void ReplayPlayer::onMatchStep(const DuelMatchState& state, const std::vector<Ma
 
 	// mPosition is atomic, so this is save
 	++mPosition;
-
 	if( mPosition >= mLength )
 	{
-		mMatch->pause(); /// \todo we want to end, which is more than pause?
+		mPosition = mLength;
 		return;
 	}
 	// update input
@@ -135,9 +135,13 @@ void ReplayPlayer::onMatchStep(const DuelMatchState& state, const std::vector<Ma
 	loader->getInputAt(mPosition, mLeftInput.get(), mRightInput.get() );
 }
 
-bool ReplayPlayer::gotoPlayingPosition(int rep_position, DuelMatch* virtual_match)
+void ReplayPlayer::gotoPlayingPosition(int rep_position)
 {
-	/*
+	std::lock_guard<std::mutex> lock(mExclusive);
+
+	assert( rep_position >= 0 );
+
+	/// \todo not thread safe with onMatchStep
 	/// \todo add validity check for rep_position
 	/// \todo replay clock does not work!
 
@@ -158,22 +162,25 @@ bool ReplayPlayer::gotoPlayingPosition(int rep_position, DuelMatch* virtual_matc
 
 		// set position and update match
 		mPosition = save_position;
-		virtual_match->injectState(state.state, std::vector<MatchEvent>());
+		mMatch->injectState(state.state, std::vector<MatchEvent>());
 	}
 	// otherwise, use current position
 
 	// this is legacy code which will make fast forwarding possible even
-	// when we have no safepoint and have to go back
+	// when we have no savepoint and have to go back
 	if(rep_position < mPosition)
 	{
 		// reset the match and simulate from start!
-		virtual_match->reset();
+		mMatch->reset();
 		mPosition = 0;
+		gotoPlayingPosition( rep_position );
 	}
 
+	/// \todo re-enable bulk simulation
 	// in the end, simulate the remaining steps
 	// maximum: 100 steps
-	for(int i = 0; i < 100; ++i)
+	// this is currently not possible
+	/*for(int i = 0; i < 100; ++i)
 	{
 		// check if we have to do another step
 		if(endOfFile() || rep_position == mPosition)
@@ -181,7 +188,6 @@ bool ReplayPlayer::gotoPlayingPosition(int rep_position, DuelMatch* virtual_matc
 
 		// do one play step
 		play(virtual_match);
-
 	}
 
 	return false;*/

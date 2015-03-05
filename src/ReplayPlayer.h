@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <string>
 #include <atomic>
+#include <mutex>
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
@@ -93,12 +94,10 @@ class ReplayPlayer : public ObjectCounter<ReplayPlayer>
 		void play();
 
 		/// \brief Jumps to a position in replay.
-		/// \details Goes to a certain position in replay. Simulates at most 100 steps per call
-		///			to prevent visual lags, so it is possible that this function has to be called
-		///			several times to reach the target.
+		/// \details Goes to a certain position in replay. Currently, there is no guarantee that
+		///			the position can be reached exactly.
 		/// \param rep_position target position in number of physic steps.
-		/// \return True, if desired position could be reached.
-		bool gotoPlayingPosition(int rep_position, DuelMatch* virtual_match);
+		void gotoPlayingPosition(int rep_position);
 
 	private:
 
@@ -114,6 +113,7 @@ class ReplayPlayer : public ObjectCounter<ReplayPlayer>
 		boost::shared_ptr<InputSource> mRightInput;
 
 		boost::shared_ptr<DuelMatch> mMatch;
+		std::mutex mExclusive;
 
 		std::string mPlayerNames[MAX_PLAYERS];
 };
