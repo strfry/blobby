@@ -99,6 +99,7 @@ NetworkGame::NetworkGame(RakServer& server, boost::shared_ptr<NetworkPlayer> lef
 	/// \todo write file author and title, too; maybe add a version number in scripts, too.
 	broadcastBitstream(stream);
 
+	mMatch->setStepCallback( std::bind(&NetworkGame::onMatchStep, this, std::placeholders::_1, std::placeholders::_2) );
 	mMatch->run();
 
 	// basic packet handling functions
@@ -119,7 +120,7 @@ void NetworkGame::injectPacket(const packet_ptr& packet)
 	mPacketQueue.push_back(packet);
 }
 
-void NetworkGame::broadcastBitstream(const RakNet::BitStream& stream, const RakNet::BitStream& switchedstream)
+void NetworkGame::broadcastBitstream(const RakNet::BitStream& stream, const RakNet::BitStream& switchedstream) const
 {
 	// checks that stream and switchedstream don't have the same content.
 	// this is a common mistake that arises from constructs like:
@@ -144,7 +145,7 @@ void NetworkGame::broadcastBitstream(const RakNet::BitStream& stream, const RakN
 	mServer.Send(&rightStream, HIGH_PRIORITY, RELIABLE_ORDERED, 0, mRightPlayer, false);
 }
 
-void NetworkGame::broadcastBitstream(const RakNet::BitStream& stream)
+void NetworkGame::broadcastBitstream(const RakNet::BitStream& stream) const
 {
 
 	mServer.Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0, mLeftPlayer, false);
@@ -172,11 +173,7 @@ void NetworkGame::step()
 	if (!isGameStarted())
 		return;
 
-	// don't record the pauses
-	if(!mMatch->isPaused())
-	{
-		broadcastPhysicState();
-	}
+	broadcastGameEvents();
 }
 
 void NetworkGame::onMatchStep(const DuelMatchState& state, const std::vector<MatchEvent>& events)
@@ -189,9 +186,16 @@ void NetworkGame::onMatchStep(const DuelMatchState& state, const std::vector<Mat
 		mRecorder->record( state );
 		mRecorder->finalize( state.getScore(LEFT_PLAYER), state.getScore(RIGHT_PLAYER) );
 	}
+
+	// don't record the pauses
+	if(!mMatch->isPaused())
+	{
+		// we can do that here, because RakNet adds packets to the send list in a thread save way (i hope it works^^)
+		broadcastPhysicState( state );
+	}
 }
 
-void NetworkGame::writeEventToStream(RakNet::BitStream& stream, MatchEvent e, bool switchSides )
+void NetworkGame::writeEventToStream(RakNet::BitStream& stream, MatchEvent e, bool switchSides ) const
 {
 	stream.Write((unsigned char)e.event);
 	if( switchSides )
@@ -202,12 +206,12 @@ void NetworkGame::writeEventToStream(RakNet::BitStream& stream, MatchEvent e, bo
 		stream.Write( e.intensity );
 }
 
-void NetworkGame::broadcastPhysicState()
+void NetworkGame::broadcastPhysicState(const DuelMatchState& state) const
 {
+	DuelMatchState ms = state;	// modifyable copy
+
 	RakNet::BitStream stream;
 	stream.Write((unsigned char)ID_GAME_UPDATE);
-	auto events = mMatch->fetchEvents();
-	auto ms = *mMatch->fetchState();	// not guaranteed to be a new state, so we might broadcast the same state twice
 
 	/// \todo this required dynamic memory allocation! not good!
 	boost::shared_ptr<GenericOut> out = createGenericWriter( &stream );
@@ -232,12 +236,17 @@ void NetworkGame::broadcastPhysicState()
 	out->generic<DuelMatchState> (ms);
 
 	mServer.Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, mRightPlayer, false);
+}
 
+void NetworkGame::broadcastGameEvents() const
+{
+	RakNet::BitStream stream;
+
+	auto events = mMatch->fetchEvents();
 	// send the events
 	if( events.empty() )
 		return;
 	// add all the events to the stream
-	stream.Reset();
 	stream.Write( (unsigned char)ID_GAME_EVENTS );
 	for(auto& e : events)
 		writeEventToStream(stream, e, mSwitchedSide == LEFT_PLAYER );
@@ -250,7 +259,6 @@ void NetworkGame::broadcastPhysicState()
 	stream.Write((char)0);
 	mServer.Send( &stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0, mRightPlayer, false);
 }
-
 
 PlayerID NetworkGame::getPlayerID( PlayerSide side ) const
 {
