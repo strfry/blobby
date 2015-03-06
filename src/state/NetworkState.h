@@ -81,7 +81,6 @@ private:
 	PlayerSide mWinningPlayer;
 
 	// cached network data to inject into game
-	boost::shared_ptr<DuelMatchState> mRemoteState;
 	std::vector<MatchEvent> mRemoteEvents;
 
 	// Chat Vars

@@ -68,7 +68,6 @@ NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client):
 	 mChatCursorPosition(0),
 	 mChattext(""),
 	 mHandler( new PacketHandler ),
-	 mRemoteState( new DuelMatchState )
 {
 	boost::shared_ptr<IUserConfigReader> config = IUserConfigReader::createUserConfigReader("config.xml");
 	mOwnSide = (PlayerSide)config->getInteger("network_side");
@@ -147,11 +146,6 @@ void NetworkGameState::step_impl()
 	{
 		mHandler->handlePacket( packet );
 	}
-
-
-	// inject network data into game
-	mMatch->injectState( *mRemoteState, mRemoteEvents );
-	mRemoteEvents.clear();
 
 	// does this generate any problems if we pause at the exact moment an event is set ( i.e. the ball hit sound
 	// could be played in a loop)?
@@ -496,7 +490,9 @@ void NetworkGameState::h_game_update( RakNet::BitStream stream )
 	///			there should be a better way to do that
 	boost::shared_ptr<GenericIn> in = createGenericReader(&stream);
 	in->generic<DuelMatchState> (ms);
-	*mRemoteState = ms;
+	// inject network data into game
+	mMatch->injectState( ms, mRemoteEvents );
+	mRemoteEvents.clear();
 }
 
 void NetworkGameState::h_events( RakNet::BitStream stream )
