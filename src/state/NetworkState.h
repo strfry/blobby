@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <vector>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/circular_buffer.hpp>
 
 class RakClient;
 class RakServer;
@@ -37,6 +38,7 @@ class NetworkGame;
 class PlayerIdentity;
 class DedicatedServer;
 class PacketHandler;
+class PlayerInputAbs;
 
 /*! \class NetworkGameState
 	\brief State for Network Game
@@ -89,6 +91,9 @@ private:
 	unsigned mSelectedChatmessage;
 	unsigned mChatCursorPosition;
 	std::string mChattext;
+
+	// circular buffer for input
+	boost::circular_buffer<PlayerInputAbs> mInputCache;
 
 	boost::scoped_ptr<PacketHandler> mHandler;
 

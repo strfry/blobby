@@ -95,6 +95,9 @@ class NetworkGame : public ObjectCounter<NetworkGame>
 		boost::scoped_ptr<DuelMatch> mMatch;
 		boost::shared_ptr<InputSource> mLeftInput;
 		boost::shared_ptr<InputSource> mRightInput;
+		// cache the info from what time point the inputs were
+		int mLeftInputTime  = 0;
+		int mRightInputTime = 0;
 
 		boost::scoped_ptr<ReplayRecorder> mRecorder;
 

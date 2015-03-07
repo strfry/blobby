@@ -68,6 +68,7 @@ NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client):
 	 mChatCursorPosition(0),
 	 mChattext(""),
 	 mHandler( new PacketHandler ),
+	 mInputCache( 100 )
 {
 	boost::shared_ptr<IUserConfigReader> config = IUserConfigReader::createUserConfigReader("config.xml");
 	mOwnSide = (PlayerSide)config->getInteger("network_side");
@@ -283,6 +284,8 @@ void NetworkGameState::step_impl()
 			RakNet::BitStream stream;
 			stream.Write((unsigned char)ID_INPUT_UPDATE);
 			input.writeTo(stream);
+			/// \todo write timing info
+			stream.Write( SDL_GetTicks() );
 			mClient->Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0);
 			break;
 		}
@@ -492,7 +495,14 @@ void NetworkGameState::h_game_update( RakNet::BitStream stream )
 	in->generic<DuelMatchState> (ms);
 	// inject network data into game
 	mMatch->injectState( ms, mRemoteEvents );
+	*mLastState = ms;	// update last state
 	mRemoteEvents.clear();
+
+	int lag;
+	stream.Read(lag);
+	lag = SDL_GetTicks() - lag;
+	//
+	std::cout << lag << "ms LAG\n";
 }
 
 void NetworkGameState::h_events( RakNet::BitStream stream )

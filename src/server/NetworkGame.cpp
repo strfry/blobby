@@ -220,7 +220,7 @@ void NetworkGame::broadcastPhysicState(const DuelMatchState& state) const
 		ms.swapSides();
 
 	out->generic<DuelMatchState> (ms);
-
+	stream.Write( mLeftInputTime );
 	mServer.Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, mLeftPlayer, false);
 
 	// reset state and stream
@@ -234,6 +234,7 @@ void NetworkGame::broadcastPhysicState(const DuelMatchState& state) const
 		ms.swapSides();
 
 	out->generic<DuelMatchState> (ms);
+	stream.Write( mRightInputTime );
 
 	mServer.Send(&stream, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, mRightPlayer, false);
 }
@@ -387,6 +388,8 @@ void NetworkGame::h_input( packet_ptr packet )
 	// ignore ID_INPUT_UPDATE
 	stream.IgnoreBytes(1);
 	PlayerInputAbs newInput(stream);
+	int timing;
+	stream.Read(timing);
 
 	/// \todo this accesses the input sources for the game,
 	/// thus it is currently not thread-safe
@@ -395,11 +398,13 @@ void NetworkGame::h_input( packet_ptr packet )
 		if (mSwitchedSide == LEFT_PLAYER)
 			newInput.swapSides();
 		mLeftInput->setInput(newInput);
+		mLeftInputTime = timing;
 	}
 	if (packet->playerId == mRightPlayer)
 	{
 		if (mSwitchedSide == RIGHT_PLAYER)
 			newInput.swapSides();
 		mRightInput->setInput(newInput);
+		mRightInputTime = timing;
 	}
 }

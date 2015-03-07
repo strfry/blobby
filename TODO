@@ -26,7 +26,7 @@ data:
 MULTI-THREAD primary:
  * extensive network checks
  * frame interpolation
- * add debug system for measuring display and network lag
+ * add debug system for measuring display and network lag	17 - 35 ms lag
 
 MULTI-THREAD secondary:
  * add lag compensation to network [this is now an easy bonus, so go for it]
