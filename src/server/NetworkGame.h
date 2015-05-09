@@ -74,10 +74,10 @@ class NetworkGame : public ObjectCounter<NetworkGame>
 	private:
 		void broadcastBitstream(const RakNet::BitStream& stream, const RakNet::BitStream& switchedstream);
 		void broadcastBitstream(const RakNet::BitStream& stream);
-		void broadcastPhysicState();
+		void broadcastPhysicState(const DuelMatchState& state) const;
+		void broadcastGameEvents() const;
+		void writeEventToStream(RakNet::BitStream& stream, MatchEvent e, bool switchSides ) const;
 		bool isGameStarted() { return mRulesSent[LEFT_PLAYER] && mRulesSent[RIGHT_PLAYER]; }
-
-		static int switchEventSides(int events);
 
 		RakServer& mServer;
 		PlayerID mLeftPlayer;

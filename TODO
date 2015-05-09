@@ -25,3 +25,9 @@ bugs:
 data:
 - monochrome font
 - more translation
+
+
+EVENT BRANCH:
+ remove double click sound when blobby hits ball
+ check network games
+ check replays
