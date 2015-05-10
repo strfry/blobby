@@ -147,6 +147,21 @@ void NetworkGameState::step_impl()
 				}
 				break;
 			}
+			case ID_WIN_NOTIFICATION:
+			{
+				RakNet::BitStream stream((char*)packet->data, packet->length, false);
+				stream.IgnoreBytes(1);	//ID_WIN_NOTIFICATION
+				stream.Read((int&)mWinningPlayer);
+
+				// last point must not be added anymore, because
+				// the score is also simulated local so it is already
+				// right. under strange circumstances this need not
+				// be true, but then the score is set to the correy value
+				// by ID_BALL_RESET
+
+				mNetworkState = PLAYER_WON;
+				break;
+			}
 			case ID_OPPONENT_DISCONNECTED:
 			{
 				// In this state, a leaving opponent would not be very surprising

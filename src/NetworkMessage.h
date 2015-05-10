@@ -39,6 +39,7 @@ enum MessageType
 	ID_GAME_EVENTS,		// send game events from server to client [reliable]
 	ID_OPPONENT_DISCONNECTED,
 	ID_GAME_READY,
+	ID_WIN_NOTIFICATION,
 	ID_ENTER_SERVER = ID_RESERVED9 + 10,
 	ID_PAUSE,
 	ID_UNPAUSE,

@@ -325,6 +325,16 @@ void NetworkGame::step()
 			mMatch->pause();
 			mRecorder->record(mMatch->getState());
 			mRecorder->finalize( mMatch->getScore(LEFT_PLAYER), mMatch->getScore(RIGHT_PLAYER) );
+			
+			RakNet::BitStream stream;
+			stream.Write((unsigned char)ID_WIN_NOTIFICATION);
+			stream.Write(winning);
+
+			RakNet::BitStream switchStream;
+			switchStream.Write((unsigned char)ID_WIN_NOTIFICATION);
+			switchStream.Write(winning == LEFT_PLAYER ? RIGHT_PLAYER : LEFT_PLAYER);
+
+			broadcastBitstream(stream, switchStream);
 		}
 
 		broadcastPhysicState(mMatch->getState());
