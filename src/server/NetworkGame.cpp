@@ -390,6 +390,7 @@ void NetworkGame::broadcastGameEvents() const
 	mServer.Send( &stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0, mLeftPlayer, false);
 
 	stream.Reset();
+	stream.Write( (unsigned char)ID_GAME_EVENTS );
 	for(auto& e : events)
 		writeEventToStream(stream, e, mSwitchedSide == RIGHT_PLAYER );
 	stream.Write((char)0);
