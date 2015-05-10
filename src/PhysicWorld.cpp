@@ -42,6 +42,7 @@ PhysicWorld::PhysicWorld()
 , mBallRotation(0)
 , mBallAngularVelocity(STANDARD_BALL_ANGULAR_VELOCITY)
 , mLastHitIntensity(0)
+, mCallback( [](const MatchEvent& me) {} )
 {
 	mCurrentBlobbyAnimationSpeed[LEFT_PLAYER] = 0.0;
 	mCurrentBlobbyAnimationSpeed[RIGHT_PLAYER] = 0.0;
