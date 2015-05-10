@@ -75,11 +75,6 @@
 			<Option target="Release" />
 		</Unit>
 		<Unit filename="src/Blood.h" />
-		<Unit filename="src/BotAPICalculations.cpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-		</Unit>
-		<Unit filename="src/BotAPICalculations.h" />
 		<Unit filename="src/CMakeLists.txt" />
 		<Unit filename="src/Clock.cpp" />
 		<Unit filename="src/Clock.h" />
