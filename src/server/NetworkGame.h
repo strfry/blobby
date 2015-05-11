@@ -92,7 +92,6 @@ class NetworkGame : public ObjectCounter<NetworkGame>
 
 		boost::scoped_ptr<ReplayRecorder> mRecorder;
 
-		bool mPausing;
 		bool mGameValid;
 
 		bool mRulesSent[MAX_PLAYERS];

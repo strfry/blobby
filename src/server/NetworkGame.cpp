@@ -54,7 +54,6 @@ NetworkGame::NetworkGame(RakServer& server, boost::shared_ptr<NetworkPlayer> lef
 , mLeftInput (new InputSource())
 , mRightInput(new InputSource())
 , mRecorder(new ReplayRecorder())
-, mPausing(false)
 , mGameValid(true)
 {
 	// check that both players don't have an active game
@@ -154,7 +153,6 @@ void NetworkGame::processPackets()
 				RakNet::BitStream stream;
 				stream.Write((unsigned char)ID_OPPONENT_DISCONNECTED);
 				broadcastBitstream(stream);
-				mPausing = true;
 				mMatch->pause();
 				mGameValid = false;
 				break;
@@ -192,7 +190,6 @@ void NetworkGame::processPackets()
 				RakNet::BitStream stream;
 				stream.Write((unsigned char)ID_PAUSE);
 				broadcastBitstream(stream);
-				mPausing = true;
 				mMatch->pause();
 				break;
 			}
@@ -202,7 +199,6 @@ void NetworkGame::processPackets()
 				RakNet::BitStream stream;
 				stream.Write((unsigned char)ID_UNPAUSE);
 				broadcastBitstream(stream);
-				mPausing = false;
 				mMatch->unpause();
 				break;
 			}
@@ -309,19 +305,17 @@ void NetworkGame::step()
 
 	// don't record the pauses
 	if(!mMatch->isPaused())
+	{
 		mRecorder->record(mMatch->getState());
 
-	mMatch->step();
+		mMatch->step();
 
-	broadcastGameEvents();
+		broadcastGameEvents();
 
-	if(!mPausing)
-	{
 		PlayerSide winning = mMatch->winningPlayer();
 		if (winning != NO_PLAYER)
 		{
 			// if someone has won, the game is paused
-			mPausing = true;
 			mMatch->pause();
 			mRecorder->record(mMatch->getState());
 			mRecorder->finalize( mMatch->getScore(LEFT_PLAYER), mMatch->getScore(RIGHT_PLAYER) );

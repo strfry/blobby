@@ -56,8 +56,6 @@ void GameState::presentGame()
 	RenderManager& rmanager = RenderManager::getSingleton();
 	SoundManager& smanager = SoundManager::getSingleton();
 
-
-
 	rmanager.setBlob(LEFT_PLAYER, mMatch->getBlobPosition(LEFT_PLAYER), mMatch->getWorld().getBlobState(LEFT_PLAYER));
 	rmanager.setBlob(RIGHT_PLAYER, mMatch->getBlobPosition(RIGHT_PLAYER),	mMatch->getWorld().getBlobState(RIGHT_PLAYER));
 
@@ -88,8 +86,7 @@ void GameState::presentGame()
 		{
 			smanager.playSound("sounds/bums.wav", e.intensity + BALL_HIT_PLAYER_SOUND_VOLUME);
 			/// \todo save that position inside the event
-			Vector2 hitPos = mMatch->getBallPosition() +
-					(mMatch->getBlobPosition(e.side) - mMatch->getBallPosition()).normalise().scale(31.5);
+			Vector2 hitPos = mMatch->getBallPosition() + (mMatch->getBlobPosition(e.side) - mMatch->getBallPosition()).normalise().scale(31.5);
 			BloodManager::getSingleton().spillBlood(hitPos, e.intensity, 0);
 		}
 
