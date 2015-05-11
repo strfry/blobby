@@ -514,6 +514,7 @@ void NetworkGameState::step_impl()
 		}
 		case PLAYER_WON:
 		{
+			mMatch->updateEvents(); // so the last whistle will be sounded
 			displayWinningPlayerScreen(mWinningPlayer);
 			if (imgui.doButton(GEN_ID, Vector2(290, 360), TextManager::LBL_OK))
 			{

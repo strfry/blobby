@@ -126,6 +126,9 @@ class DuelMatch : public ObjectCounter<DuelMatch>
 		void setServingPlayer(PlayerSide side);
 
 		const std::vector<MatchEvent>& getEvents() const { return mLastEvents; }
+		// this function will move all events into mLastEvents, so they will be returned by get events.
+		// use this if no match step is performed, but external events have to be processed.
+		void updateEvents();
 
 	private:
 

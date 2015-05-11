@@ -326,3 +326,10 @@ PlayerIdentity& DuelMatch::getPlayer(PlayerSide player)
 	return mPlayers[player];
 }
 
+void DuelMatch::updateEvents()
+{
+	/// \todo more economical with a swap?
+	mLastEvents = mEvents;
+	mEvents.clear();
+}
+
