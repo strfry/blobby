@@ -57,6 +57,8 @@
 			<Add option="-DWIN32" />
 			<Add option="-DHAVE_LIBGL" />
 			<Add directory="./src" />
+			<Add directory="./" />
+			<Add directory="fann" />
 		</Compiler>
 		<Linker>
 			<Add library="SDL2" />
@@ -65,6 +67,22 @@
 			<Add library="OpenGL32" />
 		</Linker>
 		<Unit filename="data/Icon.ico" />
+		<Unit filename="fann/compat_time.h" />
+		<Unit filename="fann/config.h" />
+		<Unit filename="fann/doublefann.h" />
+		<Unit filename="fann/fann.h" />
+		<Unit filename="fann/fann_cascade.h" />
+		<Unit filename="fann/fann_cpp.h" />
+		<Unit filename="fann/fann_data.h" />
+		<Unit filename="fann/fann_error.h" />
+		<Unit filename="fann/fann_internal.h" />
+		<Unit filename="fann/fann_io.h" />
+		<Unit filename="fann/fann_train.h" />
+		<Unit filename="fann/fixedfann.h" />
+		<Unit filename="fann/floatfann.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="fann/floatfann.h" />
 		<Unit filename="res.rc">
 			<Option compilerVar="WINDRES" />
 		</Unit>
@@ -75,11 +93,6 @@
 			<Option target="Release" />
 		</Unit>
 		<Unit filename="src/Blood.h" />
-		<Unit filename="src/BotAPICalculations.cpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-		</Unit>
-		<Unit filename="src/BotAPICalculations.h" />
 		<Unit filename="src/CMakeLists.txt" />
 		<Unit filename="src/Clock.cpp" />
 		<Unit filename="src/Clock.h" />
@@ -134,8 +147,11 @@
 		</Unit>
 		<Unit filename="src/LocalInputSource.h" />
 		<Unit filename="src/MatchEvents.h" />
+		<Unit filename="src/NNet.h" />
 		<Unit filename="src/NetworkMessage.cpp" />
 		<Unit filename="src/NetworkMessage.h" />
+		<Unit filename="src/NeuralBot.cpp" />
+		<Unit filename="src/NeuralBot.h" />
 		<Unit filename="src/PhysicState.cpp" />
 		<Unit filename="src/PhysicState.h" />
 		<Unit filename="src/PhysicWorld.cpp" />

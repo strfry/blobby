@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "IUserConfigReader.h"
 #include "LocalInputSource.h"
 #include "ScriptedInputSource.h"
+#include "NeuralBot.h"
 
 boost::shared_ptr<InputSource> InputSourceFactory::createInputSource( boost::shared_ptr<IUserConfigReader> config, PlayerSide side )
 {
@@ -43,6 +44,9 @@ boost::shared_ptr<InputSource> InputSourceFactory::createInputSource( boost::sha
 		}
 		else
 		{
+			std::cout << "NAME: " << config->getString(prefix + "_script_name") << "\n";
+			if(config->getString(prefix + "_script_name") == std::string("neural"))
+				return boost::make_shared<NeuralBot>(side, config->getInteger(prefix + "_script_strength"));
 			return boost::make_shared<ScriptedInputSource>("scripts/" + config->getString(prefix + "_script_name"),
 					side, config->getInteger(prefix + "_script_strength"));
 		}

@@ -55,6 +55,7 @@ class Vector2
 		Vector2 scaleX(float factor) const;
 		Vector2 scaleY(float factor) const;
 		float length() const;
+		float lengthSQ() const;
 		Vector2 normalise();
 		Vector2 contraVector() const ;
 
@@ -213,6 +214,11 @@ inline float Vector2::length() const
 #else
 	return sqrt(this->x * this->x + this->y * this->y);
 #endif
+}
+
+inline float Vector2::lengthSQ() const
+{
+	return x*x + y*y;
 }
 
 inline Vector2 Vector2::normalise()
