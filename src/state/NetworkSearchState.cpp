@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "tinyxml/tinyxml.h"
 
 #include "NetworkState.h"
-#include "LobbyState.h"
+#include "LobbyStates.h"
 #include "TextManager.h"
 #include "IMGUI.h"
 #include "IUserConfigReader.h"

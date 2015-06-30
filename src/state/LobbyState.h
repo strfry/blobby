@@ -32,6 +32,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "NetworkMessage.h"
 #include "PlayerIdentity.h"
 
+class LobbySubstate;
+
+enum ConnectionState
+{
+	CONNECTING,
+	CONNECTED,
+	DISCONNECTED,
+	CONNECTION_FAILED
+};
+
 class LobbyState : public State
 {
 	public:
@@ -45,23 +55,48 @@ class LobbyState : public State
 		boost::shared_ptr<RakClient> mClient;
 		PlayerIdentity mLocalPlayer;
 		ServerInfo mInfo;
-		unsigned mSelectedPlayer;
+		unsigned mSelectedGame;
 
-		struct WaitingPlayer
+		struct OpenGame
 		{
-			std::string displayname;
-			PlayerID id;
-			bool challengedMe;
+			unsigned id;
+			std::string name;
+			unsigned rules;
+			unsigned speed;
+			unsigned score;
 		};
 
-		std::vector<WaitingPlayer> mConnectedPlayers;
+		std::vector<OpenGame> mOpenGames;
+		std::vector<unsigned int> mPossibleSpeeds;
+		std::vector<std::string> mPossibleRules;
+		std::vector<unsigned> mPossibleScores{2, 5, 10, 15, 20, 25, 40, 50};
+		
+		// temp variables for open game
+		unsigned mChosenSpeed = 0;
+		unsigned mChosenRules = 0;
+		unsigned mChosenScore = 3;
+		unsigned mOwnGame = 0;
+		std::vector<PlayerID> mOtherPlayers;
 
-		enum
-		{
-			CONNECTING,
-			CONNECTED,
-			DISCONNECTED,
-			CONNECTION_FAILED
-		} mLobbyState;
+		ConnectionState mLobbyState;
+		
+		LobbyMainSubstate* mMainSubstate;
 };
 
+// Lobby Substates
+class LobbyMainSubstate : public LobbySubstate
+{
+public:
+	LobbyMainSubstate(boost::shared_ptr<RakClient> c, ServerInfo info) : mClient(c), mInfo(info)
+	{
+		
+	}
+	
+	void step();
+	void setConnectionState();
+	
+private:
+	boost::shared_ptr<RakClient> mClient;
+	ServerInfo mInfo;
+	ConnectionState mLobbyStatus;
+};

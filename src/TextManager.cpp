@@ -219,6 +219,8 @@ void TextManager::setDefault()
 	mStrings[NET_SERVER_FULL] = "server full";
 	mStrings[NET_STAY_ON_SERVER] = "stay on server";
 	mStrings[NET_RANDOM_OPPONENT] = "random";
+	mStrings[NET_OPEN_GAME] = "open game";
+	mStrings[NET_JOIN] = "join game";
 	mStrings[NET_SPEED] = "speed: ";
 	mStrings[NET_RULES_TITLE] = "rules: ";
 	mStrings[NET_RULES_BY] = " by ";

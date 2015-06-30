@@ -48,7 +48,7 @@ enum MessageType
 	ID_RULES_CHECKSUM,
 	ID_RULES,
 	ID_SERVER_STATUS,
-	ID_CHALLENGE
+	ID_LOBBY
 };
 
 // General Information:
@@ -177,26 +177,22 @@ enum MessageType
 //		size (int)
 //		data
 //
-// ID_SERVER_STATUS
+// ID_LOBBY
 // 	Description:
-//		Sent from server to waiting clients with information about the
-//		current server status
-//	Structure:
-//		ID_SERVER_STATUS
-//		vector<string> playernames
-//		vector<PlayerId> playerIDs
-//		set<PlayerId> requests
-//
-// ID_CHALLENGE
-// 	Description:
-//		Sent when the client wants to start a game. If desired opponent is set, the server looks for that
-//		opponent and matches these players.
-//		Sent from the server when another player wants to start a game with this client.
-//	Structure:
+//		This packet is used for matchmaking messages in the lobby.
 //		ID_CHALLENGE
-//		PlayerID opponent
+//		(unsigned char) TYPE
 //
 
+enum class LobbyPacketType : unsigned char
+{
+	SERVER_STATUS,
+	REMOVED_FROM_GAME,
+	OPEN_GAME,
+	JOIN_GAME,
+	GAME_STATUS,
+	START_GAME
+};
 
 class IUserConfigReader;
 

@@ -50,12 +50,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "MatchEvents.h"
 #include "SpeedController.h"
 #include "server/DedicatedServer.h"
-#include "LobbyState.h"
+#include "LobbyStates.h"
 #include "InputManager.h"
 
 
 /* implementation */
-NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client):
+NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client, int rule_checksum):
 	 GameState(new DuelMatch(true, DEFAULT_RULES_FILE)),
 	 mClient( client ),
 	 mWinningPlayer(NO_PLAYER),
@@ -97,6 +97,27 @@ NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client):
 	}
 
 	mRemotePlayer->setName("");
+	
+	// check the rules
+	int ourChecksum = 0;
+	if (rule_checksum != 0)
+	{
+		try
+		{
+			FileRead rulesFile("server_rules.lua");
+			ourChecksum = rulesFile.calcChecksum(0);
+			rulesFile.close();
+		}
+		catch( FileLoadException& ex )
+		{
+			// file doesn't exist - nothing to do here
+		}
+	}
+
+	RakNet::BitStream stream2;
+	stream2.Write((unsigned char)ID_RULES);
+	stream2.Write(bool(rule_checksum != 0 && rule_checksum != ourChecksum));
+	mClient->Send(&stream2, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
 }
 
 NetworkGameState::~NetworkGameState()
@@ -232,32 +253,7 @@ void NetworkGameState::step_impl()
 			}
 			case ID_RULES_CHECKSUM:
 			{
-				RakNet::BitStream stream((char*)packet->data, packet->length, false);
-
-				stream.IgnoreBytes(1);	// ignore ID_RULES_CHECKSUM
-
-				int serverChecksum;
-				stream.Read(serverChecksum);
-				int ourChecksum = 0;
-				if (serverChecksum != 0)
-				{
-					try
-					{
-						FileRead rulesFile("server_rules.lua");
-						ourChecksum = rulesFile.calcChecksum(0);
-						rulesFile.close();
-					}
-					catch( FileLoadException& ex )
-					{
-						// file doesn't exist - nothing to do here
-					}
-				}
-
-				RakNet::BitStream stream2;
-				stream2.Write((unsigned char)ID_RULES);
-				stream2.Write(bool(serverChecksum != 0 && serverChecksum != ourChecksum));
-				mClient->Send(&stream2, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
-
+				assert(0);
 				break;
 			}
 			case ID_RULES:
@@ -291,7 +287,6 @@ void NetworkGameState::step_impl()
 			case ID_REMOTE_DISCONNECTION_NOTIFICATION:
 			case ID_REMOTE_CONNECTION_LOST:
 			case ID_SERVER_STATUS:
-			case ID_CHALLENGE:
 			case ID_REMOTE_NEW_INCOMING_CONNECTION:
 			case ID_REMOTE_EXISTING_CONNECTION:
 				break;
@@ -649,7 +644,7 @@ void NetworkHostState::step_impl()
 					mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
 
 					// Send ENTER GAME packet
-
+/*
 					RakNet::BitStream stream2;
 					stream2.Write((char)ID_CHALLENGE);
 					auto writer = createGenericWriter(&stream2);
@@ -658,7 +653,8 @@ void NetworkHostState::step_impl()
 					mClient->Send(&stream2, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
 
 					mGameState = new NetworkGameState(mClient);
-
+*/
+/// \todo what do we do here now?
 					break;
 				}
 				case ID_SERVER_STATUS:

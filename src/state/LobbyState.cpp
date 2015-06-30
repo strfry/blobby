@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "UserConfig.h"
 #include "GenericIO.h"
 
-LobbyState::LobbyState(ServerInfo info) : mClient(new RakClient(), [](RakClient* client) { client->Disconnect(25); }), mInfo(info), mSelectedPlayer(0)
+LobbyState::LobbyState(ServerInfo info) : mClient(new RakClient(), [](RakClient* client) { client->Disconnect(25); }), mInfo(info), mSelectedGame(0)
 {
 	if (!mClient->Connect(mInfo.hostname, mInfo.port, 0, 0, RAKNET_THREAD_SLEEP_TIME))
 		throw( std::runtime_error(std::string("Could not connect to server ") + mInfo.hostname) );
@@ -56,6 +56,7 @@ LobbyState::LobbyState(ServerInfo info) : mClient(new RakClient(), [](RakClient*
 		mLocalPlayer = config.loadPlayerIdentity(RIGHT_PLAYER, true);
 	}
 
+	mMainSubstate = new LobbyMainSubstate(mClient, mInfo);
 }
 
 LobbyState::~LobbyState()
@@ -105,51 +106,49 @@ void LobbyState::step_impl()
 				mLobbyState = DISCONNECTED;
 				break;
 			};
-			case ID_SERVER_STATUS:
+			case ID_LOBBY:
 			{
 				RakNet::BitStream stream = packet->getStream();
 				auto in = createGenericReader( &stream );
 				unsigned char t;
 				in->byte(t);
-
-				std::vector<std::string> names;
-				std::vector<PlayerID> ids;
-				std::set<PlayerID> requestSet;
-
-				PlayerID own_id = mClient->GetPlayerID(  );
-
-				in->generic<std::vector<std::string>>( names );
-				in->generic<std::vector<PlayerID>>( ids );
-				in->generic<std::set<PlayerID>>( requestSet );
-				unsigned int games;
-				in->uint32( games );
-				mInfo.activegames = games;
-
-				// now add every player as possible opponent, except us
-				mConnectedPlayers.clear();
-				for(unsigned int i = 0; i < names.size(); ++i)
+				in->byte(t);
+				if((LobbyPacketType)t == LobbyPacketType::SERVER_STATUS)
 				{
-					if(ids[i] != own_id)
+					uint32_t player_count;
+					in->uint32( player_count );
+					in->generic<std::vector<unsigned int>>( mPossibleSpeeds );
+					in->generic<std::vector<std::string>>( mPossibleRules );
+					std::cout << mPossibleSpeeds.size() << "\n";
+					
+					std::vector<unsigned int> gameids;
+					std::vector<std::string> gamenames;
+					std::vector<unsigned char> gamespeeds;
+					std::vector<unsigned char> gamerules;
+					std::vector<unsigned char> gamescores;
+					in->generic<std::vector<unsigned int>>( gameids );
+					in->generic<std::vector<std::string>>( gamenames );
+					in->generic<std::vector<unsigned char>>( gamespeeds );
+					in->generic<std::vector<unsigned char>>( gamerules );
+					in->generic<std::vector<unsigned char>>( gamescores );
+					
+					mOpenGames.clear();
+					for( unsigned i = 0; i < gameids.size(); ++i)
 					{
-						mConnectedPlayers.push_back( {names[i], ids[i], (bool)requestSet.count(ids[i])} );
+						mOpenGames.push_back( OpenGame{ gameids.at(i), gamenames.at(i), gamerules.at(i), gamespeeds.at(i), gamescores.at(i)});
 					}
+				} else if((LobbyPacketType)t == LobbyPacketType::GAME_STATUS)
+				{
+					in->uint32( mOwnGame );
+					PlayerID creator;
+					std::string name;
+					in->generic<PlayerID>(creator);
+					in->string(name);
+					in->uint32(mChosenSpeed);
+					in->uint32(mChosenRules);
+					in->uint32(mChosenScore);
+					in->generic<std::vector<PlayerID>>(mOtherPlayers);
 				}
-			}
-			break;
-			case ID_CHALLENGE:
-			{
-				RakNet::BitStream stream = packet->getStream();
-				auto in = createGenericReader( &stream );
-				unsigned char t;
-				in->byte(t);
-
-				PlayerID challenger;
-				in->generic<PlayerID>( challenger );
-
-				// find player with that id
-				auto pl = std::find_if( mConnectedPlayers.begin(), mConnectedPlayers.end(), [challenger](WaitingPlayer& wp) { return wp.id == challenger; } );
-				if(pl != mConnectedPlayers.end())
-					pl->challengedMe = true;
 			}
 			break;
 			// we ignore these packets. they tell us about remote connections, which we handle manually with ID_SERVER_STATUS packets.
@@ -175,17 +174,9 @@ void LobbyState::step_impl()
 	imgui.doText(GEN_ID, Vector2(400 - 12 * std::strlen(mInfo.name), 20), mInfo.name);
 
 	// server description
-	if (mLobbyState == CONNECTING )
+	if (mLobbyState != CONNECTED )
 	{
-		imgui.doText(GEN_ID, Vector2( 100, 55 ), TextManager::NET_CONNECTING);
-	}
-	else if (mLobbyState == DISCONNECTED )
-	{
-		imgui.doText(GEN_ID, Vector2( 100, 55 ), TextManager::NET_DISCONNECT);
-	}
-	else if (mLobbyState == CONNECTION_FAILED )
-	{
-		imgui.doText(GEN_ID, Vector2( 100, 55 ), TextManager::NET_CON_FAILED);
+		mMainSubstate->step();
 	}
 	else
 	{
@@ -198,44 +189,102 @@ void LobbyState::step_impl()
 
 	// player list
 
-	std::vector<std::string> playerlist;
+	std::vector<std::string> gamelist;
 	if( mLobbyState == CONNECTED )
 	{
-		playerlist.push_back( TextManager::getSingleton()->getString(TextManager::NET_RANDOM_OPPONENT) );
-		for (unsigned int i = 0; i < mConnectedPlayers.size(); i++)
+		gamelist.push_back( TextManager::getSingleton()->getString(TextManager::NET_RANDOM_OPPONENT) );
+		gamelist.push_back( TextManager::getSingleton()->getString(TextManager::NET_OPEN_GAME) );
+		for ( const auto& game : mOpenGames)
 		{
-			std::string str(mConnectedPlayers[i].displayname);
-			if (mConnectedPlayers[i].challengedMe)
-			{
-				str.resize(13, ' ');
-				str += "!";
-			}
-			playerlist.push_back(str);
+			gamelist.push_back( game.name );
 		}
 	}
 
 	bool doEnterGame = false;
-	if( imgui.doSelectbox(GEN_ID, Vector2(25.0, 90.0), Vector2(375.0, 470.0), playerlist, mSelectedPlayer) == SBA_DBL_CLICK )
+	if( imgui.doSelectbox(GEN_ID, Vector2(25.0, 90.0), Vector2(375.0, 470.0), gamelist, mSelectedGame) == SBA_DBL_CLICK )
 	{
 		doEnterGame = true;
 	}
 
-	// info panel
-	imgui.doOverlay(GEN_ID, Vector2(425.0, 90.0), Vector2(775.0, 470.0));
-
-	// info panel contents:
-	//  * gamespeed
-	imgui.doText(GEN_ID, Vector2(435, 100), TextManager::getSingleton()->getString(TextManager::NET_SPEED) +
-				 boost::lexical_cast<std::string>(int(100.0 / 75.0 * mInfo.gamespeed)) + "%");
-	//  * number of active games
-	imgui.doText(GEN_ID, Vector2(435, 135), TextManager::getSingleton()->getString(TextManager::NET_ACTIVE_GAMES) +
-										boost::lexical_cast<std::string>(mInfo.activegames) );
-	//  * rulesfile
-	imgui.doText(GEN_ID, Vector2(435, 170), TextManager::getSingleton()->getString(TextManager::NET_RULES_TITLE) );
-	std::string rulesstring = mInfo.rulestitle + TextManager::getSingleton()->getString(TextManager::NET_RULES_BY) + mInfo.rulesauthor;
-	for (unsigned int i = 0; i < rulesstring.length(); i += 25)
+	if(mSelectedGame > 1)
 	{
-		imgui.doText(GEN_ID, Vector2(445, 205 + i / 25 * 15), rulesstring.substr(i, 25), TF_SMALL_FONT);
+		// info panel
+		imgui.doOverlay(GEN_ID, Vector2(425.0, 90.0), Vector2(775.0, 470.0));
+
+		// info panel contents:
+		//  * gamespeed
+		imgui.doText(GEN_ID, Vector2(435, 100), TextManager::getSingleton()->getString(TextManager::NET_SPEED) +
+					 boost::lexical_cast<std::string>(int(0.5 + 100.0 / 75.0 * mPossibleSpeeds.at(mOpenGames.at(mSelectedGame-2).speed))) + "%");
+		//  * points
+		imgui.doText(GEN_ID, Vector2(435, 135), TextManager::getSingleton()->getString(TextManager::NET_POINTS) +
+											 boost::lexical_cast<std::string>(mOpenGames.at(mSelectedGame-2).score) );
+		
+		//  * rulesfile
+		imgui.doText(GEN_ID, Vector2(435, 170), TextManager::getSingleton()->getString(TextManager::NET_RULES_TITLE) );
+		std::string rulesstring = mPossibleRules.at(mOpenGames.at(mSelectedGame-2).rules) + TextManager::getSingleton()->getString(TextManager::NET_RULES_BY) + mInfo.rulesauthor;
+		for (unsigned int i = 0; i < rulesstring.length(); i += 25)
+		{
+			imgui.doText(GEN_ID, Vector2(445, 205 + i / 25 * 15), rulesstring.substr(i, 25), TF_SMALL_FONT);
+		}
+		
+		// open game button
+		if( imgui.doButton(GEN_ID, Vector2(435, 430), TextManager::getSingleton()->getString(TextManager::NET_JOIN) ))
+		{
+			// send open game packet to server
+			RakNet::BitStream stream;
+			stream.Write((unsigned char)ID_LOBBY);
+			stream.Write((unsigned char)LobbyPacketType::JOIN_GAME);
+			stream.Write( mOpenGames.at(mSelectedGame-2).id );
+			/// \todo add a name
+			
+			mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
+		}
+	} 
+	// open game
+	else if (mSelectedGame == 1)
+	{
+		// info panel
+		imgui.doOverlay(GEN_ID, Vector2(425.0, 90.0), Vector2(775.0, 470.0));
+
+		// info panel contents:
+		//  * gamespeed
+		if(imgui.doButton(GEN_ID, Vector2(435, 100), TextManager::getSingleton()->getString(TextManager::NET_SPEED) +
+					 boost::lexical_cast<std::string>(int(0.5 + 100.0 / 75.0 * mPossibleSpeeds.at(mChosenSpeed))) + "%"))
+		{
+			mChosenSpeed = (mChosenSpeed + 1) % mPossibleSpeeds.size();
+		}
+		//  * points
+		if(imgui.doButton(GEN_ID, Vector2(435, 135), TextManager::getSingleton()->getString(TextManager::NET_POINTS) +
+											 boost::lexical_cast<std::string>( mPossibleScores.at(mChosenScore) ) ))
+		{
+			mChosenScore = (mChosenScore + 1) % mPossibleScores.size();
+		}
+		
+		//  * rulesfile
+		if(imgui.doButton(GEN_ID, Vector2(435, 170), TextManager::getSingleton()->getString(TextManager::NET_RULES_TITLE) ))
+		{
+			mChosenRules = (mChosenRules + 1) % mPossibleRules.size();
+		}
+		std::string rulesstring = mPossibleRules.at(mChosenRules) + TextManager::getSingleton()->getString(TextManager::NET_RULES_BY) + mInfo.rulesauthor;
+		for (unsigned int i = 0; i < rulesstring.length(); i += 25)
+		{
+			imgui.doText(GEN_ID, Vector2(445, 205 + i / 25 * 15), rulesstring.substr(i, 25), TF_SMALL_FONT);
+		}
+		
+		// open game button
+		if( imgui.doButton(GEN_ID, Vector2(435, 430), TextManager::getSingleton()->getString(TextManager::NET_OPEN_GAME) ))
+		{
+			// send open game packet to server
+			RakNet::BitStream stream;
+			stream.Write((unsigned char)ID_LOBBY);
+			stream.Write((unsigned char)LobbyPacketType::OPEN_GAME);
+			stream.Write( mChosenSpeed );
+			stream.Write( mPossibleScores.at(mChosenScore) );
+			stream.Write( mChosenRules );
+			/// \todo add a name
+			
+			mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
+		}
 	}
 
 
@@ -247,7 +296,7 @@ void LobbyState::step_impl()
 	}
 
 	// ok button
-	if (mLobbyState == CONNECTED && (imgui.doButton(GEN_ID, Vector2(230, 530), TextManager::LBL_OK) || doEnterGame))
+	/*if (mLobbyState == CONNECTED && (imgui.doButton(GEN_ID, Vector2(230, 530), TextManager::LBL_OK) || doEnterGame))
 	{
 		RakNet::BitStream stream;
 		stream.Write((char)ID_CHALLENGE);
@@ -264,10 +313,48 @@ void LobbyState::step_impl()
 		mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
 
 		switchState( new NetworkGameState(mClient) );
-	}
+	}*/
 }
 
 const char* LobbyState::getStateName() const
 {
 	return "LobbyState";
+}
+
+// ******************************************************************************
+// 						Lobby in main state
+// ******************************************************************************
+
+void LobbyMainSubstate::step()
+{
+	IMGUI& imgui = IMGUI::getSingleton();
+
+	imgui.doCursor();
+	imgui.doImage(GEN_ID, Vector2(400.0, 300.0), "background");
+	imgui.doOverlay(GEN_ID, Vector2(0.0, 0.0), Vector2(800.0, 600.0));
+	imgui.doInactiveMode(false);
+
+	// server name
+	imgui.doText(GEN_ID, Vector2(400 - 12 * std::strlen(mInfo.name), 20), mInfo.name);
+
+	// server description
+	if (mLobbyStatus == CONNECTING )
+	{
+		imgui.doText(GEN_ID, Vector2( 100, 55 ), TextManager::NET_CONNECTING);
+	}
+	else if (mLobbyStatus == DISCONNECTED )
+	{
+		imgui.doText(GEN_ID, Vector2( 100, 55 ), TextManager::NET_DISCONNECT);
+	}
+	else if (mLobbyStatus == CONNECTION_FAILED )
+	{
+		imgui.doText(GEN_ID, Vector2( 100, 55 ), TextManager::NET_CON_FAILED);
+	}
+	
+	// player list
+	unsigned int s;
+	imgui.doSelectbox(GEN_ID, Vector2(25.0, 90.0), Vector2(375.0, 470.0), std::vector<std::string>{}, s);
+
+	// info panel
+	imgui.doOverlay(GEN_ID, Vector2(425.0, 90.0), Vector2(775.0, 470.0));
 }

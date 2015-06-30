@@ -65,10 +65,17 @@ DedicatedServer::DedicatedServer(const ServerInfo& info, const std::string& rule
 	// set rules data in ServerInfo
 	/// \todo this code should be places in ServerInfo
 	std::strncpy(mServerInfo.rulestitle, gamelogic->getTitle().c_str(), sizeof(mServerInfo.rulestitle));
-	mServerInfo.rulesauthor[sizeof(mServerInfo.rulestitle)-1] = 0;
+	mServerInfo.rulestitle[sizeof(mServerInfo.rulestitle)-1] = 0;
 
 	std::strncpy(mServerInfo.rulesauthor, gamelogic->getAuthor().c_str(), sizeof(mServerInfo.rulesauthor));
 	mServerInfo.rulesauthor[sizeof(mServerInfo.rulesauthor)-1] = 0;
+
+	mMatchMaker.setSendFunction([&](const RakNet::BitStream& stream, PlayerID target){ mServer->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0, target, false); });
+	mMatchMaker.setCreateGame([&](boost::shared_ptr<NetworkPlayer> left, boost::shared_ptr<NetworkPlayer> right, PlayerSide switchSide){ return createGame(left, right, switchSide); });
+	mMatchMaker.addGameSpeedOption( info.gamespeed );
+	mMatchMaker.addGameSpeedOption( 120 );	// debug
+	mMatchMaker.addRuleOption( gamelogic->getTitle() );
+	mMatchMaker.addRuleOption( "blitz" );	// debug
 }
 
 DedicatedServer::~DedicatedServer()
@@ -117,6 +124,7 @@ void DedicatedServer::processPackets()
 
 					// no longer count this player as connected
 					mPlayerMap.erase( player );
+					mMatchMaker.removePlayer( player->first );
 
 					updateLobby();
 				}
@@ -160,113 +168,19 @@ void DedicatedServer::processPackets()
 				auto newplayer = boost::make_shared<NetworkPlayer>(packet->playerId, stream);
 
 				mPlayerMap[packet->playerId] = newplayer;
+				mMatchMaker.addPlayer(packet->playerId, newplayer);
 				syslog(LOG_DEBUG, "New player \"%s\" connected from %s ", newplayer->getName().c_str(), packet->playerId.toString().c_str());
 
 				// answer by sending the status to all players
 				updateLobby();
 				break;
 			}
-			case ID_CHALLENGE:
+			case ID_LOBBY:
 			{
 				/// \todo assert that the player send an ID_ENTER_SERVER before
 
 				// which player is wanted as opponent
-				auto stream = packet->getStream();
-
-				// check packet size
-				if( stream.GetNumberOfBytesUsed() != 9 )
-				{
-					syslog(LOG_NOTICE, "faulty ID_ENTER_PACKET received: Expected 9 bytes, got %d", stream.GetNumberOfBytesUsed());
-				}
-
-				PlayerID first = packet->playerId;
-				PlayerID second = UNASSIGNED_PLAYER_ID;
-
-				auto player = mPlayerMap.find(first);
-				if( player == mPlayerMap.end())
-				{
-					// seems like we did not receive a ENTER_SERVER Packet before.
-					syslog( LOG_ERR, "a player tried to enter a game, but has no player info" );
-					break;
-				}
-
-				auto firstPlayer = player->second;
-
-				auto reader = createGenericReader(&stream);
-				unsigned char temp;
-				reader->byte(temp);
-				reader->generic<PlayerID>(second);
-
-				bool started = false;
-
-				// debug log challenge
-				syslog(LOG_DEBUG, "%s challenged %s", first.toString().c_str(), second.toString().c_str());
-
-				// search if there is an open request
-				for(auto it = mGameRequests.begin(); it != mGameRequests.end(); ++it)
-				{
-					// is this a game request of the player we want to play with, or if we want to play with everyone
-					if( it->first == second || second == UNASSIGNED_PLAYER_ID)
-					{
-						// do they want to play with us or anyone
-						if(it->second == first || it->second == UNASSIGNED_PLAYER_ID)
-						{
-							/// \todo check that these players are still connected and not already playing a game
-							if( mPlayerMap.find(it->first) != mPlayerMap.end() && firstPlayer->getGame() == nullptr &&  mPlayerMap[it->first]->getGame() == nullptr )
-							{
-								try
-								{
-									// we can create a game now
-									auto newgame = createGame( firstPlayer, mPlayerMap[it->first] );
-									mGameList.push_back(newgame);
-
-									// remove the game request
-									mGameRequests.erase( it );
-									started = true;
-									break;	// we're done
-								}
-								 catch (std::exception& ex)
-								{
-									syslog( LOG_ERR, "error while creating game: %s", ex.what() );
-								}
-							}
-						}
-					}
-
-				}
-
-				if (!started)
-				{
-					// no match could be found -> add to request list
-					mGameRequests[first] = second;
-
-					// send challenge packets
-					if( second == UNASSIGNED_PLAYER_ID )
-					{
-						// challenge everybody
-						for(auto it = mPlayerMap.begin(); it != mPlayerMap.end(); ++it)
-						{
-							if( it->second->getGame() == nullptr )
-							{
-								RakNet::BitStream stream;
-								auto writer = createGenericWriter( &stream );
-								writer->byte( ID_CHALLENGE );
-								writer->generic<PlayerID> ( first );
-								mServer->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0, it->second->getID(), false);
-							}
-						}
-					}
-					// challenge only one player
-					else
-					{
-						RakNet::BitStream stream;
-						auto writer = createGenericWriter( &stream );
-						writer->byte( ID_CHALLENGE );
-						writer->generic<PlayerID> ( first );
-						mServer->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0, second, false);
-					}
-				}
-
+				mMatchMaker.receiveLobbyPacket( packet->playerId, packet->getStream() );
 				break;
 			}
 			case ID_BLOBBY_SERVER_PRESENT:
@@ -478,37 +392,16 @@ void DedicatedServer::processBlobbyServerPresent( const packet_ptr& packet)
 	}
 }
 
-boost::shared_ptr<NetworkGame> DedicatedServer::createGame(boost::shared_ptr<NetworkPlayer> first, boost::shared_ptr<NetworkPlayer> second)
+boost::shared_ptr<NetworkGame> DedicatedServer::createGame(boost::shared_ptr<NetworkPlayer> left, boost::shared_ptr<NetworkPlayer> right, PlayerSide switchSide)
 {
-	PlayerSide switchSide = NO_PLAYER;
-
-	auto leftPlayer = first;
-	auto rightPlayer = second;
-
-	// put first player on his desired side in game
-	if(RIGHT_PLAYER == first->getDesiredSide())
-	{
-		std::swap(leftPlayer, rightPlayer);
-	}
-
-	// if both players want the same side, one of them is going to get inverted game data
-	if (first->getDesiredSide() == second->getDesiredSide())
-	{
-		// if both wanted to play on the left, the right player is the inverted one, if both wanted right, the left
-		if (second->getDesiredSide() == LEFT_PLAYER)
-			switchSide = RIGHT_PLAYER;
-		if (second->getDesiredSide() == RIGHT_PLAYER)
-			switchSide = LEFT_PLAYER;
-	}
-
-	auto newgame = boost::make_shared<NetworkGame>(*mServer.get(), leftPlayer, rightPlayer, switchSide, mRulesFile);
-	leftPlayer->setGame( newgame );
-	rightPlayer->setGame( newgame );
+	auto newgame = boost::make_shared<NetworkGame>(*mServer.get(), left, right, switchSide, mRulesFile);
+	left->setGame( newgame );
+	right->setGame( newgame );
 
 	SWLS_Games++;
 
 	/// \todo add some logging?
-	syslog(LOG_DEBUG, "Created game \"%s\" vs. \"%s\"", leftPlayer->getName().c_str(), rightPlayer->getName().c_str());
+	syslog(LOG_DEBUG, "Created game \"%s\" vs. \"%s\"", left->getName().c_str(), right->getName().c_str());
 
 	return newgame;
 }

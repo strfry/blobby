@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "NetworkPlayer.h"
 #include "NetworkMessage.h"
+#include "MatchMaker.h"
 
 class RakServer;
 
@@ -75,7 +76,7 @@ class DedicatedServer
 		void processBlobbyServerPresent( const packet_ptr& packet );
 		// creates a new game with those players
 		// does not add the game to the active game list
-		boost::shared_ptr<NetworkGame> createGame(boost::shared_ptr<NetworkPlayer> first, boost::shared_ptr<NetworkPlayer> second);
+		boost::shared_ptr<NetworkGame> createGame(boost::shared_ptr<NetworkPlayer> left, boost::shared_ptr<NetworkPlayer> right, PlayerSide switchSide);
 		// broadcasts the current server  status to all waiting clients
 		void broadcastServerStatus();
 
@@ -97,4 +98,6 @@ class DedicatedServer
 		std::list< boost::shared_ptr<NetworkGame> > mGameList;
 		std::map< PlayerID, boost::shared_ptr<NetworkPlayer>> mPlayerMap;
 		std::map< PlayerID, PlayerID> mGameRequests;
+		
+		MatchMaker mMatchMaker;
 };
