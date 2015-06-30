@@ -342,14 +342,19 @@ void LobbyGameSubstate::step( const ServerStatusData& status )
 {
 	IMGUI& imgui = IMGUI::getSingleton();
 
+	
+
 	std::vector<std::string> playerlist;
 	for ( const auto& player : mOtherPlayers )
 	{
 		playerlist.push_back( player.toString() );
 	}
+	bool no_players = playerlist.empty();
 	if(playerlist.empty())
+	{
 		playerlist.push_back(""); // fake entry to prevent crash! not nice!
-
+	}
+	
 	bool doEnterGame = false;
 	if( imgui.doSelectbox(GEN_ID, Vector2(25.0, 90.0), Vector2(375.0, 470.0), playerlist, mSelectedPlayer) == SBA_DBL_CLICK )
 	{
@@ -375,17 +380,25 @@ void LobbyGameSubstate::step( const ServerStatusData& status )
 	}
 
 	// open game button
-	if( mIsHost && (imgui.doButton(GEN_ID, Vector2(435, 430), TextManager::getSingleton()->getString(TextManager::MNU_LABEL_START) )
-					|| doEnterGame) )
+	if( mIsHost )
 	{
-		// Start Game
-		RakNet::BitStream stream;
-		stream.Write((unsigned char)ID_LOBBY);
-		stream.Write((unsigned char)LobbyPacketType::START_GAME);
-		auto writer = createGenericWriter(&stream);
-		writer->generic<PlayerID>( mOtherPlayers.at(mSelectedPlayer) );
+		if( !no_players && (imgui.doButton(GEN_ID, Vector2(435, 430), TextManager::getSingleton()->getString(TextManager::MNU_LABEL_START) )
+						|| doEnterGame) )
+		{
+			// Start Game
+			RakNet::BitStream stream;
+			stream.Write((unsigned char)ID_LOBBY);
+			stream.Write((unsigned char)LobbyPacketType::START_GAME);
+			auto writer = createGenericWriter(&stream);
+			writer->generic<PlayerID>( mOtherPlayers.at(mSelectedPlayer) );
 
-		mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
+			mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
+		} 
+		
+		if( no_players )
+		{
+			imgui.doText(GEN_ID, Vector2(435, 430), TextManager::getSingleton()->getString(TextManager::GAME_WAITING));
+		}
 	}
 }
 

@@ -125,8 +125,6 @@ void DedicatedServer::processPackets()
 					// no longer count this player as connected
 					mPlayerMap.erase( player );
 					mMatchMaker.removePlayer( player->first );
-
-					updateLobby();
 				}
 				 else
 				{
@@ -170,9 +168,6 @@ void DedicatedServer::processPackets()
 				mPlayerMap[packet->playerId] = newplayer;
 				mMatchMaker.addPlayer(packet->playerId, newplayer);
 				syslog(LOG_DEBUG, "New player \"%s\" connected from %s ", newplayer->getName().c_str(), packet->playerId.toString().c_str());
-
-				// answer by sending the status to all players
-				updateLobby();
 				break;
 			}
 			case ID_LOBBY:
@@ -225,67 +220,6 @@ void DedicatedServer::updateGames()
 			++iter;
 		}
 	}
-}
-
-void DedicatedServer::updateLobby()
-{
-	// remove all invalid game requests
-	for( auto it = mGameRequests.begin(); it != mGameRequests.end(); /* no increment, because we have to do that manually in case we erase*/ )
-	{
-		PlayerID first = it->first;
-		PlayerID second = it->second;
-
-		auto firstPlayer = mPlayerMap.find(first);
-		// if the first player is no longer available, everything is fine
-		if( firstPlayer == mPlayerMap.end() || firstPlayer->second->getGame() != nullptr)
-		{
-			auto tmpIt = it;
-			tmpIt++;
-
-			// left server or is already playing -> remove game requests
-			mGameRequests.erase(it);
-			it = tmpIt;
-			continue;
-		}
-
-		if( second != UNASSIGNED_PLAYER_ID )
-		{
-			auto secondPlayer = mPlayerMap.find(second);
-			if( secondPlayer == mPlayerMap.end() || secondPlayer->second->getGame() != nullptr)
-			{
-				auto tmpIt = it;
-				tmpIt++;
-
-				// left server or is already playing -> remove game requests
-				mGameRequests.erase(it);
-				it = tmpIt;
-
-				// if the second player starts a game, or disconnected, no need to keep the first player waiting
-				/// \todo this could be done a lot more elegant
-				// close connection does not create a disconnect notification...
-				mServer->CloseConnection(firstPlayer->first, true);
-
-				// ... so we have to do the disconnection code manually
-				mConnectedClients--;
-				// delete the disconnectiong player
-				if( firstPlayer != mPlayerMap.end() )
-				{
-					// no longer count this player as connected
-					mPlayerMap.erase( firstPlayer );
-					//updateLobby();
-				}
-				syslog(LOG_DEBUG, "Connection %s closed, %d clients connected now", first.toString().c_str(), mConnectedClients);
-				// done.
-
-				continue;
-			}
-		}
-
-		// if all still valid, increment iterator
-		++it;
-	}
-
-	broadcastServerStatus();
 }
 
 bool DedicatedServer::hasActiveGame() const
@@ -402,62 +336,8 @@ boost::shared_ptr<NetworkGame> DedicatedServer::createGame(boost::shared_ptr<Net
 
 	/// \todo add some logging?
 	syslog(LOG_DEBUG, "Created game \"%s\" vs. \"%s\"", left->getName().c_str(), right->getName().c_str());
+	mGameList.push_back(newgame);
 
 	return newgame;
-}
-
-void DedicatedServer::broadcastServerStatus()
-{
-	std::vector<std::string> playernames;
-	std::vector<PlayerID> playerIDs;
-	std::map<PlayerID, std::set<PlayerID>> requestMap;
-	for( auto it = mPlayerMap.begin(); it != mPlayerMap.end(); ++it)
-	{
-		// only send players that are waiting
-		if( it->second->getGame() == nullptr )
-		{
-			playernames.push_back( it->second->getName() );
-			playerIDs.push_back( it->second->getID() );
-			requestMap[it->first] = std::set<PlayerID>();
-		}
-	}
-	for( auto rit = mGameRequests.begin(); rit != mGameRequests.end(); ++rit)
-	{
-		if( mPlayerMap[rit->first]->getGame() == nullptr)
-		{
-			if( rit->second == UNASSIGNED_PLAYER_ID)
-			{
-				for( auto it = mPlayerMap.begin(); it != mPlayerMap.end(); ++it)
-				{
-					if( it->second->getGame() == nullptr)
-					{
-						requestMap[it->first].insert(rit->first);
-					}
-				}
-			}
-			else
-			{
-				requestMap[rit->second].insert(rit->first);
-			}
-		}
-	}
-	for( auto it = mPlayerMap.begin(); it != mPlayerMap.end(); ++it)
-	{
-		if( it->second->getGame() == nullptr)
-		{
-			RakNet::BitStream stream;
-
-			auto out = createGenericWriter(&stream);
-			out->byte((unsigned char)ID_SERVER_STATUS);
-
-			out->generic<std::vector<std::string>>( playernames );
-			out->generic<std::vector<PlayerID>>( playerIDs );
-			out->generic<std::set<PlayerID>>( requestMap[it->first] );
-
-			out->uint32(mGameList.size());
-
-			mServer->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0, it->first, false);
-		}
-	}
 }
 

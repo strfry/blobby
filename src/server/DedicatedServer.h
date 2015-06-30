@@ -55,7 +55,6 @@ class DedicatedServer
 		// server processing
 		void processPackets();
 		void updateGames();
-		void updateLobby();
 
 		// status queries
 		bool hasActiveGame() const;
@@ -78,7 +77,6 @@ class DedicatedServer
 		// does not add the game to the active game list
 		boost::shared_ptr<NetworkGame> createGame(boost::shared_ptr<NetworkPlayer> left, boost::shared_ptr<NetworkPlayer> right, PlayerSide switchSide);
 		// broadcasts the current server  status to all waiting clients
-		void broadcastServerStatus();
 
 		// member variables
 		// number of currently connected clients
@@ -97,7 +95,6 @@ class DedicatedServer
 		// containers for all games and mapping players to their games
 		std::list< boost::shared_ptr<NetworkGame> > mGameList;
 		std::map< PlayerID, boost::shared_ptr<NetworkPlayer>> mPlayerMap;
-		std::map< PlayerID, PlayerID> mGameRequests;
 		
 		MatchMaker mMatchMaker;
 };

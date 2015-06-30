@@ -151,12 +151,6 @@ int main(int argc, char** argv)
 
 		server.processPackets();
 
-		/// \todo make this gamespeed independent
-		if(SWLS_RunningTime % (750 /*10s*/) == 0 )
-		{
-			server.updateLobby();
-		}
-
 		// -------------------------------------------------------------------------------
 		// now, step through all network games and process input - if a game ended, delete it
 		// -------------------------------------------------------------------------------
