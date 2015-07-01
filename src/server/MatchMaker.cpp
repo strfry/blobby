@@ -336,6 +336,18 @@ void MatchMaker::broadcastOpenGameStatus( unsigned gameID )
 	out->uint32(g->second.rules);
 	out->uint32(g->second.points);
 	out->generic<std::vector<PlayerID>>(g->second.connected);
+	std::vector<std::string> plnames;
+	for( auto& pid : g->second.connected )
+	{
+		auto player = mPlayerMap.find(pid);
+		if( player == mPlayerMap.end() )
+			plnames.push_back("INVALID!");
+		else 
+		{
+			plnames.push_back( player->second->getName() );
+		}
+	}
+	out->generic<std::vector<std::string>>( plnames );
 
 	// send to all players
 	mSendPacket(stream, g->second.creator );

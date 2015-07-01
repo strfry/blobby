@@ -100,6 +100,7 @@ private:
 	unsigned mSelectedPlayer = 0;
 
 	std::vector<PlayerID> mOtherPlayers;
+	std::vector<std::string> mOtherPlayerNames;
 };
 
 #endif // LOBBYSTATES_H_INCLUDED

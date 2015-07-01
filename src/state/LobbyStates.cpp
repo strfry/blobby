@@ -338,27 +338,20 @@ LobbyGameSubstate::LobbyGameSubstate(boost::shared_ptr<RakClient> client, boost:
 	in->uint32(mRules);
 	in->uint32(mScore);
 	in->generic<std::vector<PlayerID>>(mOtherPlayers);
+	in->generic<std::vector<std::string>>(mOtherPlayerNames);
 }
 
 void LobbyGameSubstate::step( const ServerStatusData& status )
 {
 	IMGUI& imgui = IMGUI::getSingleton();
-
-	
-
-	std::vector<std::string> playerlist;
-	for ( const auto& player : mOtherPlayers )
+	bool no_players = mOtherPlayers.empty();
+	if(mOtherPlayerNames.empty())
 	{
-		playerlist.push_back( player.toString() );
-	}
-	bool no_players = playerlist.empty();
-	if(playerlist.empty())
-	{
-		playerlist.push_back(""); // fake entry to prevent crash! not nice!
+		mOtherPlayerNames.push_back(""); // fake entry to prevent crash! not nice!
 	}
 	
 	bool doEnterGame = false;
-	if( imgui.doSelectbox(GEN_ID, Vector2(25.0, 90.0), Vector2(375.0, 470.0), playerlist, mSelectedPlayer) == SBA_DBL_CLICK )
+	if( imgui.doSelectbox(GEN_ID, Vector2(25.0, 90.0), Vector2(375.0, 470.0), mOtherPlayerNames, mSelectedPlayer) == SBA_DBL_CLICK )
 	{
 		doEnterGame = true;
 	}
