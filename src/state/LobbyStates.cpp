@@ -106,6 +106,7 @@ void LobbyState::step_impl()
 					in->uint32( player_count );
 					in->generic<std::vector<unsigned int>>( mStatus.mPossibleSpeeds );
 					in->generic<std::vector<std::string>>( mStatus.mPossibleRules );
+					in->generic<std::vector<std::string>>( mStatus.mPossibleRulesAuthor );
 
 					std::vector<unsigned int> gameids;
 					std::vector<std::string> gamenames;
@@ -296,6 +297,7 @@ void LobbyMainSubstate::step(const ServerStatusData& status)
 			mChosenRules = (mChosenRules + 1) % status.mPossibleRules.size();
 		}
 		std::string rulesstring = status.mPossibleRules.at(mChosenRules) + TextManager::getSingleton()->getString(TextManager::NET_RULES_BY);
+		rulesstring += " " + status.mPossibleRulesAuthor.at(mChosenRules);
 		for (unsigned int i = 0; i < rulesstring.length(); i += 25)
 		{
 			imgui.doText(GEN_ID, Vector2(445, 205 + i / 25 * 15), rulesstring.substr(i, 25), TF_SMALL_FONT);
@@ -374,6 +376,7 @@ void LobbyGameSubstate::step( const ServerStatusData& status )
 	//  * rulesfile
 	imgui.doText(GEN_ID, Vector2(435, 170), TextManager::getSingleton()->getString(TextManager::NET_RULES_TITLE) );
 	std::string rulesstring = status.mPossibleRules.at(mRules) + TextManager::getSingleton()->getString(TextManager::NET_RULES_BY);
+	rulesstring += " " + status.mPossibleRulesAuthor.at(mRules);
 	for (unsigned int i = 0; i < rulesstring.length(); i += 25)
 	{
 		imgui.doText(GEN_ID, Vector2(445, 205 + i / 25 * 15), rulesstring.substr(i, 25), TF_SMALL_FONT);

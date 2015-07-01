@@ -32,6 +32,7 @@ struct ServerStatusData
 	std::vector<OpenGame> mOpenGames;
 	std::vector<unsigned int> mPossibleSpeeds;
 	std::vector<std::string> mPossibleRules;
+	std::vector<std::string> mPossibleRulesAuthor;
 };
 
 class LobbySubstate

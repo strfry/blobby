@@ -284,11 +284,14 @@ void MatchMaker::sendOpenGameList( PlayerID recipient )
 	out->uint32(mPlayerMap.size());									// waiting player count
 	out->generic<std::vector<unsigned int>>( mPossibleGameSpeeds );
 	std::vector<std::string> rule_names;
+	std::vector<std::string> rule_authors;
 	for( const auto& r : mPossibleGameRules)
 	{
 		rule_names.push_back(r.name);
+		rule_authors.push_back(r.author);
 	}
 	out->generic<std::vector<std::string>>( rule_names );
+	out->generic<std::vector<std::string>>( rule_authors );
 
 	// built games vectors
 	for( const auto& game : mOpenGames)
