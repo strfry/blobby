@@ -190,6 +190,7 @@ enum class LobbyPacketType : unsigned char
 	REMOVED_FROM_GAME,
 	OPEN_GAME,
 	JOIN_GAME,
+	LEAVE_GAME,
 	GAME_STATUS,
 	START_GAME
 };

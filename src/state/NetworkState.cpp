@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <boost/lexical_cast.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
 
 #include "raknet/RakClient.h"
 #include "raknet/RakServer.h"
@@ -597,9 +599,11 @@ NetworkHostState::NetworkHostState() : mServer(  ), mClient( new RakClient ), mG
 	}
 
 	ServerInfo info( mLocalPlayer.getName().c_str());
-	std::string rulesfile = config.getString("rules");
+	std::vector<std::string> rule_vec;
+	std::string flist = config.getString("rules");
+	boost::algorithm::split(rule_vec, flist, boost::algorithm::is_space(), boost::algorithm::token_compress_on);
 
-	mServer.reset( new DedicatedServer(info, rulesfile, 4));
+	mServer.reset( new DedicatedServer(info, rule_vec, 4));
 
 	// connect to server
 	if (!mClient->Connect(info.hostname, info.port, 0, 0, RAKNET_THREAD_SLEEP_TIME))

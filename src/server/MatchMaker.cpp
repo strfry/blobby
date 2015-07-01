@@ -255,6 +255,12 @@ void MatchMaker::receiveLobbyPacket( PlayerID player, RakNet::BitStream stream )
 		joinGame(player, id);
 
 		return;
+	} else if( type == LobbyPacketType::LEAVE_GAME )
+	{
+		// normally, a player should only be in one game.
+		removePlayerFromAllGames( player );
+
+		return;
 	} else if ( type == LobbyPacketType::START_GAME )
 	{
 		// read target player

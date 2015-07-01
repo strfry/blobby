@@ -46,10 +46,9 @@ extern int SWLS_GameSteps;
 
 void syslog(int pri, const char* format, ...);
 
-DedicatedServer::DedicatedServer(const ServerInfo& info, const std::string& rulefile, int max_clients)
+DedicatedServer::DedicatedServer(const ServerInfo& info, const std::vector<std::string>& rulefiles, int max_clients)
 : mConnectedClients(0)
 , mServer(new RakServer())
-, mRulesFile(rulefile)
 , mAcceptNewPlayers(true)
 , mServerInfo(info)
 {
@@ -68,8 +67,8 @@ DedicatedServer::DedicatedServer(const ServerInfo& info, const std::string& rule
 	mMatchMaker.addGameSpeedOption( 120 );	// debug
 	
 	// add rules
-	mMatchMaker.addRuleOption( rulefile );
-	mMatchMaker.addRuleOption( "firewall" );	// debug
+	for( const auto& f : rulefiles )
+		mMatchMaker.addRuleOption( f );
 }
 
 DedicatedServer::~DedicatedServer()

@@ -49,7 +49,7 @@ class DedicatedServer
 		/// create a dedicated server with the data specified in info, using the rules from rulesfile, allowing max_clients
 		/// simulatanious connections
 		/// \todo Maybe two classes for server info: lokal server info for an server, and remote for data sent to client
-		DedicatedServer(const ServerInfo& info, const std::string& rulefile, int max_clients);
+		DedicatedServer(const ServerInfo& info, const std::vector<std::string>& rulefile, int max_clients);
 		~DedicatedServer();
 
 		// server processing
@@ -85,8 +85,6 @@ class DedicatedServer
 		// raknet server used
 		boost::scoped_ptr<RakServer> mServer;
 
-		// path to rules file
-		std::string mRulesFile;
 		// true, if new players should be accepted
 		bool mAcceptNewPlayers;
 		// server info with server config

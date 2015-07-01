@@ -30,6 +30,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <errno.h>
 #include <unistd.h>
 
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
+
 #include <SDL2/SDL_timer.h>
 
 #include "DedicatedServer.h"
@@ -134,7 +137,9 @@ int main(int argc, char** argv)
 	}
 
 	ServerInfo myinfo(config);
-	DedicatedServer server(myinfo, rulesFile, maxClients);
+	std::vector<std::string> rule_vec;
+	boost::algorithm::split(rule_vec, rulesFile, boost::algorithm::is_space(), boost::algorithm::token_compress_on);
+	DedicatedServer server(myinfo, rule_vec, maxClients);
 
 	float speed = myinfo.gamespeed;
 

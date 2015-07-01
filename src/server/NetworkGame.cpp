@@ -84,7 +84,8 @@ NetworkGame::NetworkGame(RakServer& server, boost::shared_ptr<NetworkPlayer> lef
 	mRulesSent[0] = false;
 	mRulesSent[1] = false;
 
-	FileRead file(std::string("rules/") + rules + ".lua");
+	rules = FileRead::makeLuaFilename( rules );
+	FileRead file(std::string("rules/") + rules);
 	checksum = file.calcChecksum(0);
 	mRulesLength = file.length();
 	mRulesString = file.readRawBytes(mRulesLength);

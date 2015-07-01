@@ -127,6 +127,9 @@ void LobbyState::step_impl()
 				} else if((LobbyPacketType)t == LobbyPacketType::GAME_STATUS)
 				{
 					mSubState = boost::make_shared<LobbyGameSubstate>(mClient, in);
+				} else if((LobbyPacketType)t == LobbyPacketType::REMOVED_FROM_GAME)
+				{
+					mSubState = boost::make_shared<LobbyMainSubstate>(mClient);
 				}
 				}
 				break;
@@ -378,8 +381,7 @@ void LobbyGameSubstate::step( const ServerStatusData& status )
 	// open game button
 	if( mIsHost )
 	{
-		if( !no_players && (imgui.doButton(GEN_ID, Vector2(435, 430), TextManager::getSingleton()->getString(TextManager::MNU_LABEL_START) )
-						|| doEnterGame) )
+		if( !no_players && (imgui.doButton(GEN_ID, Vector2(435, 430), TextManager::getSingleton()->getString(TextManager::MNU_LABEL_START) ) || doEnterGame) )
 		{
 			// Start Game
 			RakNet::BitStream stream;
@@ -387,14 +389,22 @@ void LobbyGameSubstate::step( const ServerStatusData& status )
 			stream.Write((unsigned char)LobbyPacketType::START_GAME);
 			auto writer = createGenericWriter(&stream);
 			writer->generic<PlayerID>( mOtherPlayers.at(mSelectedPlayer) );
-
-			mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
+			mClient->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0);
 		} 
 		
 		if( no_players )
 		{
 			imgui.doText(GEN_ID, Vector2(435, 430), TextManager::getSingleton()->getString(TextManager::GAME_WAITING));
 		}
+	} else 
+	{
+		if( imgui.doButton(GEN_ID, Vector2(435, 430), TextManager::getSingleton()->getString(TextManager::NET_LEAVE) ) )
+		{
+			RakNet::BitStream stream;
+			stream.Write((unsigned char)ID_LOBBY);
+			stream.Write((unsigned char)LobbyPacketType::LEAVE_GAME);
+			mClient->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0);
+		} 
 	}
 }
 
