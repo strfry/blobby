@@ -41,8 +41,6 @@ ServerInfo::ServerInfo(RakNet::BitStream& stream, const char* ip, uint16_t p)
 	stream.Read(name, sizeof(name));
 	stream.Read(waitingplayers);
 	stream.Read(description, sizeof(description));
-	stream.Read(rulestitle, sizeof(rulestitle));
-	stream.Read(rulesauthor, sizeof(rulesauthor));
 }
 
 ServerInfo::ServerInfo(const IUserConfigReader& config)
@@ -86,16 +84,13 @@ void ServerInfo::writeToBitstream(RakNet::BitStream& stream)
 	stream.Write(name, sizeof(name));
 	stream.Write(waitingplayers);
 	stream.Write(description, sizeof(description));
-	stream.Write(rulestitle, sizeof(rulestitle));
-	stream.Write(rulesauthor, sizeof(rulesauthor));
 	assert( stream.GetNumberOfBytesUsed() == BLOBBY_SERVER_PRESENT_PACKET_SIZE);
 }
 
 const size_t ServerInfo::BLOBBY_SERVER_PRESENT_PACKET_SIZE = sizeof((unsigned char)ID_BLOBBY_SERVER_PRESENT)
 		+ 3 * sizeof(int) 	// activegames & gamespeed &  waiting players
 		+ 32				// name
-		+ 192				// description
-		+ 64;				// rules title / author
+		+ 192;				// description
 
 
 

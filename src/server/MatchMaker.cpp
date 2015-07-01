@@ -221,7 +221,7 @@ void MatchMaker::startGame(PlayerID host, PlayerID client)
 			switchSide = LEFT_PLAYER;
 	}
 
-	mCreateGame( leftPlayer->second, rightPlayer->second, switchSide );
+	mCreateGame( leftPlayer->second, rightPlayer->second, switchSide, mPossibleGameRules[game->second.rules].file );
 	
 	// remove players from available player list
 	removePlayer( host );
@@ -283,7 +283,12 @@ void MatchMaker::sendOpenGameList( PlayerID recipient )
 	auto out = createGenericWriter(&stream);
 	out->uint32(mPlayerMap.size());									// waiting player count
 	out->generic<std::vector<unsigned int>>( mPossibleGameSpeeds );
-	out->generic<std::vector<std::string>>( mPossibleGameRules );
+	std::vector<std::string> rule_names;
+	for( const auto& r : mPossibleGameRules)
+	{
+		rule_names.push_back(r.name);
+	}
+	out->generic<std::vector<std::string>>( rule_names );
 
 	// built games vectors
 	for( const auto& game : mOpenGames)
@@ -342,8 +347,9 @@ void MatchMaker::addGameSpeedOption( int speed )
 	mPossibleGameSpeeds.push_back( speed );
 }
 
-void MatchMaker::addRuleOption( const std::string& rule )
+void MatchMaker::addRuleOption( const std::string& file )
 {
+	auto gamelogic = createGameLogic(file, nullptr);
 	/// \todo check rule validity and load author and description
-	mPossibleGameRules.push_back(rule);
+	mPossibleGameRules.emplace_back(Rule{file, gamelogic->getTitle(), gamelogic->getAuthor(), ""});
 }

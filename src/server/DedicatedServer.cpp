@@ -60,22 +60,16 @@ DedicatedServer::DedicatedServer(const ServerInfo& info, const std::string& rule
 		throw(2);
 	}
 
-	auto gamelogic = createGameLogic(rulefile, nullptr);
-
-	// set rules data in ServerInfo
 	/// \todo this code should be places in ServerInfo
-	std::strncpy(mServerInfo.rulestitle, gamelogic->getTitle().c_str(), sizeof(mServerInfo.rulestitle));
-	mServerInfo.rulestitle[sizeof(mServerInfo.rulestitle)-1] = 0;
-
-	std::strncpy(mServerInfo.rulesauthor, gamelogic->getAuthor().c_str(), sizeof(mServerInfo.rulesauthor));
-	mServerInfo.rulesauthor[sizeof(mServerInfo.rulesauthor)-1] = 0;
-
 	mMatchMaker.setSendFunction([&](const RakNet::BitStream& stream, PlayerID target){ mServer->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0, target, false); });
-	mMatchMaker.setCreateGame([&](boost::shared_ptr<NetworkPlayer> left, boost::shared_ptr<NetworkPlayer> right, PlayerSide switchSide){ return createGame(left, right, switchSide); });
+	mMatchMaker.setCreateGame([&](boost::shared_ptr<NetworkPlayer> left, boost::shared_ptr<NetworkPlayer> right, PlayerSide switchSide, std::string rules){ 
+							createGame(left, right, switchSide, rules); });
 	mMatchMaker.addGameSpeedOption( info.gamespeed );
 	mMatchMaker.addGameSpeedOption( 120 );	// debug
-	mMatchMaker.addRuleOption( gamelogic->getTitle() );
-	mMatchMaker.addRuleOption( "blitz" );	// debug
+	
+	// add rules
+	mMatchMaker.addRuleOption( rulefile );
+	mMatchMaker.addRuleOption( "firewall" );	// debug
 }
 
 DedicatedServer::~DedicatedServer()
@@ -326,18 +320,17 @@ void DedicatedServer::processBlobbyServerPresent( const packet_ptr& packet)
 	}
 }
 
-boost::shared_ptr<NetworkGame> DedicatedServer::createGame(boost::shared_ptr<NetworkPlayer> left, boost::shared_ptr<NetworkPlayer> right, PlayerSide switchSide)
+void DedicatedServer::createGame(boost::shared_ptr<NetworkPlayer> left, boost::shared_ptr<NetworkPlayer> right, PlayerSide switchSide,
+														std::string rules)
 {
-	auto newgame = boost::make_shared<NetworkGame>(*mServer.get(), left, right, switchSide, mRulesFile);
+	auto newgame = boost::make_shared<NetworkGame>(*mServer.get(), left, right, switchSide, rules);
 	left->setGame( newgame );
 	right->setGame( newgame );
 
 	SWLS_Games++;
 
 	/// \todo add some logging?
-	syslog(LOG_DEBUG, "Created game \"%s\" vs. \"%s\"", left->getName().c_str(), right->getName().c_str());
+	syslog(LOG_DEBUG, "Created game \"%s\" vs. \"%s\", rules:%s", left->getName().c_str(), right->getName().c_str(), rules.c_str());
 	mGameList.push_back(newgame);
-
-	return newgame;
 }
 

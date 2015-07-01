@@ -42,7 +42,7 @@ public:
 	void removePlayer( PlayerID id );
 
 	// set callback functions
-	typedef std::function<boost::shared_ptr<NetworkGame>(boost::shared_ptr<NetworkPlayer>, boost::shared_ptr<NetworkPlayer>, PlayerSide)> create_game_fn;
+	typedef std::function<void(boost::shared_ptr<NetworkPlayer>, boost::shared_ptr<NetworkPlayer>, PlayerSide, std::string rules)> create_game_fn;
 	void setCreateGame( create_game_fn func) { mCreateGame = func;};
 
 	typedef std::function<void(const RakNet::BitStream& stream, PlayerID target)> send_fn;
@@ -59,7 +59,7 @@ public:
 
 	// add settings
 	void addGameSpeedOption( int speed );
-	void addRuleOption( const std::string& rule );
+	void addRuleOption( const std::string& file );
 
 private:
 	struct OpenGame;
@@ -89,6 +89,14 @@ private:
 		// connected players
 		std::vector<PlayerID> connected;
 	};
+	
+	struct Rule
+	{
+		std::string file;
+		std::string name;
+		std::string author;
+		std::string description;
+	};
 
 	std::map<unsigned, OpenGame> mOpenGames;
 	unsigned int mIDCounter = 0;
@@ -98,7 +106,7 @@ private:
 
 	// possible game configurations
 	std::vector<unsigned int> mPossibleGameSpeeds;
-	std::vector<std::string> mPossibleGameRules;
+	std::vector<Rule> mPossibleGameRules;
 
 	// callbacks
 	create_game_fn mCreateGame;
