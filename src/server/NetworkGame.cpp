@@ -84,7 +84,7 @@ NetworkGame::NetworkGame(RakServer& server, boost::shared_ptr<NetworkPlayer> lef
 	mRulesSent[0] = false;
 	mRulesSent[1] = false;
 
-	FileRead file(std::string("rules/") + rules);
+	FileRead file(std::string("rules/") + rules + ".lua");
 	checksum = file.calcChecksum(0);
 	mRulesLength = file.length();
 	mRulesString = file.readRawBytes(mRulesLength);
@@ -240,8 +240,10 @@ void NetworkGame::processPackets()
 
 			case ID_RULES:
 			{
-				boost::shared_ptr<RakNet::BitStream> stream = boost::make_shared<RakNet::BitStream>();
+				boost::shared_ptr<RakNet::BitStream> stream = boost::make_shared<RakNet::BitStream>((char*)packet->data,
+						packet->length, false);
 				bool needRules;
+				stream->IgnoreBytes(1);
 				stream->Read(needRules);
 				mRulesSent[mLeftPlayer == packet->playerId ? LEFT_PLAYER : RIGHT_PLAYER] = true;
 

@@ -677,11 +677,6 @@ void NetworkHostState::step_impl()
 
 	/// \todo make this gamespeed independent
 	mLobbyCounter++;
-	if(mLobbyCounter % (750 /*10s*/) == 0 )
-	{
-		mServer->updateLobby();
-	}
-
 	mServer->updateGames();
 
 	if( mGameState )

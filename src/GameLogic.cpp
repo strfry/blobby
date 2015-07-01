@@ -522,6 +522,7 @@ LuaGameLogic::LuaGameLogic( const std::string& filename, DuelMatch* match ) : mS
 	lua_setglobal(mState, "SCORE_TO_WIN");
 
 	setGameConstants();
+	setGameFunctions();
 
 	// add functions
 	luaL_requiref(mState, "math", luaopen_math, 1);
@@ -534,6 +535,7 @@ LuaGameLogic::LuaGameLogic( const std::string& filename, DuelMatch* match ) : mS
 	// now load script file
 	openScript("api");
 	openScript("rules_api");
+	openScript("rules/"+mSourceFile);
 
 	lua_getglobal(mState, "SCORE_TO_WIN");
 	mScoreToWin = lua_toint(mState, -1);
