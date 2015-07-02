@@ -35,6 +35,13 @@ struct ServerStatusData
 	std::vector<std::string> mPossibleRulesAuthor;
 };
 
+enum class PreviousState
+{
+	ONLINE,
+	LAN,
+	MAIN
+};
+
 class LobbySubstate
 {
 public:
@@ -44,7 +51,7 @@ public:
 class LobbyState : public State
 {
 	public:
-		LobbyState(ServerInfo info);
+		LobbyState(ServerInfo info, PreviousState previous);
 		virtual ~LobbyState();
 
 		virtual void step_impl();
@@ -54,6 +61,7 @@ class LobbyState : public State
 		boost::shared_ptr<RakClient> mClient;
 		PlayerIdentity mLocalPlayer;
 		ServerInfo mInfo;
+		PreviousState mPrevious;
 
 		ConnectionState mLobbyState;
 

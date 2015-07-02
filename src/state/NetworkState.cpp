@@ -355,7 +355,7 @@ void NetworkGameState::step_impl()
 
 				if (packet->length == ServerInfo::BLOBBY_SERVER_PRESENT_PACKET_SIZE )
 				{
-					switchState(new LobbyState(info));
+					switchState(new LobbyState(info, PreviousState::MAIN));
 				}
 				break;
 			}

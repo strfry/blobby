@@ -10,11 +10,12 @@
 
 #include "IMGUI.h"
 #include "NetworkState.h"
+#include "NetworkSearchState.h"
 #include "UserConfig.h"
 #include "GenericIO.h"
 
-LobbyState::LobbyState(ServerInfo info) : mClient(new RakClient(), [](RakClient* client) { client->Disconnect(25); }),
-											mInfo(info),
+LobbyState::LobbyState(ServerInfo info, PreviousState previous) : mClient(new RakClient(), [](RakClient* client) { client->Disconnect(25); }),
+											mInfo(info), mPrevious( previous ), 
 											mLobbyState(ConnectionState::CONNECTING)
 {
 	if (!mClient->Connect(mInfo.hostname, mInfo.port, 0, 0, RAKNET_THREAD_SLEEP_TIME))
@@ -204,7 +205,12 @@ void LobbyState::step_impl()
 	// back button
 	if (imgui.doButton(GEN_ID, Vector2(480, 530), TextManager::LBL_CANCEL))
 	{
-		switchState( new MainMenuState );
+		if( mPrevious == PreviousState::ONLINE )
+			switchState( new OnlineSearchState );
+		else if ( mPrevious == PreviousState::LAN )
+			switchState( new LANSearchState );
+		else 
+			switchState( new MainMenuState );
 	}
 }
 

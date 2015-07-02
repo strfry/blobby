@@ -342,7 +342,7 @@ void NetworkSearchState::step_impl()
 			|| doEnterServer)
 	{
 		ServerInfo server = mScannedServers[mSelectedServer];
-		switchState(new LobbyState(server));
+		switchState(new LobbyState(server, dynamic_cast<OnlineSearchState*>(this) == nullptr ? PreviousState::LAN : PreviousState::ONLINE));
 	}
 	if (imgui.doButton(GEN_ID, Vector2(480, 530), TextManager::LBL_CANCEL))
 	{
