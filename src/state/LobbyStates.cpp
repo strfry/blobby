@@ -203,7 +203,7 @@ void LobbyState::step_impl()
 
 
 	// back button
-	if (imgui.doButton(GEN_ID, Vector2(480, 530), TextManager::LBL_CANCEL))
+	if (imgui.doButton(GEN_ID, Vector2(50, 530), TextManager::LBL_CANCEL))
 	{
 		if( mPrevious == PreviousState::ONLINE )
 			switchState( new OnlineSearchState );
@@ -245,6 +245,10 @@ void LobbyMainSubstate::step(const ServerStatusData& status)
 	{
 		doEnterGame = true;
 	}
+	
+	// if selected game is invalid (i.e. a game was removed and the reference now is wrong), set to random
+	if(mSelectedGame >= gamelist.size())
+		mSelectedGame = 0;
 
 	if(mSelectedGame > 1)
 	{
@@ -387,6 +391,14 @@ void LobbyGameSubstate::step( const ServerStatusData& status )
 	// open game button
 	if( mIsHost )
 	{
+		if( imgui.doButton(GEN_ID, Vector2(435, 395), TextManager::getSingleton()->getString(TextManager::NET_LEAVE) ) )
+		{
+			RakNet::BitStream stream;
+			stream.Write((unsigned char)ID_LOBBY);
+			stream.Write((unsigned char)LobbyPacketType::LEAVE_GAME);
+			mClient->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0);
+		} 
+		
 		if( !no_players && (imgui.doButton(GEN_ID, Vector2(435, 430), TextManager::getSingleton()->getString(TextManager::MNU_LABEL_START) ) || doEnterGame) )
 		{
 			// Start Game

@@ -55,6 +55,7 @@ public:
 
 	// broadcast the status of a game
 	void broadcastOpenGameStatus( unsigned gameID );
+	void broadcastOpenGameList(); // sends the game list to all players that are not in a game
 
 
 	// add settings

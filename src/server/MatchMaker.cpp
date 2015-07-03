@@ -63,24 +63,36 @@ unsigned MatchMaker::addGame( OpenGame game )
 		sendOpenGameList(player.first);
 	}
 
+	broadcastOpenGameList();
 	broadcastOpenGameStatus(mIDCounter);
+	return mIDCounter;
 }
 
 void MatchMaker::removeGame( unsigned id )
 {
 	auto g = mOpenGames.find(id);
 	assert( g != mOpenGames.end() );
+	
+	RakNet::BitStream stream;
+	stream.Write( (unsigned char)ID_LOBBY );
+	stream.Write( (unsigned char)LobbyPacketType::REMOVED_FROM_GAME );
+	stream.Write( id );
+	
+	mSendPacket( stream, g->second.creator );
 
 	// get the list of connected players and send them a notification
 	auto players = g->second.connected;
 	for( auto player : players )
 	{
 		// send disconnect message
-		removePlayerFromGame( id, player );
+		mSendPacket( stream, player );
+
 	}
 
 	// now remove the game itself
 	mOpenGames.erase(g);
+	
+	broadcastOpenGameList();
 }
 
 void MatchMaker::removePlayerFromAllGames( PlayerID player )
@@ -164,6 +176,7 @@ void MatchMaker::joinGame(PlayerID player, unsigned gameID)
 	if( g == mOpenGames.end() )
 	{
 		std::cerr << "player "<< pl->second->getName() << " [" << player.toString() << "] tried to join game " << gameID << " which does not exits (anymore?)\n";
+		sendOpenGameList( player ); // send the updated game list to that player
 		return;
 	}
 
@@ -359,6 +372,28 @@ void MatchMaker::broadcastOpenGameStatus( unsigned gameID )
 	mSendPacket(stream, g->second.creator );
 	for(auto p: g->second.connected)
 		mSendPacket(stream, p );
+}
+
+void MatchMaker::broadcastOpenGameList()
+{
+	for(auto& p : mPlayerMap)
+	{
+		auto player = p.first;
+		bool ingame = false;
+		for(auto& g : mOpenGames)
+		{
+			if(g.second.creator == player || std::count(g.second.connected.begin(), g.second.connected.end(), player) != 0)
+			{
+				ingame = true;
+				break;
+			}
+		}
+		
+		if(!ingame)
+		{
+			sendOpenGameList(player);
+		}
+	}
 }
 
 
