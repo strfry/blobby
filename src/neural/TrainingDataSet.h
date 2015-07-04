@@ -6,6 +6,8 @@
 #include <vector>
 #include <mutex>
 
+#include "InputCoder.h"
+
 struct fann_train_data;
 
 /// this class is used to accumulate training data
@@ -40,6 +42,10 @@ private:
 	fann_train_data* mCurrentDataCollection = nullptr;
 	std::atomic<unsigned int> mCollectionIndex{0};
 	std::vector<float> mLastInput; // cache last input, to reduce data spam on serve
+	
+	// keep statistics about learning data distribution
+	InputCoder mCoder;
+	std::vector<int> mDataHistogram;
 };
 
 #endif // TRAININGDATASET_H_INCLUDED

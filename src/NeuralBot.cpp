@@ -46,42 +46,32 @@ extern "C"
 
 NeuralBot::NeuralBot(PlayerSide playerside, unsigned int difficulty)
 : mDifficulty(difficulty)
-, mLastBallSpeed(0)
-, mSide(playerside)
-, mPositionErrorDistribution( 0.0, difficulty / 75.0 * BALL_RADIUS ),
+, mSide(playerside),
+mOwnCollector(mCollector, false),
+mOppCollector(mCollector, true),
 reference( "scripts/reduced.lua", playerside, difficulty), 
-mTrainingData( 7500, mCoder.getChannels())
+mExerciseThread( [this](){ exercise(); } )
 {
 	mStartTime = SDL_GetTicks();
 
     const unsigned int num_output = 3;
-    const unsigned int num_layers = 5;
+    const unsigned int num_layers = 4;
 
-    mNetwork = //fann_create_shortcut(2, 6, 3);
-    fann_create_sparse(0.5, num_layers, mCoder.getChannels(), 150, 100, 50, num_output);
+	mNetwork = fann_create_standard(num_layers, mCoder.getChannels(), 200, 100, num_output);
     fann_set_activation_function_hidden(mNetwork, FANN_SIGMOID_SYMMETRIC_STEPWISE);	// use stepwise to be faster
     fann_set_activation_function_output(mNetwork, FANN_SIGMOID_SYMMETRIC);	
 
-	mNetwork = fann_create_from_file("neuralbot.net");
+	//mNetwork = fann_create_from_file("neuralbot.net");
 	fann_set_training_algorithm( mNetwork, FANN_TRAIN_RPROP);
 	fann_set_learning_rate( mNetwork, 0.7 );
 	fann_set_learning_momentum( mNetwork, 0.1 );
 	fann_set_activation_steepness_output( mNetwork, 1.0 );
-	
-	mTrainingData.loadData();
 }
 
 NeuralBot::~NeuralBot()
 {
-	if( mLearnFuture.valid() )
-	{
-		fann_destroy(mNetwork);
-		mNetwork = mLearnFuture.get();
-	}
-	
-	fann_save(mNetwork, "neuralbot.net");
-	mTrainingData.saveData();
-    fann_destroy(mNetwork);
+    mRunThread = false;
+    mExerciseThread.join();
 }
 
 PlayerInputAbs NeuralBot::getNextInput()
@@ -97,157 +87,113 @@ PlayerInputAbs NeuralBot::getNextInput()
 	// collect match states
 	auto matchstate = getMatch()->getState();
 	if(mSide != LEFT_PLAYER)
+	{
+		if(!getMatch()->getBallDown())
+			mOppCollector.record(matchstate);
 		matchstate.swapSides();
-		
-	// when the score changes
-	if( mLastScore != matchstate.logicState.rightScore )
+		if(!getMatch()->getBallDown())
+			mOwnCollector.record(matchstate);
+	} 
+	 else if(!getMatch()->getBallDown())
 	{
-		// limit maximum data
-		if( mTrainingData.getFailureDataCount() < 500 )
-			mLoses.addFail(mOldState.worldState.ballPosition, mOldState.worldState.ballVelocity, mOldState.worldState.blobPosition[LEFT_PLAYER] );
-		mLastScore = matchstate.logicState.rightScore;
-	}
-		
-	// whenever somebody touches the ball
-	if(matchstate.logicState.hitCount[RIGHT_PLAYER] != mLastHitCount)
-	{
-		// if it was the ai
-		if(matchstate.logicState.hitCount[RIGHT_PLAYER] != 0)
-		{
-			mOldState = matchstate;
-		}
-		mLastHitCount = matchstate.logicState.hitCount[RIGHT_PLAYER];
+		mOwnCollector.record(matchstate);
+		matchstate.swapSides();
+		mOppCollector.record(matchstate);
+		matchstate.swapSides();
 	}
 
-	//matchstate.worldState.ballPosition += mBallPosError;
-	//matchstate.worldState.ballVelocity *= Vector2(mBallVelError, mBallVelError);
-
+	
+	
 	// do neural calculation
 	auto state = mCoder.encode( matchstate.worldState );
-	//mSituationCache.push_back(state);
-
-	// switch to trained network
-	if( mLearnFuture.valid() && std::future_status::ready == mLearnFuture.wait_for( std::chrono::milliseconds(0) ) )
+	
+	bool wantleft, wantright, wantjump;
 	{
-		fann_destroy(mNetwork);
-		mNetwork = mLearnFuture.get();
-		fann_save(mNetwork, "neuralbot.net");
+		std::lock_guard<std::mutex> l(mNetworkMutex);
+		auto result = fann_run(mNetwork, &state[0]);
+		wantleft = result[0] > 0;
+		//std::cout << result[0] << " " << result[1] << " " << result[2] << "\n"; 
+		wantright = result[1] > 0;
+		wantjump = result[2] > 0;
 	}
 	
-	// reset bench object
-	if( mBenchFuture.valid() && std::future_status::ready == mBenchFuture.wait_for( std::chrono::milliseconds(0) ) )
+	bool LEARNING = true;
+	if( LEARNING )
 	{
-		mBenchFuture.get();
-	}
-
-	//float result[3];
-	//std::cout << state[0] << " " << state[1] << " " << state[2] <<  " " << state[3] << "\n";
-	auto result = fann_run(mNetwork, &state[0]);
-	static bool init = false;
-	if(!init)
-	{
-		reference.setMatch( getMatch() );
-		init = true;
-	}
-	auto ref_in = reference.getNextInput().toPlayerInput( getMatch());
-	//std::cout << result[0] << " " << result[1] << " " << result[2] << "\n";
-
-	bool wantleft = result[0] > 0;
-	bool wantright = result[1] > 0;
-	mLastJump = result[2] > 0;
-
-	//std::cout << mNet.getLayer(0).getWeights()[0] << "\n";
-	mLearningPhase = 0;
-	if( mLearningPhase == 0 && mStartTime + 1500 < SDL_GetTicks())
-	{
-		static int timer = 0;
-		
-		std::array<float, 3> out{ref_in.left ? 1 : -1, ref_in.right ? 1 : -1, ref_in.up ? 1 : -1} ;
-
-		// learn every ten steps, or when the ball is close to the blobby
-		if( rand() % 3 == 0 || ref_in.left != wantleft ||ref_in.right == wantright || mLastJump != ref_in.up )
-			mTrainingData.addDefaultBotDataPoint( state, out );
-		
-		// switch between playing styles if no new data is available
-		if(!mTrainingData.isNewDataReady() && (timer / 100) % 2 == 0 && mLastSuccessQuota < 0.95 )
+		static bool init = false;
+		if(!init)
 		{
-			wantleft = ref_in.left;
-			wantright = ref_in.right;
-			mLastJump = ref_in.up;
+			reference.setMatch( getMatch() );
+			init = true;
 		}
-		
-		++timer;
-	}
-	
-	// try to learn (non neuronal) from own mistakes
-	if( (mLoses.ballpos.size() >= 50 || (!mLearnFuture.valid() && !mLoses.ballpos.empty())) && !mBenchFuture.valid() )
-	{	
-		// capture by copy, because we will change mLoses as soon as we start learning
-		auto data = mLoses;
-		auto refnet = fann_copy(mNetwork);
-		auto createTrainingData = [data, refnet, this]()
+		auto ref_in = reference.getNextInput().toPlayerInput( getMatch() );
+		//if( rand() % 2 == 0)
 		{
-			Benchmark generator;
-			auto my_errors = generator.makeTrainingSet( data, refnet );
-			if( my_errors)
-			{
-				std::cout << "own errors: " << data.ballpos.size() << " = " << fann_length_train_data(my_errors) << " data points\n";
-				mTrainingData.setDifficultTraining( my_errors, data.ballpos.size() );
-			}
-			fann_destroy(refnet);
-		};
-		mLoses.clear();
-		
-		mBenchFuture = std::async(std::launch::async, createTrainingData);
-	}
-	
-	if(!mLearnFuture.valid())
-	{
-		auto trainingdata = mTrainingData.getDataForTraining();
-		if(trainingdata)
-		{
-			auto trainingnet = fann_copy(mNetwork);
-			std::cout << "learn from data: " << fann_length_train_data(trainingdata) << "\n";
-	
-			auto learn = [this, trainingnet, trainingdata]()
-			{
-				fann_train_on_data(trainingnet, trainingdata, mLearnEpochs, 10, mDesiredError);
-				// first, compare to last fails
-				std::cout << " network improvement: " << int(100 * bench.benchImprovement(trainingnet).score) << "%\n";
-				
-				// then complete re-evaluation
-				BenchResult succ = bench.benchNet( trainingnet );
-				mLastSuccessQuota = succ.score;
-				std::cout << " benchmark success: " << int(1000 * succ.score) << "Pkt\n";
-				
-				// explicitly train the benchmark fails
-				auto training = bench.makeTrainingSet( succ, trainingnet );
-				mTrainingData.setDifficultTraining( training, succ.ballpos.size() );
-
-				return trainingnet;
-			};
-
-			mLearnFuture = std::async (std::launch::async, learn);
+			bool dir = rand() % 2;
+			wantleft = dir;//ref_in.left;
+			wantright = !dir;//ref_in.right;
+			wantjump = false;//ref_in.up;
 		}
-	}
-
-	// override for serving for now, because bot does not learn that...
-	if (!getMatch()->getBallActive() && mSide ==
-			// if no player is serving player, assume the left one is
-			(getMatch()->getServingPlayer() == NO_PLAYER ? LEFT_PLAYER : getMatch()->getServingPlayer() ))
-	{
-		return PlayerInputAbs(ref_in.left, ref_in.right, ref_in.up);
-
-
 	}
 
 	// swap left/right if side is swapped
 	if ( mSide == RIGHT_PLAYER )
 		std::swap(wantleft, wantright);
 
+	if (!getMatch()->getBallActive() && mSide ==// if no player is serving player, assume the left one is
+			(getMatch()->getServingPlayer() == NO_PLAYER ? LEFT_PLAYER : getMatch()->getServingPlayer() ))
+	{
+		wantright = matchstate.worldState.blobPosition[LEFT_PLAYER].x < 180;
+		wantleft = matchstate.worldState.blobPosition[LEFT_PLAYER].x > 200;
+		wantjump = rand() % 100 == 0;
+	}
+
 
 	if (mStartTime + 1500 > SDL_GetTicks() && serving)
 		return PlayerInputAbs();
-	return PlayerInputAbs(wantleft, wantright, mLastJump);
+	return PlayerInputAbs(wantleft, wantright, wantjump);
 }
 
+void NeuralBot::exercise()
+{
+	fann_train_data* data_ptr = nullptr;
+	fann_train_data* working_set = nullptr;
+	fann* working_net = nullptr;
+	while(mRunThread)
+	{
+		if( mCollector.has_new())
+		{
+			data_ptr = mCollector.getExerciseData();
+			if(working_set)
+				fann_destroy_train(working_set);
+			working_set = fann_duplicate_train_data(data_ptr);
+			std::cout << "csize: " << fann_length_train_data(working_set) << "\n";
+		}
+		
+		if(working_set && fann_length_train_data(working_set) > 1000)
+		{
+			if(!working_net)
+			{
+				std::lock_guard<std::mutex> l(mNetworkMutex);
+				working_net = fann_copy(mNetwork);
+				fann_set_user_data(working_net, this);
+			}
+			
+			//std::cout << fann_length_train_data(working_set) << "\n";
+			// learn for some time
+			fann_set_training_algorithm( working_net, FANN_TRAIN_INCREMENTAL);
+			fann_set_learning_rate( working_net, 0.5 );
+			fann_train_on_data(working_net, working_set, 50, 10, 0);
+				
+			{
+				std::lock_guard<std::mutex> l(mNetworkMutex);
+				fann_destroy(mNetwork);
+				mNetwork = working_net;
+				working_net = nullptr;
+			}
+		}
+	}
+	
+	fann_save(mNetwork, "neuralbot.net");
+	fann_destroy(mNetwork);
+}

@@ -4,9 +4,10 @@
 #include <cassert>
 #include <iostream>
 
-InputCoder::InputCoder() : mBallXResolution(16), mBallYResolution(16), mBallXVelResolution(16), mBallYVelResolution(16)
+InputCoder::InputCoder() : mBallXResolution(16), mBallYResolution(20), mBallXVelResolution(16), mBallYVelResolution(16), mBlobXResolution(8), mBlobYResolution(8)
 {
-	mInputSize = mBallXResolution + mBallYResolution + mBallXVelResolution + mBallYVelResolution + 6;
+	mInputSize = mBallXResolution + mBallYResolution + mBallXVelResolution + 
+					mBallYVelResolution + mBlobXResolution + mBlobYResolution + 6;
 }
 
 int InputCoder::getChannels() const
@@ -25,28 +26,27 @@ float register_overlap( float min, float max, int step, int count, float positio
 
 float code(std::vector<float>& target, int& iter, float min, float max, float count, float pos)
 {
-	if( min > pos && pos > max)
+	if( min > pos || pos > max)
 	{
 		std::cout << "coding problem: " << min << " < " << pos << " < " << max << " not fulfilled\n"; 
 	}
 	for( int i = 0; i < count; ++i)
 	{
-		target.at(++iter) = register_overlap(min, max, i, count, pos);
+		target.at(iter) = register_overlap(min, max, i, count, pos);
+		++iter;
 	}
 }
 
 std::vector<float> InputCoder::encode(const PhysicState& world)
 {
 	std::vector<float> coded( mInputSize );
-	coded[0] = world.blobPosition[LEFT_PLAYER].x / 400;
-	coded[1] = world.blobPosition[LEFT_PLAYER].y / 600;
-	
-	int idx = 1;
+	int idx = 0;
 	// give bot ball positions by x/y neurons
-	int res = mBallXResolution;
+	code(coded, idx, 0, NET_POSITION_X, mBlobXResolution,  world.blobPosition[LEFT_PLAYER].x);
+	code(coded, idx, 50, GROUND_PLANE_HEIGHT, mBlobYResolution,  world.blobPosition[LEFT_PLAYER].y);
 	code(coded, idx, LEFT_PLANE, RIGHT_PLANE, mBallXResolution, world.ballPosition.x);
-	code(coded, idx, -100, GROUND_PLANE_HEIGHT_MAX, mBallYResolution, world.ballPosition.y);
-	code(coded, idx, -BALL_COLLISION_VELOCITY - 1, BALL_COLLISION_VELOCITY + 1, mBallXVelResolution, world.ballVelocity.x);
+	code(coded, idx, -300, GROUND_PLANE_HEIGHT_MAX, mBallYResolution, world.ballPosition.y);
+	code(coded, idx, -BALL_COLLISION_VELOCITY - 2, BALL_COLLISION_VELOCITY + 2, mBallXVelResolution, world.ballVelocity.x);
 	code(coded, idx, -BALL_COLLISION_VELOCITY - 1, BALL_COLLISION_VELOCITY + 20, mBallYVelResolution, world.ballVelocity.y);
 	
 	// helper var: position where ball will hit the ground: crude estimate
@@ -62,6 +62,36 @@ std::vector<float> InputCoder::encode(const PhysicState& world)
 		coded[++idx] = (world.ballPosition.x - world.blobPosition[LEFT_PLAYER].x) / 2 / (BALL_RADIUS + BLOBBY_LOWER_RADIUS);
 	}
 	return coded;
+}
+
+void acc( const float coded[], int idx, int& cumm_count, int max )
+{
+	idx *= (max / 2);
+	for( int p = 0; p < cumm_count + max; ++p )
+		if( coded[p + cumm_count] > 0.5 )
+		{
+			cumm_count += (max / 2);
+			idx += p;
+			return;	
+		}
+}
+
+unsigned int InputCoder::getStateIndex( const float coded[] ) const
+{
+	int cmt = 0;
+	int idx = 0;
+	acc( coded, idx, cmt, mBlobXResolution);
+	acc( coded, idx, cmt, mBlobYResolution);
+	acc( coded, idx, cmt, mBallXResolution);
+	acc( coded, idx, cmt, mBallYResolution);
+	acc( coded, idx, cmt, mBallXVelResolution);
+	acc( coded, idx, cmt, mBallYVelResolution);
+	return idx;
+}
+
+unsigned int InputCoder::getMaxStateIdx() const
+{
+	return (mBallXResolution/2) * (mBallYResolution/2) * (mBlobXResolution/2) * (mBlobYResolution/2) * (mBallXVelResolution/2) * (mBallYVelResolution/2);
 }
 
 float InputCoder::parabel_time( float grav, float vel, float y0, float target)

@@ -1455,6 +1455,45 @@ FANN_EXTERNAL void FANN_API fann_set_weight(struct fann *ann,
     }
 }
 
+
+FANN_EXTERNAL fann_type FANN_API fann_get_weight(struct fann *ann,
+    unsigned int from_neuron, unsigned int to_neuron )
+{
+    struct fann_neuron *first_neuron;
+    struct fann_layer *layer_it;
+    struct fann_neuron *neuron_it;
+    unsigned int idx;
+    unsigned int source_index;
+    unsigned int destination_index;
+
+    first_neuron = ann->first_layer->first_neuron;
+
+    source_index = 0;
+    destination_index = 0;
+
+    /* Find the connection, simple brute force search through the network
+       for one or more connections that match to minimize datastructure dependencies.
+       Nothing is done if the connection does not already exist in the network. */
+
+    /* for each layer */
+    for(layer_it = ann->first_layer; layer_it != ann->last_layer; layer_it++){
+        /* for each neuron */
+        for(neuron_it = layer_it->first_neuron; neuron_it != layer_it->last_neuron; neuron_it++){
+            /* for each connection */
+            for (idx = neuron_it->first_con; idx < neuron_it->last_con; idx++){
+                /* If the source and destination neurons match, assign the weight */
+                if (((int)from_neuron == ann->connections[source_index] - first_neuron) &&
+                    (to_neuron == destination_index))
+                {
+                    return ann->weights[source_index];
+                }
+                source_index++;
+            }
+            destination_index++;
+        }
+    }
+}
+
 FANN_GET_SET(void *, user_data)
 
 #ifdef FIXEDFANN

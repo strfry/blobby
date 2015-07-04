@@ -16,9 +16,11 @@
 #include "InputCoder.h"
 #include "TrainingDataSet.h"
 #include "Benchmark.h"
+#include "DataCollector.h"
 
 #include <future>
 #include <mutex>
+#include <thread>
 
 /// \class NeuralBot
 /// \brief Bot controller
@@ -55,42 +57,32 @@ class NeuralBot : public InputSource
 		// ki strength values
 		int mDifficulty;
 
-		float mLastBallSpeed;
-
 		PlayerSide mSide;
 
 		// error data
-		std::normal_distribution<double> mPositionErrorDistribution;
 		std::default_random_engine mRandom;
 		
-		std::vector<std::vector<double>> mSituationCache;
 		DuelMatchState mOldState;
 		int mLastHitCount = 0;
+		int mLastOppHitCount = 0;
 		int mLastScore = 0;
-		BenchResult mLoses;
-
-		int mLearningPhase = 0;
-
+		int mLastOppScore = 0;
+		int timer = 0;
+		PlayerSide mLastSide = LEFT_PLAYER;
 		ScriptedInputSource reference;
-
-		fann* mNetwork;
-
-		std::future<fann*> mLearnFuture;
-		std::future<void>  mBenchFuture;
-
-		int mLearnEpochs = 100;
-		int mDataSetSize = 10000;
-		float mDesiredError = 0.01;
-		
-		// feedback loop
-		bool mLastJump;
 		
 		InputCoder mCoder;
+		fann* mNetwork;
 		
-		TrainingDataSet mTrainingData;
+		DataCollector mCollector;
+		CollectorInterface mOwnCollector;
+		CollectorInterface mOppCollector;
+		fann_train_data* mCurrentTraining = nullptr;
 		
-		Benchmark bench;
+		void exercise();
 		
-		float mLastSuccessQuota = 0.0;
+		std::atomic<bool> mRunThread{true}; // declared before thread, so it is initialized before
+		std::thread mExerciseThread;
+		std::mutex mNetworkMutex;
 };
 

@@ -13,6 +13,10 @@ public:
 	
 	std::vector<float> encode(const PhysicState& state);
 	
+	// calculates a numeric index based on the state. similar states have the same index.
+	unsigned int getStateIndex( const float coded[] ) const;
+	unsigned int getMaxStateIdx() const;
+	
 	int getChannels() const; // gets the number of input channels
 private:
 	
@@ -22,6 +26,8 @@ private:
 	int mBallYResolution;
 	int mBallXVelResolution;
 	int mBallYVelResolution;
+	int mBlobXResolution;
+	int mBlobYResolution;
 	int mInputSize;
 	
 	// flags 

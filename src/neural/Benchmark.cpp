@@ -66,9 +66,10 @@ BenchResult Benchmark::benchImprovement( fann* net )
 }
 
 void Benchmark::setupTest()
-{
+{	
 	mInitialBlobPosition.x = mDistribution(mRandom) * (NET_POSITION_X-NET_RADIUS-BLOBBY_LOWER_RADIUS);
 	mInitialBlobPosition.y = GROUND_PLANE_HEIGHT;
+	
 	int mballstartx =  mDistribution(mRandom) * (NET_POSITION_X - BALL_RADIUS) + NET_POSITION_X;
 	int mballstarty = 100 + mDistribution(mRandom) * (GROUND_PLANE_HEIGHT-100);
 	
@@ -108,6 +109,7 @@ bool Benchmark::runTest( std::vector<PlayerInput>* res_actions, int* first_hit )
 	
 	PhysicState state = mVirtualReality.getState();
 	state.blobPosition[LEFT_PLAYER] = mInitialBlobPosition;
+	state.blobVelocity[LEFT_PLAYER] = Vector2(0,0);
 	mVirtualReality.setState( state );
 	
 	int success = 0;
@@ -183,7 +185,7 @@ fann_train_data* Benchmark::makeTrainingSet( BenchResult fails, fann* network )
 	fann_train_data* new_training = nullptr;
 	
 	for( int i = 0; i < fails.ballpos.size(); ++i)
-	{
+	{			
 		for( int repeat = 0; repeat < std::sqrt(fails.mWeights[i]+1); ++repeat)
 		{
 		mInitialBallPosition = fails.ballpos[i];
@@ -293,6 +295,7 @@ fann_train_data* Benchmark::simulateNewTry( const std::vector<PlayerInput>& inpu
 	
 	PhysicState state = mVirtualReality.getState();
 	state.blobPosition[LEFT_PLAYER] = mInitialBlobPosition;
+	state.blobVelocity[LEFT_PLAYER] = Vector2(0,0);
 	mVirtualReality.setState( state );
 	
 	int success = 0;

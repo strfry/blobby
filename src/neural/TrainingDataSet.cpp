@@ -12,7 +12,7 @@ extern "C"
 
 TrainingDataSet::TrainingDataSet( int reservoir_size, int input_count ) : 
 	mCurrentDataCollection( fann_create_train(reservoir_size, input_count, 3) ),
-	mLastInput( input_count )
+	mLastInput( input_count ), mDataHistogram(mCoder.getMaxStateIdx(), 0)
 {
 	
 }
@@ -88,10 +88,33 @@ fann_train_data* TrainingDataSet::getDataForTraining()
 		return mCurrentTrainingData;
 	} // otherwise
 	else 
-	{
+	{		
+		mDataHistogram.assign(mCoder.getMaxStateIdx(), 0);
+		int copy_to = 0;
+		for( int i = 0; i < fann_length_train_data(mCurrentTrainingData); ++i)
+		{
+			int idx = mCoder.getStateIndex( mCurrentTrainingData->input[i]);
+			
+			// copy
+			for( int j = 0; j < mCurrentTrainingData->num_input; ++j)
+				mCurrentTrainingData->input[copy_to][j] = mCurrentTrainingData->input[i][j];
+			for( int j = 0; j < mCurrentTrainingData->num_output; ++j)
+				mCurrentTrainingData->output[copy_to][j] = mCurrentTrainingData->output[i][j];
+			
+			// count in  histogram
+			++mDataHistogram[idx];
+			std::cout << idx << "\n";
+			if( rand() % mDataHistogram[idx] < 5 )
+			{
+				++copy_to;
+			}
+		}
+		
+		std::cout << "shrink dataset: " << fann_length_train_data(mCurrentTrainingData) << " -> "  << copy_to << "\n";
+		
 		// shrink amount of data in training net to get space for new stuff
 		int amount = mCurrentTrainingData->num_data;
-		mCurrentTrainingData->num_data = 3 * amount / 4;
+		mCurrentTrainingData->num_data = copy_to;
 		auto merged = fann_merge_train_data( mCurrentTrainingData, mCurrentDataCollection );
 		// restore amount to ensure proper deletion? just to be safe
 		mCurrentTrainingData->num_data = amount;
