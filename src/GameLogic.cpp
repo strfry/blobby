@@ -170,7 +170,7 @@ void IGameLogic::setState(GameLogicState gls)
 // -------------------------------------------------------------------------------------------------
 //								Event Handlers
 // -------------------------------------------------------------------------------------------------
-void IGameLogic::step()
+void IGameLogic::step( const DuelMatchState& state )
 {
 	mClock.step();
 
@@ -181,7 +181,7 @@ void IGameLogic::step()
 		--mSquishWall;
 		--mSquishGround;
 
-		OnGameHandler();
+		OnGameHandler( state );
 	}
 }
 
@@ -382,7 +382,7 @@ class DummyGameLogic : public IGameLogic
 		{
 		}
 
-		virtual void OnGameHandler()
+		virtual void OnGameHandler( const DuelMatchState& state )
 		{
 		}
 };
@@ -488,7 +488,7 @@ class LuaGameLogic : public FallbackGameLogic, public IScriptableComponent
 		virtual void OnBallHitsWallHandler(PlayerSide side);
 		virtual void OnBallHitsNetHandler(PlayerSide side);
 		virtual void OnBallHitsGroundHandler(PlayerSide side);
-		virtual void OnGameHandler();
+		virtual void OnGameHandler( const DuelMatchState& state );
 
 		static LuaGameLogic* getGameLogic(lua_State* state);
 
@@ -559,6 +559,7 @@ LuaGameLogic::~LuaGameLogic()
 
 PlayerSide LuaGameLogic::checkWin() const
 {
+	const_cast<LuaGameLogic*>(this)->updateGameState( getState( ) ); // make sure the scripting engine gets current version
 	bool won = false;
 	if (!getLuaFunction("IsWinning"))
 	{
@@ -590,6 +591,7 @@ PlayerSide LuaGameLogic::checkWin() const
 
 PlayerInput LuaGameLogic::handleInput(PlayerInput ip, PlayerSide player)
 {
+	updateGameState( getState( ) ); // make sure the scripting engine gets current version
 	if (!getLuaFunction( "HandleInput" ))
 	{
 		return FallbackGameLogic::handleInput(ip, player);
@@ -617,6 +619,7 @@ PlayerInput LuaGameLogic::handleInput(PlayerInput ip, PlayerSide player)
 
 void LuaGameLogic::OnBallHitsPlayerHandler(PlayerSide side)
 {
+	updateGameState( getState( ) ); // make sure the scripting engine gets current version
 	if (!getLuaFunction("OnBallHitsPlayer"))
 	{
 		FallbackGameLogic::OnBallHitsPlayerHandler(side);
@@ -632,6 +635,7 @@ void LuaGameLogic::OnBallHitsPlayerHandler(PlayerSide side)
 
 void LuaGameLogic::OnBallHitsWallHandler(PlayerSide side)
 {
+	updateGameState( getState( ) ); // make sure the scripting engine gets current version
 	if (!getLuaFunction("OnBallHitsWall"))
 	{
 		FallbackGameLogic::OnBallHitsWallHandler(side);
@@ -648,6 +652,7 @@ void LuaGameLogic::OnBallHitsWallHandler(PlayerSide side)
 
 void LuaGameLogic::OnBallHitsNetHandler(PlayerSide side)
 {
+	updateGameState( getState( ) ); // make sure the scripting engine gets current version
 	if (!getLuaFunction( "OnBallHitsNet" ))
 	{
 		FallbackGameLogic::OnBallHitsNetHandler(side);
@@ -665,6 +670,7 @@ void LuaGameLogic::OnBallHitsNetHandler(PlayerSide side)
 
 void LuaGameLogic::OnBallHitsGroundHandler(PlayerSide side)
 {
+	updateGameState( getState( ) ); // make sure the scripting engine gets current version
 	if (!getLuaFunction( "OnBallHitsGround" ))
 	{
 		FallbackGameLogic::OnBallHitsGroundHandler(side);
@@ -680,11 +686,13 @@ void LuaGameLogic::OnBallHitsGroundHandler(PlayerSide side)
 	};
 }
 
-void LuaGameLogic::OnGameHandler()
+void LuaGameLogic::OnGameHandler( const DuelMatchState& state )
 {
+	updateGameState( state );		// set state of world
+	updateGameState( getState( ) ); // make sure the scripting engine gets current version
 	if (!getLuaFunction( "OnGame" ))
 	{
-		FallbackGameLogic::OnGameHandler();
+		FallbackGameLogic::OnGameHandler( state );
 		return;
 	}
 	if( lua_pcall(mState, 0, 0, 0) )
