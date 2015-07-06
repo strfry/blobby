@@ -42,7 +42,7 @@ public:
 	void removePlayer( PlayerID id );
 
 	// set callback functions
-	typedef std::function<void(boost::shared_ptr<NetworkPlayer>, boost::shared_ptr<NetworkPlayer>, PlayerSide, std::string rules)> create_game_fn;
+	typedef std::function<void(boost::shared_ptr<NetworkPlayer>, boost::shared_ptr<NetworkPlayer>, PlayerSide, std::string rules, int score)> create_game_fn;
 	void setCreateGame( create_game_fn func) { mCreateGame = func;};
 
 	typedef std::function<void(const RakNet::BitStream& stream, PlayerID target)> send_fn;

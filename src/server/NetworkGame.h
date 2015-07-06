@@ -50,7 +50,7 @@ class NetworkGame : public ObjectCounter<NetworkGame>
 		/// \exception Throws FileLoadException, if the desired rules file could not be loaded
 		///	\exception Throws std::runtime_error, if \p leftPlayer or \p rightPlayer are already assigned to a game.
 		NetworkGame(RakServer& server, boost::shared_ptr<NetworkPlayer> leftPlayer, boost::shared_ptr<NetworkPlayer> rightPlayer,
-					PlayerSide switchedSide, std::string rules);
+					PlayerSide switchedSide, std::string rules, int scoreToWin);
 
 		~NetworkGame();
 

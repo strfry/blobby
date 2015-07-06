@@ -234,7 +234,7 @@ void MatchMaker::startGame(PlayerID host, PlayerID client)
 			switchSide = LEFT_PLAYER;
 	}
 
-	mCreateGame( leftPlayer->second, rightPlayer->second, switchSide, mPossibleGameRules[game->second.rules].file );
+	mCreateGame( leftPlayer->second, rightPlayer->second, switchSide, mPossibleGameRules[game->second.rules].file, game->second.points );
 	
 	// remove players from available player list
 	removePlayer( host );
@@ -405,7 +405,7 @@ void MatchMaker::addGameSpeedOption( int speed )
 
 void MatchMaker::addRuleOption( const std::string& file )
 {
-	auto gamelogic = createGameLogic(file, nullptr);
+	auto gamelogic = createGameLogic(file, nullptr, 1);
 	/// \todo check rule validity and load author and description
 	mPossibleGameRules.emplace_back(Rule{file, gamelogic->getTitle(), gamelogic->getAuthor(), ""});
 }

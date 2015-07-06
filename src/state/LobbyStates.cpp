@@ -142,10 +142,11 @@ void LobbyState::step_impl()
 
 				stream.IgnoreBytes(1);	// ignore ID_RULES_CHECKSUM
 
-				int serverChecksum;
+				int serverChecksum, scoreToWin;
 				stream.Read(serverChecksum);
+				stream.Read(scoreToWin);
 				
-				switchState( new NetworkGameState( mClient, serverChecksum ) );
+				switchState( new NetworkGameState( mClient, serverChecksum, scoreToWin ) );
 				}
 				break;
 			default:

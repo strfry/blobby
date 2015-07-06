@@ -61,8 +61,8 @@ DedicatedServer::DedicatedServer(const ServerInfo& info, const std::vector<std::
 
 	/// \todo this code should be places in ServerInfo
 	mMatchMaker.setSendFunction([&](const RakNet::BitStream& stream, PlayerID target){ mServer->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0, target, false); });
-	mMatchMaker.setCreateGame([&](boost::shared_ptr<NetworkPlayer> left, boost::shared_ptr<NetworkPlayer> right, PlayerSide switchSide, std::string rules){ 
-							createGame(left, right, switchSide, rules); });
+	mMatchMaker.setCreateGame([&](boost::shared_ptr<NetworkPlayer> left, boost::shared_ptr<NetworkPlayer> right, PlayerSide switchSide, std::string rules, int stw){ 
+							createGame(left, right, switchSide, rules, stw); });
 	mMatchMaker.addGameSpeedOption( info.gamespeed );
 	mMatchMaker.addGameSpeedOption( 120 );	// debug
 	
@@ -320,9 +320,9 @@ void DedicatedServer::processBlobbyServerPresent( const packet_ptr& packet)
 }
 
 void DedicatedServer::createGame(boost::shared_ptr<NetworkPlayer> left, boost::shared_ptr<NetworkPlayer> right, PlayerSide switchSide,
-														std::string rules)
+														std::string rules, int scoreToWin)
 {
-	auto newgame = boost::make_shared<NetworkGame>(*mServer.get(), left, right, switchSide, rules);
+	auto newgame = boost::make_shared<NetworkGame>(*mServer.get(), left, right, switchSide, rules, scoreToWin);
 	left->setGame( newgame );
 	right->setGame( newgame );
 

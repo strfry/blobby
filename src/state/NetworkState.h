@@ -46,7 +46,7 @@ class NetworkGameState : public GameState
 public:
 	/// create a NetworkGameState with connection to a certain server
 	/// \param client A client which has an established connection to the server we want to start the game on.
-	NetworkGameState(boost::shared_ptr<RakClient> client, int rule_checksum);
+	NetworkGameState(boost::shared_ptr<RakClient> client, int rule_checksum, int score_to_win);
 
 	virtual ~NetworkGameState();
 	virtual void step_impl();

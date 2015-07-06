@@ -57,8 +57,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 /* implementation */
-NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client, int rule_checksum):
-	 GameState(new DuelMatch(true, DEFAULT_RULES_FILE)),
+NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client, int rule_checksum, int score_to_win):
+	 GameState(new DuelMatch(true, DEFAULT_RULES_FILE, score_to_win)),
 	 mClient( client ),
 	 mWinningPlayer(NO_PLAYER),
 	 mNetworkState(WAITING_FOR_OPPONENT),

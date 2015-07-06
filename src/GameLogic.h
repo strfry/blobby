@@ -48,7 +48,8 @@ class IGameLogic: public ObjectCounter<IGameLogic>
 {
 	public:
 		// constuctor and destructor
-		IGameLogic();
+		/// \param stw score to win
+		IGameLogic( int stw );
 		virtual ~IGameLogic();
 
 		virtual GameLogic clone() const = 0;

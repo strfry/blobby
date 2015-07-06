@@ -48,9 +48,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 /* implementation */
 
 NetworkGame::NetworkGame(RakServer& server, boost::shared_ptr<NetworkPlayer> leftPlayer, boost::shared_ptr<NetworkPlayer> rightPlayer,
-			PlayerSide switchedSide, std::string rules)
+			PlayerSide switchedSide, std::string rules, int scoreToWin)
 : mServer(server)
-, mMatch(new DuelMatch(false, rules))
+, mMatch(new DuelMatch(false, rules, scoreToWin))
 , mLeftInput (new InputSource())
 , mRightInput(new InputSource())
 , mRecorder(new ReplayRecorder())
@@ -94,6 +94,7 @@ NetworkGame::NetworkGame(RakServer& server, boost::shared_ptr<NetworkPlayer> lef
 	RakNet::BitStream stream;
 	stream.Write((unsigned char)ID_RULES_CHECKSUM);
 	stream.Write(checksum);
+	stream.Write(mMatch->getScoreToWin());
 	/// \todo write file author and title, too; maybe add a version number in scripts, too.
 	broadcastBitstream(stream);
 }
@@ -252,8 +253,8 @@ void NetworkGame::processPackets()
 				{
 					stream = boost::make_shared<RakNet::BitStream>();
 					stream->Write((unsigned char)ID_RULES);
-					stream->Write(mRulesLength);
-					stream->Write(mRulesString.get(), mRulesLength);
+					stream->Write( mRulesLength );
+					stream->Write( mRulesString.get(), mRulesLength);
 					assert( stream->GetData()[0] == ID_RULES );
 
 					mServer.Send(stream.get(), HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->playerId, false);
