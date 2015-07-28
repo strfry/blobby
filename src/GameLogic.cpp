@@ -688,6 +688,9 @@ void LuaGameLogic::OnBallHitsGroundHandler(PlayerSide side)
 
 void LuaGameLogic::OnGameHandler( const DuelMatchState& state )
 {
+	// we need to do this on every function call, so maybe it was not the best idea
+	// to save the state instead of the pointer to a duel match inside the lua script.
+	/// \todo find a better way to do this.
 	updateGameState( state );		// set state of world
 	updateGameState( getState( ) ); // make sure the scripting engine gets current version
 	if (!getLuaFunction( "OnGame" ))

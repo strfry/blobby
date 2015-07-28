@@ -37,7 +37,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 unsigned MatchMaker::openGame( PlayerID creator, int speed, int rules, int points )
 {
-	OpenGame newgame{creator, "unnamed game", speed, rules, points, std::vector<PlayerID>(0)};
+	auto plid = mPlayerMap.find(creator);
+	if(plid == mPlayerMap.end())
+	{
+		std::cerr << "Invalid player " << creator << " tried to create a game\n";
+		return -1;
+	}
+	auto create_pl = plid->second;
+	
+	OpenGame newgame{creator, create_pl->getName()+"'s game" , speed, rules, points, std::vector<PlayerID>(0)};
 
 	// if creator already has an open game, delete that
 	removePlayerFromAllGames( creator );
@@ -168,14 +176,14 @@ void MatchMaker::joinGame(PlayerID player, unsigned gameID)
 	auto pl = mPlayerMap.find( player );
 	if( pl == mPlayerMap.end())
 	{
-		std::cerr << "player " << player.toString() << "does no longer exist but tried to join game " << gameID << "\n";
+		std::cerr << "player " << player << "does no longer exist but tried to join game " << gameID << "\n";
 		return;
 	}
 
 	auto g = mOpenGames.find(gameID);
 	if( g == mOpenGames.end() )
 	{
-		std::cerr << "player "<< pl->second->getName() << " [" << player.toString() << "] tried to join game " << gameID << " which does not exits (anymore?)\n";
+		std::cerr << "player "<< pl->second->getName() << " [" << player << "] tried to join game " << gameID << " which does not exits (anymore?)\n";
 		sendOpenGameList( player ); // send the updated game list to that player
 		return;
 	}
@@ -199,7 +207,7 @@ void MatchMaker::startGame(PlayerID host, PlayerID client)
 							[host](const std::pair<unsigned, OpenGame>& g) { return g.second.creator == host; } );
 	if( game == mOpenGames.end() )
 	{
-		std::cerr << "Trying to start game of player " << host.toString() << ", but no such game was found.\n";
+		std::cerr << "Trying to start game of player " << host << ", but no such game was found.\n";
 		return;
 	}
 
@@ -207,7 +215,7 @@ void MatchMaker::startGame(PlayerID host, PlayerID client)
 	auto conlist = game->second.connected;
     if( std::find(conlist.begin(), conlist.end(), client) == conlist.end() )
 	{
-		std::cerr << "player " << host.toString() << " tried to start a game with player " << client.toString()
+		std::cerr << "player " << host << " tried to start a game with player " << client
 					<< " who was not available!\n";
 		return;
 	}
