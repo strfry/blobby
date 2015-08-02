@@ -223,6 +223,7 @@ void TextManager::setDefault()
 	mStrings[NET_JOIN] = "join game";
 	mStrings[NET_LEAVE] = "leave game";
 	mStrings[NET_SPEED] = "speed: ";
+	mStrings[NET_POINTS] = "points: ";
 	mStrings[NET_RULES_TITLE] = "rules: ";
 	mStrings[NET_RULES_BY] = " by ";
 
