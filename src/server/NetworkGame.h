@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <list>
 #include <mutex>
+#include <thread>
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_array.hpp>
@@ -96,6 +97,7 @@ class NetworkGame : public ObjectCounter<NetworkGame>
 		SpeedController mSpeedController;
 		boost::shared_ptr<InputSource> mLeftInput;
 		boost::shared_ptr<InputSource> mRightInput;
+		std::thread mGameThread;
 
 		boost::scoped_ptr<ReplayRecorder> mRecorder;
 

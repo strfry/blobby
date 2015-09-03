@@ -42,7 +42,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 extern int SWLS_PacketCount;
 extern int SWLS_Connections;
 extern int SWLS_Games;
-extern int SWLS_GameSteps;
 
 void syslog(int pri, const char* format, ...);
 
@@ -61,14 +60,16 @@ DedicatedServer::DedicatedServer(const ServerInfo& info, const std::vector<std::
 
 	/// \todo this code should be places in ServerInfo
 	mMatchMaker.setSendFunction([&](const RakNet::BitStream& stream, PlayerID target){ mServer->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0, target, false); });
-	mMatchMaker.setCreateGame([&](boost::shared_ptr<NetworkPlayer> left, boost::shared_ptr<NetworkPlayer> right, PlayerSide switchSide, std::string rules, int stw){ 
+	mMatchMaker.setCreateGame([&](boost::shared_ptr<NetworkPlayer> left, boost::shared_ptr<NetworkPlayer> right, PlayerSide switchSide, std::string rules, int stw){
 							createGame(left, right, switchSide, rules, stw); });
 	mMatchMaker.addGameSpeedOption( info.gamespeed );
 	mMatchMaker.addGameSpeedOption( 120 );	// debug
-	
+
 	// add rules
 	for( const auto& f : rulefiles )
 		mMatchMaker.addRuleOption( f );
+
+	mServer->setUpdateCallback([this](){ queuePackets(); });
 }
 
 DedicatedServer::~DedicatedServer()
@@ -76,11 +77,65 @@ DedicatedServer::~DedicatedServer()
 	mServer->Disconnect(50);
 }
 
-void DedicatedServer::processPackets()
+void DedicatedServer::queuePackets()
 {
 	packet_ptr packet;
 	while ((packet = mServer->Receive()))
 	{
+		SWLS_PacketCount++;
+
+		switch(packet->data[0])
+		{
+			// connection status changes
+			case ID_NEW_INCOMING_CONNECTION:
+			case ID_CONNECTION_LOST:
+			case ID_DISCONNECTION_NOTIFICATION:
+			case ID_ENTER_SERVER:
+			case ID_LOBBY:
+			case ID_BLOBBY_SERVER_PRESENT:
+			{
+				std::lock_guard<std::mutex> lock( mPacketQueueMutex );
+				mPacketQueue.push_back( packet );
+				break;
+			}
+			// game progress packets
+			case ID_INPUT_UPDATE:
+			case ID_PAUSE:
+			case ID_UNPAUSE:
+			case ID_CHAT_MESSAGE:
+			case ID_REPLAY:
+			case ID_RULES:
+			{
+				// disallow player map changes while we sort out packets!
+				std::lock_guard<std::mutex> lock( mPlayerMapMutex );
+
+				auto player = mPlayerMap.find(packet->playerId);
+				// delete the disconnectiong player
+				if( player != mPlayerMap.end() && player->second->getGame() )
+				{
+					player->second->getGame() ->injectPacket( packet );
+				} else {
+					syslog(LOG_ERR, "received packet from player not in playerlist!");
+				}
+
+				break;
+			}
+			default:
+				syslog(LOG_DEBUG, "Unknown packet %d received\n", int(packet->data[0]));
+		}
+	}
+}
+
+void DedicatedServer::processPackets()
+{
+	while (!mPacketQueue.empty())
+	{
+		packet_ptr packet;
+		{
+			std::lock_guard<std::mutex> lock(mPacketQueueMutex);
+			packet = mPacketQueue.front();
+			mPacketQueue.pop_front();
+		}
 		SWLS_PacketCount++;
 
 		switch(packet->data[0])
@@ -115,8 +170,11 @@ void DedicatedServer::processPackets()
 					if( player->second->getGame() )
 						player->second->getGame()->injectPacket( packet );
 
-					// no longer count this player as connected
-					mPlayerMap.erase( player );
+					// no longer count this player as connected. protect this change with a mutex
+					{
+						std::lock_guard<std::mutex> lock( mPlayerMapMutex );
+						mPlayerMap.erase( player );
+					}
 					mMatchMaker.removePlayer( player->first );
 				}
 				 else
@@ -127,28 +185,6 @@ void DedicatedServer::processPackets()
 				syslog(LOG_DEBUG, "Connection %s closed via %d, %d clients connected now", packet->playerId.toString().c_str(),  pid, mConnectedClients);
 				break;
 			}
-
-			// game progress packets
-
-			case ID_INPUT_UPDATE:
-			case ID_PAUSE:
-			case ID_UNPAUSE:
-			case ID_CHAT_MESSAGE:
-			case ID_REPLAY:
-			case ID_RULES:
-			{
-				auto player = mPlayerMap.find(packet->playerId);
-				// delete the disconnectiong player
-				if( player != mPlayerMap.end() && player->second->getGame() )
-				{
-					player->second->getGame() ->injectPacket( packet );
-				} else {
-					syslog(LOG_ERR, "received packet from player not in playerlist!");
-				}
-
-				break;
-			}
-
 			// player connects to server
 			case ID_ENTER_SERVER:
 			{
@@ -158,7 +194,11 @@ void DedicatedServer::processPackets()
 
 				auto newplayer = boost::make_shared<NetworkPlayer>(packet->playerId, stream);
 
-				mPlayerMap[packet->playerId] = newplayer;
+				// add to player map. protect with mutex
+				{
+					std::lock_guard<std::mutex> lock( mPlayerMapMutex );
+					mPlayerMap[packet->playerId] = newplayer;
+				}
 				mMatchMaker.addPlayer(packet->playerId, newplayer);
 				syslog(LOG_DEBUG, "New player \"%s\" connected from %s ", newplayer->getName().c_str(), packet->playerId.toString().c_str());
 				break;
@@ -185,27 +225,27 @@ void DedicatedServer::processPackets()
 
 void DedicatedServer::updateGames()
 {
-	// make sure all ingame packets are processed.
-
-	/// \todo we iterate over all games twice! We should find a way to organize things better.
+	// this loop ensures that all games that have finished (eg because one
+	// player left) still process network packets, to let the other player
+	// finalize its interactions (sending replays etc).
 	for(auto it = mPlayerMap.begin(); it != mPlayerMap.end(); ++it)
 	{
 		auto game = it->second->getGame();
-		if(game)
+		if(game && !game->isGameValid())
 		{
 			game->processPackets();
 		}
 	}
 
+	// remove dead games from gamelist
 	for (auto iter = mGameList.begin(); iter != mGameList.end();  )
 	{
-		SWLS_GameSteps++;
-
-		(*iter)->processPackets();
-		(*iter)->step();
 		if (!(*iter)->isGameValid())
 		{
-			syslog( LOG_DEBUG, "Removed game %s vs %s from gamelist", (*iter)->getPlayerID(LEFT_PLAYER).toString().c_str(), (*iter)->getPlayerID(RIGHT_PLAYER).toString().c_str() );
+			syslog( LOG_DEBUG, "Removed game %s vs %s from gamelist",
+					(*iter)->getPlayerID(LEFT_PLAYER).toString().c_str(),
+					(*iter)->getPlayerID(RIGHT_PLAYER).toString().c_str()
+					);
 			iter = mGameList.erase(iter);
 		}
 		 else
@@ -323,7 +363,7 @@ void DedicatedServer::createGame(boost::shared_ptr<NetworkPlayer> left, boost::s
 														std::string rules, int scoreToWin)
 {
 	auto newgame = boost::make_shared<NetworkGame>(*mServer.get(), left, right,
-								switchSide, rules, scoreToWin, SpeedController::getMainInstance()->getGameSpeed());
+								switchSide, rules, scoreToWin, mServerInfo.gamespeed);
 	left->setGame( newgame );
 	right->setGame( newgame );
 

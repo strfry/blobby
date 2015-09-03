@@ -95,7 +95,7 @@ int main(int argc, char** argv)
 	process_arguments(argc, argv);
 
 	FileSystem fileSys(argv[0]);
-	
+
 	if (!g_run_in_foreground)
 	{
 		fork_to_background();
@@ -143,19 +143,13 @@ int main(int argc, char** argv)
 
 	float speed = myinfo.gamespeed;
 
-	SpeedController scontroller(speed);
+	SpeedController scontroller(10);
 	SpeedController::setMainInstance(&scontroller);
 
 	syslog(LOG_NOTICE, "Blobby Volley 2 dedicated server version %i.%i started", BLOBBY_VERSION_MAJOR, BLOBBY_VERSION_MINOR);
 
-	while (1)
+	while ( true )
 	{
-		// -------------------------------------------------------------------------------
-		// process all incoming packets , probably relay them to responsible network games
-		// -------------------------------------------------------------------------------
-
-		server.processPackets();
-
 		// -------------------------------------------------------------------------------
 		// now, step through all network games and process input - if a game ended, delete it
 		// -------------------------------------------------------------------------------
@@ -171,6 +165,7 @@ int main(int argc, char** argv)
 			std::cout << " game steps: " << SWLS_GameSteps << "\n";
 		}
 
+		server.processPackets();
 		server.updateGames();
 
 		scontroller.update();
@@ -323,7 +318,7 @@ void setup_physfs(char* argv0)
 		fs.addToSearchPath(BLOBBY_INSTALL_PREFIX  "/share/blobby");
 		fs.addToSearchPath(BLOBBY_INSTALL_PREFIX  "/share/blobby/rules.zip");
 	#endif
-	#endif	
+	#endif
 	fs.addToSearchPath("data");
 	fs.addToSearchPath("data" + fs.getDirSeparator() + "rules.zip");
 }

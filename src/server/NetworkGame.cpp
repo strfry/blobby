@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "NetworkPlayer.h"
 #include "InputSource.h"
 
+extern int SWLS_GameSteps;
 
 /* implementation */
 
@@ -99,10 +100,25 @@ NetworkGame::NetworkGame(RakServer& server, boost::shared_ptr<NetworkPlayer> lef
 	stream.Write(mMatch->getScoreToWin());
 	/// \todo write file author and title, too; maybe add a version number in scripts, too.
 	broadcastBitstream(stream);
+
+	// game loop
+	mGameThread = std::thread(
+		[this]()
+		{
+			while(mGameValid)
+			{
+				processPackets();
+				step();
+				SWLS_GameSteps++;
+				mSpeedController.update();
+			}
+		}					);
 }
 
 NetworkGame::~NetworkGame()
 {
+	mGameValid = false;
+	mGameThread.join();
 }
 
 void NetworkGame::injectPacket(const packet_ptr& packet)
