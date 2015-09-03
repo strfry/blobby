@@ -322,7 +322,8 @@ void DedicatedServer::processBlobbyServerPresent( const packet_ptr& packet)
 void DedicatedServer::createGame(boost::shared_ptr<NetworkPlayer> left, boost::shared_ptr<NetworkPlayer> right, PlayerSide switchSide,
 														std::string rules, int scoreToWin)
 {
-	auto newgame = boost::make_shared<NetworkGame>(*mServer.get(), left, right, switchSide, rules, scoreToWin);
+	auto newgame = boost::make_shared<NetworkGame>(*mServer.get(), left, right,
+								switchSide, rules, scoreToWin, SpeedController::getMainInstance()->getGameSpeed());
 	left->setGame( newgame );
 	right->setGame( newgame );
 

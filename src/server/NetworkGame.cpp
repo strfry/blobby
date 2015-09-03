@@ -47,14 +47,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* implementation */
 
-NetworkGame::NetworkGame(RakServer& server, boost::shared_ptr<NetworkPlayer> leftPlayer, boost::shared_ptr<NetworkPlayer> rightPlayer,
-			PlayerSide switchedSide, std::string rules, int scoreToWin)
-: mServer(server)
-, mMatch(new DuelMatch(false, rules, scoreToWin))
-, mLeftInput (new InputSource())
-, mRightInput(new InputSource())
-, mRecorder(new ReplayRecorder())
-, mGameValid(true)
+NetworkGame::NetworkGame(RakServer& server, boost::shared_ptr<NetworkPlayer> leftPlayer,
+			boost::shared_ptr<NetworkPlayer> rightPlayer, PlayerSide switchedSide,
+			std::string rules, int scoreToWin, float speed) :
+	mServer(server),
+	mMatch(new DuelMatch(false, rules, scoreToWin)),
+	mLeftInput (new InputSource()),
+	mRightInput(new InputSource()),
+	mRecorder(new ReplayRecorder()),
+	mGameValid(true),
+	mSpeedController( speed )
 {
 	// check that both players don't have an active game
 	if(leftPlayer->getGame())
@@ -76,7 +78,7 @@ NetworkGame::NetworkGame(RakServer& server, boost::shared_ptr<NetworkPlayer> lef
 
 	mRecorder->setPlayerNames(leftPlayer->getName(), rightPlayer->getName());
 	mRecorder->setPlayerColors(leftPlayer->getColor(), rightPlayer->getColor());
-	mRecorder->setGameSpeed(SpeedController::getMainInstance()->getGameSpeed());
+	mRecorder->setGameSpeed(mSpeedController.getGameSpeed());
 
 	// read rulesfile into a string
 	int checksum = 0;
@@ -280,7 +282,7 @@ void NetworkGame::processPacket( const packet_ptr& packet )
 				// writing data into leftStream
 				RakNet::BitStream leftStream;
 				leftStream.Write((unsigned char)ID_GAME_READY);
-				leftStream.Write((int)SpeedController::getMainInstance()->getGameSpeed());
+				leftStream.Write((int)mSpeedController.getGameSpeed());
 				strncpy(name, mMatch->getPlayer(RIGHT_PLAYER).getName().c_str(), sizeof(name));
 				leftStream.Write(name, sizeof(name));
 				leftStream.Write(mMatch->getPlayer(RIGHT_PLAYER).getStaticColor().toInt());
@@ -288,7 +290,7 @@ void NetworkGame::processPacket( const packet_ptr& packet )
 				// writing data into rightStream
 				RakNet::BitStream rightStream;
 				rightStream.Write((unsigned char)ID_GAME_READY);
-				rightStream.Write((int)SpeedController::getMainInstance()->getGameSpeed());
+				rightStream.Write((int)mSpeedController.getGameSpeed());
 				strncpy(name, mMatch->getPlayer(LEFT_PLAYER).getName().c_str(), sizeof(name));
 				rightStream.Write(name, sizeof(name));
 				rightStream.Write(mMatch->getPlayer(LEFT_PLAYER).getStaticColor().toInt());
