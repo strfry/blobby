@@ -15,7 +15,7 @@
 #include "GenericIO.h"
 
 LobbyState::LobbyState(ServerInfo info, PreviousState previous) : mClient(new RakClient(), [](RakClient* client) { client->Disconnect(25); }),
-											mInfo(info), mPrevious( previous ), 
+											mInfo(info), mPrevious( previous ),
 											mLobbyState(ConnectionState::CONNECTING)
 {
 	if (!mClient->Connect(mInfo.hostname, mInfo.port, 0, 0, RAKNET_THREAD_SLEEP_TIME))
@@ -145,7 +145,7 @@ void LobbyState::step_impl()
 				int serverChecksum, scoreToWin;
 				stream.Read(serverChecksum);
 				stream.Read(scoreToWin);
-				
+
 				switchState( new NetworkGameState( mClient, serverChecksum, scoreToWin ) );
 				}
 				break;
@@ -210,7 +210,7 @@ void LobbyState::step_impl()
 			switchState( new OnlineSearchState );
 		else if ( mPrevious == PreviousState::LAN )
 			switchState( new LANSearchState );
-		else 
+		else
 			switchState( new MainMenuState );
 	}
 }
@@ -234,24 +234,19 @@ void LobbyMainSubstate::step(const ServerStatusData& status)
 
 	// player list
 	std::vector<std::string> gamelist;
-	gamelist.push_back( TextManager::getSingleton()->getString(TextManager::NET_RANDOM_OPPONENT) );
 	gamelist.push_back( TextManager::getSingleton()->getString(TextManager::NET_OPEN_GAME) );
 	for ( const auto& game : status.mOpenGames)
 	{
 		gamelist.push_back( game.name );
 	}
 
-	bool doEnterGame = false;
-	if( imgui.doSelectbox(GEN_ID, Vector2(25.0, 90.0), Vector2(375.0, 470.0), gamelist, mSelectedGame) == SBA_DBL_CLICK )
-	{
-		doEnterGame = true;
-	}
-	
+	bool doEnterGame = imgui.doSelectbox(GEN_ID, Vector2(25.0, 90.0), Vector2(375.0, 470.0), gamelist, mSelectedGame) == SBA_DBL_CLICK;
+
 	// if selected game is invalid (i.e. a game was removed and the reference now is wrong), set to random
 	if(mSelectedGame >= gamelist.size())
 		mSelectedGame = 0;
 
-	if(mSelectedGame > 1)
+	if(mSelectedGame != 0)
 	{
 		// info panel
 		imgui.doOverlay(GEN_ID, Vector2(425.0, 90.0), Vector2(775.0, 470.0));
@@ -273,20 +268,21 @@ void LobbyMainSubstate::step(const ServerStatusData& status)
 		}
 
 		// open game button
-		if( imgui.doButton(GEN_ID, Vector2(435, 430), TextManager::getSingleton()->getString(TextManager::NET_JOIN) ) || doEnterGame)
+		if( imgui.doButton(GEN_ID, Vector2(435, 430), TextManager::getSingleton()->getString(TextManager::NET_JOIN) ) ||
+			doEnterGame)
 		{
 			// send open game packet to server
 			RakNet::BitStream stream;
 			stream.Write((unsigned char)ID_LOBBY);
 			stream.Write((unsigned char)LobbyPacketType::JOIN_GAME);
-			stream.Write( status.mOpenGames.at(mSelectedGame-2).id );
+			stream.Write( status.mOpenGames.at(mSelectedGame-1).id );
 			/// \todo add a name
 
-			mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
+			mClient->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0);
 		}
 	}
 	// open game
-	else if (mSelectedGame == 1)
+	else
 	{
 		// info panel
 		imgui.doOverlay(GEN_ID, Vector2(425.0, 90.0), Vector2(775.0, 470.0));
@@ -363,7 +359,7 @@ void LobbyGameSubstate::step( const ServerStatusData& status )
 	{
 		mOtherPlayerNames.push_back(""); // fake entry to prevent crash! not nice!
 	}
-	
+
 	bool doEnterGame = false;
 	if( imgui.doSelectbox(GEN_ID, Vector2(25.0, 90.0), Vector2(375.0, 470.0), mOtherPlayerNames, mSelectedPlayer) == SBA_DBL_CLICK )
 	{
@@ -398,8 +394,8 @@ void LobbyGameSubstate::step( const ServerStatusData& status )
 			stream.Write((unsigned char)ID_LOBBY);
 			stream.Write((unsigned char)LobbyPacketType::LEAVE_GAME);
 			mClient->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0);
-		} 
-		
+		}
+
 		if( !no_players && (imgui.doButton(GEN_ID, Vector2(435, 430), TextManager::getSingleton()->getString(TextManager::MNU_LABEL_START) ) || doEnterGame) )
 		{
 			// Start Game
@@ -409,13 +405,13 @@ void LobbyGameSubstate::step( const ServerStatusData& status )
 			auto writer = createGenericWriter(&stream);
 			writer->generic<PlayerID>( mOtherPlayers.at(mSelectedPlayer) );
 			mClient->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0);
-		} 
-		
+		}
+
 		if( no_players )
 		{
 			imgui.doText(GEN_ID, Vector2(435, 430), TextManager::getSingleton()->getString(TextManager::GAME_WAITING));
 		}
-	} else 
+	} else
 	{
 		if( imgui.doButton(GEN_ID, Vector2(435, 430), TextManager::getSingleton()->getString(TextManager::NET_LEAVE) ) )
 		{
@@ -423,7 +419,7 @@ void LobbyGameSubstate::step( const ServerStatusData& status )
 			stream.Write((unsigned char)ID_LOBBY);
 			stream.Write((unsigned char)LobbyPacketType::LEAVE_GAME);
 			mClient->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0);
-		} 
+		}
 	}
 }
 
