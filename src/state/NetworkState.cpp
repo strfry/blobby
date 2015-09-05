@@ -99,7 +99,7 @@ NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client, int rul
 	}
 
 	mRemotePlayer->setName("");
-	
+
 	// check the rules
 	int ourChecksum = 0;
 	if (rule_checksum != 0)
@@ -603,7 +603,7 @@ NetworkHostState::NetworkHostState() : mServer(  ), mClient( new RakClient ), mG
 	std::string flist = config.getString("rules");
 	boost::algorithm::split(rule_vec, flist, boost::algorithm::is_space(), boost::algorithm::token_compress_on);
 
-	mServer.reset( new DedicatedServer(info, rule_vec, 4));
+	mServer.reset( new DedicatedServer(info, rule_vec, std::vector<float>{ SpeedController::getMainInstance()->getGameSpeed() }, 4));
 
 	// connect to server
 	if (!mClient->Connect(info.hostname, info.port, 0, 0, RAKNET_THREAD_SLEEP_TIME))

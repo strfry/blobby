@@ -45,7 +45,10 @@ extern int SWLS_Games;
 
 void syslog(int pri, const char* format, ...);
 
-DedicatedServer::DedicatedServer(const ServerInfo& info, const std::vector<std::string>& rulefiles, int max_clients)
+DedicatedServer::DedicatedServer(const ServerInfo& info,
+								const std::vector<std::string>& rulefiles,
+								const std::vector<float>& gamespeeds,
+								int max_clients)
 : mConnectedClients(0)
 , mServer(new RakServer())
 , mAcceptNewPlayers(true)
@@ -60,10 +63,13 @@ DedicatedServer::DedicatedServer(const ServerInfo& info, const std::vector<std::
 
 	/// \todo this code should be places in ServerInfo
 	mMatchMaker.setSendFunction([&](const RakNet::BitStream& stream, PlayerID target){ mServer->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0, target, false); });
-	mMatchMaker.setCreateGame([&](boost::shared_ptr<NetworkPlayer> left, boost::shared_ptr<NetworkPlayer> right, PlayerSide switchSide, std::string rules, int stw){
-							createGame(left, right, switchSide, rules, stw); });
-	mMatchMaker.addGameSpeedOption( info.gamespeed );
-	mMatchMaker.addGameSpeedOption( 120 );	// debug
+	mMatchMaker.setCreateGame([&](boost::shared_ptr<NetworkPlayer> left, boost::shared_ptr<NetworkPlayer> right,
+								PlayerSide switchSide, std::string rules, int stw, float sp){
+							createGame(left, right, switchSide, rules, stw, sp); });
+
+	// add gamespeeds
+	for( auto& s : gamespeeds )
+		mMatchMaker.addGameSpeedOption( s );
 
 	// add rules
 	for( const auto& f : rulefiles )
@@ -359,11 +365,13 @@ void DedicatedServer::processBlobbyServerPresent( const packet_ptr& packet)
 	}
 }
 
-void DedicatedServer::createGame(boost::shared_ptr<NetworkPlayer> left, boost::shared_ptr<NetworkPlayer> right, PlayerSide switchSide,
-														std::string rules, int scoreToWin)
+void DedicatedServer::createGame(boost::shared_ptr<NetworkPlayer> left,
+								boost::shared_ptr<NetworkPlayer> right,
+								PlayerSide switchSide, std::string rules,
+								int scoreToWin, float gamespeed)
 {
 	auto newgame = boost::make_shared<NetworkGame>(*mServer.get(), left, right,
-								switchSide, rules, scoreToWin, mServerInfo.gamespeed);
+								switchSide, rules, scoreToWin, gamespeed);
 	left->setGame( newgame );
 	right->setGame( newgame );
 

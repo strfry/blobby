@@ -44,7 +44,7 @@ unsigned MatchMaker::openGame( PlayerID creator, int speed, int rules, int point
 		return -1;
 	}
 	auto create_pl = plid->second;
-	
+
 	OpenGame newgame{creator, create_pl->getName()+"'s game" , speed, rules, points, std::vector<PlayerID>(0)};
 
 	// if creator already has an open game, delete that
@@ -80,12 +80,12 @@ void MatchMaker::removeGame( unsigned id )
 {
 	auto g = mOpenGames.find(id);
 	assert( g != mOpenGames.end() );
-	
+
 	RakNet::BitStream stream;
 	stream.Write( (unsigned char)ID_LOBBY );
 	stream.Write( (unsigned char)LobbyPacketType::REMOVED_FROM_GAME );
 	stream.Write( id );
-	
+
 	mSendPacket( stream, g->second.creator );
 
 	// get the list of connected players and send them a notification
@@ -99,7 +99,7 @@ void MatchMaker::removeGame( unsigned id )
 
 	// now remove the game itself
 	mOpenGames.erase(g);
-	
+
 	broadcastOpenGameList();
 }
 
@@ -242,8 +242,11 @@ void MatchMaker::startGame(PlayerID host, PlayerID client)
 			switchSide = LEFT_PLAYER;
 	}
 
-	mCreateGame( leftPlayer->second, rightPlayer->second, switchSide, mPossibleGameRules[game->second.rules].file, game->second.points );
-	
+	mCreateGame( leftPlayer->second, rightPlayer->second, switchSide,
+				mPossibleGameRules.at(game->second.rules).file,
+				game->second.points,
+				mPossibleGameSpeeds.at(game->second.speed) );
+
 	// remove players from available player list
 	removePlayer( host );
 	removePlayer( client );
@@ -369,7 +372,7 @@ void MatchMaker::broadcastOpenGameStatus( unsigned gameID )
 		auto player = mPlayerMap.find(pid);
 		if( player == mPlayerMap.end() )
 			plnames.push_back("INVALID!");
-		else 
+		else
 		{
 			plnames.push_back( player->second->getName() );
 		}
@@ -396,7 +399,7 @@ void MatchMaker::broadcastOpenGameList()
 				break;
 			}
 		}
-		
+
 		if(!ingame)
 		{
 			sendOpenGameList(player);

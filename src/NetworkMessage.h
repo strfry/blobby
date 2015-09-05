@@ -211,7 +211,6 @@ struct ServerInfo : public ObjectCounter<ServerInfo>
 	///			as e.g., hostname can be left uninitialised on server
 	/// we combine to functionsalities here: server information and server addresses.
 	int activegames;
-	int gamespeed;
 	uint16_t port;
 	char hostname[64];
 	char name[32];

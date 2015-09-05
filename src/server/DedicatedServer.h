@@ -51,7 +51,8 @@ class DedicatedServer
 		/// create a dedicated server with the data specified in info, using the rules from rulesfile, allowing max_clients
 		/// simulatanious connections
 		/// \todo Maybe two classes for server info: lokal server info for an server, and remote for data sent to client
-		DedicatedServer(const ServerInfo& info, const std::vector<std::string>& rulefile, int max_clients);
+		DedicatedServer(const ServerInfo& info, const std::vector<std::string>& rulefile,
+						const std::vector<float>& speeds, int max_clients);
 		~DedicatedServer();
 
 		// server processing
@@ -78,7 +79,8 @@ class DedicatedServer
 		void processBlobbyServerPresent( const packet_ptr& packet );
 		// creates a new game with those players
 		// does not add the game to the active game list
-		void createGame(boost::shared_ptr<NetworkPlayer> left, boost::shared_ptr<NetworkPlayer> right, PlayerSide switchSide, std::string rules, int scoreToWin);
+		void createGame(boost::shared_ptr<NetworkPlayer> left, boost::shared_ptr<NetworkPlayer> right,
+						PlayerSide switchSide, std::string rules, int scoreToWin, float gamespeed);
 		// broadcasts the current server  status to all waiting clients
 
 		// member variables
