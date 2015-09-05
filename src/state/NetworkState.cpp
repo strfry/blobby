@@ -631,19 +631,7 @@ void NetworkHostState::step_impl()
 				{
 					// ----------------------------------------------------
 					// Send ENTER SERVER packet
-					RakNet::BitStream stream;
-					stream.Write((unsigned char)ID_ENTER_SERVER);
-
-					// Send preferred side
-					stream.Write( mLocalPlayer.getPreferredSide() );
-
-					// Send playername
-					char myname[16];
-					strncpy(myname, mLocalPlayer.getName().c_str(), sizeof(myname));
-					stream.Write(myname, sizeof(myname));
-
-					// send color settings
-					stream.Write(mLocalPlayer.getStaticColor().toInt());
+					RakNet::BitStream stream = makeEnterServerPacket(mLocalPlayer);
 
 					mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
 

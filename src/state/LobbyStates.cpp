@@ -55,21 +55,8 @@ void LobbyState::step_impl()
 		{
 			case ID_CONNECTION_REQUEST_ACCEPTED:
 			{
-				RakNet::BitStream stream;
-				stream.Write((unsigned char)ID_ENTER_SERVER);
-
-				// Send preferred side
-				stream.Write( mLocalPlayer.getPreferredSide() );
-
-				// Send playername
-				char myname[16];
-				strncpy(myname, mLocalPlayer.getName().c_str(), sizeof(myname));
-				stream.Write(myname, sizeof(myname));
-
-				// send color settings
-				stream.Write(mLocalPlayer.getStaticColor().toInt());
-
-				mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
+				RakNet::BitStream stream = makeEnterServerPacket( mLocalPlayer );
+				mClient->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0);
 
 				mSubState = boost::make_shared<LobbyMainSubstate>(mClient);
 				break;

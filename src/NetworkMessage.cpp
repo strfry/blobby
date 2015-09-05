@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <ostream>
 
 #include "UserConfig.h"
+#include "PlayerIdentity.h"
 
 /* implementation */
 ServerInfo::ServerInfo(RakNet::BitStream& stream, const char* ip, uint16_t p)
@@ -83,6 +84,25 @@ const size_t ServerInfo::BLOBBY_SERVER_PRESENT_PACKET_SIZE = sizeof((unsigned ch
 		+ 32				// name
 		+ 192;			// description
 
+
+
+RakNet::BitStream makeEnterServerPacket( const PlayerIdentity& player )
+{
+	RakNet::BitStream stream;
+	stream.Write((unsigned char)ID_ENTER_SERVER);
+
+	// Send preferred side
+	stream.Write( player.getPreferredSide() );
+
+	// Send playername
+	char myname[16];
+	strncpy(myname, player.getName().c_str(), sizeof(myname));
+	stream.Write(myname, sizeof(myname));
+
+	// send color settings
+	stream.Write(player.getStaticColor().toInt());
+	return stream;
+}
 
 
 
