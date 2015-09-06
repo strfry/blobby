@@ -14,9 +14,10 @@
 #include "UserConfig.h"
 #include "GenericIO.h"
 
-LobbyState::LobbyState(ServerInfo info, PreviousState previous) : mClient(new RakClient(), [](RakClient* client) { client->Disconnect(25); }),
-											mInfo(info), mPrevious( previous ),
-											mLobbyState(ConnectionState::CONNECTING)
+LobbyState::LobbyState(ServerInfo info, PreviousState previous) :
+		mClient(new RakClient(), [](RakClient* client) { client->Disconnect(25); }),
+		mInfo(info), mPrevious( previous ),
+		mLobbyState(ConnectionState::CONNECTING)
 {
 	if (!mClient->Connect(mInfo.hostname, mInfo.port, 0, 0, RAKNET_THREAD_SLEEP_TIME))
 		throw( std::runtime_error(std::string("Could not connect to server ") + mInfo.hostname) );
@@ -235,20 +236,22 @@ void LobbyMainSubstate::step(const ServerStatusData& status)
 
 	if(mSelectedGame != 0)
 	{
+		unsigned gameIndex = mSelectedGame - 1;
+
 		// info panel
 		imgui.doOverlay(GEN_ID, Vector2(425.0, 90.0), Vector2(775.0, 470.0));
 
 		// info panel contents:
 		//  * gamespeed
 		imgui.doText(GEN_ID, Vector2(435, 100), TextManager::getSingleton()->getString(TextManager::NET_SPEED) +
-					 boost::lexical_cast<std::string>(int(0.5 + 100.0 / 75.0 * status.mPossibleSpeeds.at(status.mOpenGames.at(mSelectedGame-2).speed))) + "%");
+					 boost::lexical_cast<std::string>(int(0.5 + 100.0 / 75.0 * status.mPossibleSpeeds.at(status.getGame(gameIndex).speed))) + "%");
 		//  * points
 		imgui.doText(GEN_ID, Vector2(435, 135), TextManager::getSingleton()->getString(TextManager::NET_POINTS) +
-											 boost::lexical_cast<std::string>(status.mOpenGames.at(mSelectedGame-2).score) );
+											 boost::lexical_cast<std::string>(status.getGame(gameIndex).score) );
 
 		//  * rulesfile
 		imgui.doText(GEN_ID, Vector2(435, 170), TextManager::getSingleton()->getString(TextManager::NET_RULES_TITLE) );
-		std::string rulesstring = status.mPossibleRules.at(status.mOpenGames.at(mSelectedGame-2).rules);
+		std::string rulesstring = status.mPossibleRules.at(status.getGame(gameIndex).rules);
 		for (unsigned int i = 0; i < rulesstring.length(); i += 25)
 		{
 			imgui.doText(GEN_ID, Vector2(445, 205 + i / 25 * 15), rulesstring.substr(i, 25), TF_SMALL_FONT);
@@ -262,7 +265,7 @@ void LobbyMainSubstate::step(const ServerStatusData& status)
 			RakNet::BitStream stream;
 			stream.Write((unsigned char)ID_LOBBY);
 			stream.Write((unsigned char)LobbyPacketType::JOIN_GAME);
-			stream.Write( status.mOpenGames.at(mSelectedGame-1).id );
+			stream.Write( status.getGame(gameIndex).id );
 			/// \todo add a name
 
 			mClient->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0);

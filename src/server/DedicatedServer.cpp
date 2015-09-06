@@ -276,6 +276,11 @@ int DedicatedServer::getWaitingPlayers() const
 	return mPlayerMap.size() - 2 * mGameList.size();
 }
 
+const ServerInfo& DedicatedServer::getServerInfo() const
+{
+	return mServerInfo;
+}
+
 int DedicatedServer::getConnectedClients() const
 {
 	return mConnectedClients;

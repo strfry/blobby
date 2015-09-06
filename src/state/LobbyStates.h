@@ -29,6 +29,11 @@ struct ServerStatusData
 		unsigned score;
 	};
 
+	const OpenGame& getGame( unsigned id ) const
+	{
+		return mOpenGames.at(id);
+	}
+
 	std::vector<OpenGame> mOpenGames;
 	std::vector<unsigned int> mPossibleSpeeds;
 	std::vector<std::string> mPossibleRules;

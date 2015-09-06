@@ -66,6 +66,8 @@ class DedicatedServer
 		int getWaitingPlayers() const;
 		int getConnectedClients() const;
 
+		const ServerInfo& getServerInfo() const;
+
 		// debug functions
 		void printAllPlayers(std::ostream& stream) const;
 		void printAllGames(std::ostream& stream) const;
