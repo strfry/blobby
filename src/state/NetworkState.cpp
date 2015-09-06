@@ -60,8 +60,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 NetworkGameState::NetworkGameState( boost::shared_ptr<RakClient> client, int rule_checksum, int score_to_win):
 	 GameState(new DuelMatch(true, DEFAULT_RULES_FILE, score_to_win)),
 	 mClient( client ),
-	 mWinningPlayer(NO_PLAYER),
 	 mNetworkState(WAITING_FOR_OPPONENT),
+	 mWinningPlayer(NO_PLAYER),
 	 mWaitingForReplay(false),
 	 mSelectedChatmessage(0),
 	 mChatCursorPosition(0),
@@ -575,111 +575,6 @@ const char* NetworkGameState::getStateName() const
 {
 	return "NetworkGameState";
 }
-
-// ---------------------------------------------------------------------------------------------------------------------------------
-//	implementation of the local host state
-// ----------------------------------------
-
-NetworkHostState::NetworkHostState() : mServer(  ), mClient( new RakClient ), mGameState(nullptr)
-{
-	// read config
-	/// \todo we need read-only access here!
-	UserConfig config;
-	config.loadFile("config.xml");
-	PlayerSide localSide = (PlayerSide)config.getInteger("network_side");
-
-	// load/init players
-	if(localSide == LEFT_PLAYER)
-	{
-		mLocalPlayer = config.loadPlayerIdentity(LEFT_PLAYER, true);
-	}
-	 else
-	{
-		mLocalPlayer = config.loadPlayerIdentity(RIGHT_PLAYER, true);
-	}
-
-	ServerInfo info( mLocalPlayer.getName().c_str());
-	std::vector<std::string> rule_vec;
-	std::string flist = config.getString("rules");
-	boost::algorithm::split(rule_vec, flist, boost::algorithm::is_space(), boost::algorithm::token_compress_on);
-
-	mServer.reset( new DedicatedServer(info, rule_vec, std::vector<float>{ SpeedController::getMainInstance()->getGameSpeed() }, 4));
-
-	// connect to server
-	if (!mClient->Connect(info.hostname, info.port, 0, 0, RAKNET_THREAD_SLEEP_TIME))
-		throw( std::runtime_error(std::string("Could not connect to server ") + info.hostname) );
-
-
-}
-
-NetworkHostState::~NetworkHostState()
-{
-	delete mGameState;
-}
-
-void NetworkHostState::step_impl()
-{
-	packet_ptr packet;
-	if( mGameState == nullptr )
-	{
-		while (packet = mClient->Receive())
-		{
-			switch(packet->data[0])
-			{
-				// as soon as we are connected to the server
-				case ID_CONNECTION_REQUEST_ACCEPTED:
-				{
-					// ----------------------------------------------------
-					// Send ENTER SERVER packet
-					RakNet::BitStream stream = makeEnterServerPacket(mLocalPlayer);
-
-					mClient->Send(&stream, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
-
-					// Send ENTER GAME packet
-/*
-					RakNet::BitStream stream2;
-					stream2.Write((char)ID_CHALLENGE);
-					auto writer = createGenericWriter(&stream2);
-					writer->generic<PlayerID>( UNASSIGNED_PLAYER_ID );
-
-					mClient->Send(&stream2, HIGH_PRIORITY, RELIABLE_ORDERED, 0);
-
-					mGameState = new NetworkGameState(mClient);
-*/
-/// \todo what do we do here now?
-					break;
-				}
-				case ID_SERVER_STATUS:
-					{
-
-					}
-					break;
-				default:
-					std::cout << "Unknown packet " << int(packet->data[0]) << " received\n";
-			}
-		}
-	}
-
-	if(mServer->hasActiveGame())
-	{
-		mServer->allowNewPlayers(false);
-	}
-
-	mServer->processPackets();
-
-	/// \todo make this gamespeed independent
-	mLobbyCounter++;
-	mServer->updateGames();
-
-	if( mGameState )
-		mGameState->step_impl();
-}
-
-const char* NetworkHostState::getStateName() const
-{
-	return "NetworkHostState";
-}
-
 // definition of syslog for client hosted games
 void syslog(int pri, const char* format, ...)
 {

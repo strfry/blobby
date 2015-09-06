@@ -26,9 +26,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <vector>
 #include <utility>
 #include <future>
+#include <thread>
 #include <iostream> // debugging
 
 #include <boost/lexical_cast.hpp>
+#include <boost/make_shared.hpp>
 
 #include "raknet/RakClient.h"
 #include "raknet/PacketEnumerations.h"
@@ -46,7 +48,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "IUserConfigReader.h"
 #include "FileWrite.h"
 #include "FileRead.h"
+#include "UserConfig.h"
+#include "SpeedController.h"
+#include "server/DedicatedServer.h"
 
+
+// control variables for a dedicated server thread in case a game is hosted
+boost::shared_ptr<std::thread> gHostedServerThread;
+std::atomic<bool> gKillHostThread{false};
 
 /* implementation */
 NetworkSearchState::NetworkSearchState() :
@@ -118,9 +127,10 @@ void NetworkSearchState::step_impl()
 					//FIXME: We must copy the needed informations, so that we can call DeallocatePacket(packet)
 					//FIXME: The client finds a server at this point, which is not valid
 					RakNet::BitStream stream((char*)packet->data, packet->length, false);
-					printf("server is a blobby server\n");
 					stream.IgnoreBytes(1);	//ID_BLOBBY_SERVER_PRESENT
 					ServerInfo info(stream,	(*iter)->PlayerIDToDottedIP(packet->playerId), packet->playerId.port);
+
+					printf("server %s at %s is a blobby server\n", info.name, info.hostname);
 
 					// check that the packet sizes match
 					if(packet->length == ServerInfo::BLOBBY_SERVER_PRESENT_PACKET_SIZE)
@@ -156,6 +166,16 @@ void NetworkSearchState::step_impl()
 					if (iter == mQueryClients.end())
 						skip_iter = true;
 					skip = true;
+
+					// if one server is the one this PC is hosting, auto connect
+					if( mHostedServer && std::string(info.hostname) == mHostedServer->hostname &&
+							info.port == mHostedServer->port)
+					{
+						switchState(new LobbyState(info,
+									dynamic_cast<OnlineSearchState*>(this) == nullptr ? PreviousState::LAN : PreviousState::ONLINE)
+									);
+						return;
+					}
 					break;
 				}
 				case ID_VERSION_MISMATCH:
@@ -331,7 +351,52 @@ void NetworkSearchState::step_impl()
 	if (imgui.doButton(GEN_ID, Vector2(450, 480), TextManager::NET_HOST_GAME) &&
 			!mDisplayInfo)
 	{
-		switchState(new NetworkHostState());
+		auto server_func = []()
+		{
+			// read config
+			/// \todo we need read-only access here!
+			UserConfig config;
+			config.loadFile("config.xml");
+			PlayerSide localSide = (PlayerSide)config.getInteger("network_side");
+
+			PlayerIdentity local_player = config.loadPlayerIdentity(localSide, true);
+			ServerInfo info( local_player.getName().c_str());
+			std::vector<std::string> rule_vec{config.getString("rules")};
+
+
+			DedicatedServer server(info, rule_vec, std::vector<float>{ SpeedController::getMainInstance()->getGameSpeed() }, 4);
+			SpeedController scontroller( 10 );
+			gKillHostThread = false;
+			while(!gKillHostThread)
+			{
+			// now run the server
+			if(server.hasActiveGame())
+			{
+				server.allowNewPlayers(false);
+			}
+
+			server.processPackets();
+			server.updateGames();
+			scontroller.update();
+			}
+		};
+
+		gKillHostThread = true;
+		gHostedServerThread = boost::make_shared<std::thread>(server_func);
+		SDL_Delay(100); // give the server some time to start up.
+		// might cause a slight visible delay, but I think we can
+		// live with that right now.
+		searchServers();
+
+		// getting the server info
+		UserConfig config;
+		config.loadFile("config.xml");
+
+		PlayerIdentity local_player = config.loadPlayerIdentity((PlayerSide)config.getInteger("network_side"), true);
+		mHostedServer.reset(new ServerInfo( local_player.getName().c_str()));
+		std::strncpy(mHostedServer->hostname,
+					mPingClient->PlayerIDToDottedIP(mPingClient->GetInternalID()),
+					sizeof(mHostedServer->hostname));
 	}
 
 	if ((imgui.doButton(GEN_ID, Vector2(230, 530), TextManager::LBL_OK) && !mScannedServers.empty())

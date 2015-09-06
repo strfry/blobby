@@ -85,31 +85,3 @@ private:
 	unsigned mChatCursorPosition;
 	std::string mChattext;
 };
-
-
-/*! \class NetworkHostState
-	\brief state for hosting a game locally
-	\details
-	This class is a wrapper for NetworkGameState to run an instance
-	of NetworkGame
-	\todo this construction seems like a big hack ;)
-*/
-class NetworkHostState : public State
-{
-public:
-	NetworkHostState();
-	virtual ~NetworkHostState();
-
-	virtual void step_impl();
-	virtual const char* getStateName() const;
-
-private:
-	boost::scoped_ptr<DedicatedServer> mServer;
-	boost::shared_ptr<RakClient> mClient;
-	NetworkGameState* mGameState;
-
-	PlayerIdentity mLocalPlayer;
-	unsigned int mLobbyCounter;
-
-};
-
