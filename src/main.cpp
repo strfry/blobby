@@ -195,7 +195,7 @@ void setupPHYSFS()
 	DEBUG_STATUS("SDL initialised");
 
 	atexit(SDL_Quit);
-	atexit([](){gKillHostThread=true; gHostedServerThread->join();});
+	atexit([](){gKillHostThread=true; if(gHostedServerThread) gHostedServerThread->join();});
 	srand(SDL_GetTicks());
 	// Default is OpenGL and false
 	// choose renderer
