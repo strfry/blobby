@@ -369,15 +369,15 @@ void NetworkSearchState::step_impl()
 			gKillHostThread = false;
 			while(!gKillHostThread)
 			{
-			// now run the server
-			if(server.hasActiveGame())
-			{
-				server.allowNewPlayers(false);
-			}
+				// now run the server
+				if(server.hasActiveGame())
+				{
+					server.allowNewPlayers(false);
+				}
 
-			server.processPackets();
-			server.updateGames();
-			scontroller.update();
+				server.processPackets();
+				server.updateGames();
+				scontroller.update();
 			}
 		};
 

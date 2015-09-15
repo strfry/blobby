@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <iostream>
 #include <cstdio>
 #include <ctime>
+#include <future>
 
 #include <errno.h>
 #include <unistd.h>
@@ -72,6 +73,7 @@ static bool g_run_in_foreground = false;
 static bool g_print_syslog_to_stderr = false;
 static bool g_workaround_memleaks = false;
 static std::string g_config_file = "server.xml";
+static std::atomic<bool> g_run_server(true); // set this variable to false to stop the server
 
 // ...
 void printHelp();
@@ -89,8 +91,7 @@ int SWLS_RunningTime = 0;
 
 const int UPDATE_FREQUENCY = 10;
 
-// functions for processing certain network packets
-void createNewGame();
+void main_loop(DedicatedServer& server);
 
 int main(int argc, char** argv)
 {
@@ -107,9 +108,6 @@ int main(int argc, char** argv)
 	{
 		wait_and_restart_child();
 	}
-
-
-	int startTime = SDL_GetTicks();
 
 	#ifndef WIN32
 	int syslog_options = LOG_CONS | LOG_PID | (g_print_syslog_to_stderr ? LOG_PERROR : 0);
@@ -152,15 +150,60 @@ int main(int argc, char** argv)
 
 	DedicatedServer server(myinfo, rule_vec, speed_vec, maxClients);
 
-	SpeedController scontroller( UPDATE_FREQUENCY );
-	SpeedController::setMainInstance(&scontroller);
-
 	syslog(LOG_NOTICE, "Blobby Volley 2 dedicated server version %i.%i started", BLOBBY_VERSION_MAJOR, BLOBBY_VERSION_MINOR);
 
-	while ( true )
+	// main loop
+	auto serverthread = std::async(std::launch::async, [&](){main_loop(server);});
+
+	while(true)
+	{
+		std::string command;
+		std::cin >> command;
+
+		std::vector<std::string> cmd_vec;
+		boost::algorithm::split(cmd_vec, command, boost::algorithm::is_space(), boost::algorithm::token_compress_on);
+
+
+		if( cmd_vec[0] == "exit" )
+		{
+			/// \todo check for confirmation if there are still players connected!
+			g_run_server = false;
+			break;
+		} else if ( cmd_vec[0] == "players" )
+		{
+			server.printAllPlayers(std::cout);
+		} else if ( cmd_vec[0] == "games" )
+		{
+			server.printAllGames(std::cout);
+		} else if ( cmd_vec[0] == "status" )
+		{
+			std::cout << "Blobby Server Status Report " << (SWLS_RunningTime / UPDATE_FREQUENCY / 60 / 60) << "h running \n";
+			std::cout << " packet count: " << SWLS_PacketCount << "\n";
+			std::cout << " accepted connections: " << SWLS_Connections << "\n";
+			std::cout << " started games: " << SWLS_Games << "\n";
+			std::cout << " game steps: " << SWLS_GameSteps << "\n";
+		}
+
+	}
+
+	syslog(LOG_NOTICE, "Blobby Volley 2 dedicated server shutting down");
+	#ifndef WIN32
+	closelog();
+	#endif
+}
+
+// -----------------------------------------------------------------------------------------
+//    server main loop function
+// ------------------------------
+void main_loop( DedicatedServer& server)
+{
+	int startTime = SDL_GetTicks();
+	SpeedController scontroller( UPDATE_FREQUENCY );
+
+	while ( g_run_server )
 	{
 		// -------------------------------------------------------------------------------
-		// now, step through all network games and process input - if a game ended, delete it
+		//  step through all network games and process input - if a game ended, delete it
 		// -------------------------------------------------------------------------------
 
 		SWLS_RunningTime++;
@@ -193,10 +236,6 @@ int main(int argc, char** argv)
 			}
 		}
 	}
-	syslog(LOG_NOTICE, "Blobby Volley 2 dedicated server shutting down");
-	#ifndef WIN32
-	closelog();
-	#endif
 }
 
 // -----------------------------------------------------------------------------------------
