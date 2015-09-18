@@ -48,13 +48,13 @@ void syslog(int pri, const char* format, ...);
 DedicatedServer::DedicatedServer(const ServerInfo& info,
 								const std::vector<std::string>& rulefiles,
 								const std::vector<float>& gamespeeds,
-								int max_clients)
+								int max_clients, bool local_server)
 : mConnectedClients(0)
 , mServer(new RakServer())
 , mAcceptNewPlayers(true)
+, mPlayerHosted( local_server )
 , mServerInfo(info)
 {
-
 	if (!mServer->Start(max_clients, 1, mServerInfo.port))
 	{
 		syslog(LOG_ERR, "Couldn't bind to port %i, exiting", mServerInfo.port);
@@ -207,6 +207,17 @@ void DedicatedServer::processPackets()
 				}
 				mMatchMaker.addPlayer(packet->playerId, newplayer);
 				syslog(LOG_DEBUG, "New player \"%s\" connected from %s ", newplayer->getName().c_str(), packet->playerId.toString().c_str());
+
+				// if this is a locally hosted server, any player that connects automatically joins an
+				// open game
+				if( mPlayerHosted && mMatchMaker.getOpenGamesCount() != 0)
+				{
+					RakNet::BitStream stream;
+					stream.Write((unsigned char)ID_LOBBY);
+					stream.Write((unsigned char)LobbyPacketType::JOIN_GAME);
+					stream.Write( mMatchMaker.getOpenGameIDs().front() );
+					mMatchMaker.receiveLobbyPacket( packet->playerId, stream );
+				}
 				break;
 			}
 			case ID_LOBBY:

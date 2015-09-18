@@ -50,9 +50,10 @@ class DedicatedServer
 	public:
 		/// create a dedicated server with the data specified in info, using the rules from rulesfile, allowing max_clients
 		/// simulatanious connections
-		/// \todo Maybe two classes for server info: lokal server info for an server, and remote for data sent to client
+		/// \todo Maybe two classes for server info: local server info for a server, and remote for data sent to client
+		/// \param is_local: Set to true, to indicate a locally hosted server intended for a single game.
 		DedicatedServer(const ServerInfo& info, const std::vector<std::string>& rulefile,
-						const std::vector<float>& speeds, int max_clients);
+						const std::vector<float>& speeds, int max_clients, bool is_local = false);
 		~DedicatedServer();
 
 		// server processing
@@ -94,6 +95,8 @@ class DedicatedServer
 
 		// true, if new players should be accepted
 		bool mAcceptNewPlayers;
+		// true, if this is a player hosted local server
+		bool mPlayerHosted;
 		// server info with server config
 		ServerInfo mServerInfo;
 

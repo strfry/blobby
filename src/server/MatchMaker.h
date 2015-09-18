@@ -63,6 +63,10 @@ public:
 	void addGameSpeedOption( int speed );
 	void addRuleOption( const std::string& file );
 
+	// info functions
+	unsigned getOpenGamesCount() const;
+	std::vector<unsigned> getOpenGameIDs() const;
+
 private:
 	struct OpenGame;
 
