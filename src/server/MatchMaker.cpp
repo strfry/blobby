@@ -37,6 +37,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 unsigned MatchMaker::openGame( PlayerID creator, int speed, int rules, int points )
 {
+	if(!mAllowNewGames)
+	{
+		std::cerr << "creation of new games is currently disabled, sorry " << creator << "\n";
+		return -1;
+	}
+
 	auto plid = mPlayerMap.find(creator);
 	if(plid == mPlayerMap.end())
 	{
@@ -434,4 +440,9 @@ std::vector<unsigned> MatchMaker::getOpenGameIDs() const
 		gameids.push_back( v.first );
 	}
 	return gameids;
+}
+
+void MatchMaker::setAllowNewGames( bool allow )
+{
+	mAllowNewGames = allow;
 }

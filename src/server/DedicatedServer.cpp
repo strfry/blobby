@@ -242,6 +242,12 @@ void DedicatedServer::processPackets()
 
 void DedicatedServer::updateGames()
 {
+	// update new game creation for locally hosted games.
+	if( mPlayerHosted )
+	{
+		mMatchMaker.setAllowNewGames(mMatchMaker.getOpenGamesCount() == 0);
+	}
+
 	// this loop ensures that all games that have finished (eg because one
 	// player left) still process network packets, to let the other player
 	// finalize its interactions (sending replays etc).

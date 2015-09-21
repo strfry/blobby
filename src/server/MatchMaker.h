@@ -62,6 +62,7 @@ public:
 	// add settings
 	void addGameSpeedOption( int speed );
 	void addRuleOption( const std::string& file );
+	void setAllowNewGames( bool allow );
 
 	// info functions
 	unsigned getOpenGamesCount() const;
@@ -113,6 +114,7 @@ private:
 	// possible game configurations
 	std::vector<unsigned int> mPossibleGameSpeeds;
 	std::vector<Rule> mPossibleGameRules;
+	bool mAllowNewGames = true;
 
 	// callbacks
 	create_game_fn mCreateGame;
