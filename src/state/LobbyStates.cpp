@@ -1,6 +1,7 @@
 #include "LobbyStates.h"
 
 #include <stdexcept>
+#include <algorithm>
 #include <iostream>
 
 #include <boost/lexical_cast.hpp>
@@ -13,6 +14,7 @@
 #include "NetworkSearchState.h"
 #include "UserConfig.h"
 #include "GenericIO.h"
+#include "GameLogic.h"
 
 LobbyState::LobbyState(ServerInfo info, PreviousState previous) :
 		mClient(new RakClient(), [](RakClient* client) { client->Disconnect(25); }),
@@ -59,7 +61,7 @@ void LobbyState::step_impl()
 				RakNet::BitStream stream = makeEnterServerPacket( mLocalPlayer );
 				mClient->Send(&stream, LOW_PRIORITY, RELIABLE_ORDERED, 0);
 
-				mSubState = boost::make_shared<LobbyMainSubstate>(mClient);
+				mSubState = boost::make_shared<LobbyMainSubstate>(mClient, 0, 0, 3);
 				break;
 			}
 			case ID_CONNECTION_ATTEMPT_FAILED:
@@ -88,7 +90,6 @@ void LobbyState::step_impl()
 				unsigned char t;
 				in->byte(t);
 				in->byte(t);
-				std::cout << "T: " << (int)t << "\n";
 				if((LobbyPacketType)t == LobbyPacketType::SERVER_STATUS)
 				{
 					uint32_t player_count;
@@ -113,12 +114,46 @@ void LobbyState::step_impl()
 					{
 						mStatus.mOpenGames.push_back( ServerStatusData::OpenGame{ gameids.at(i), gamenames.at(i), gamerules.at(i), gamespeeds.at(i), gamescores.at(i)});
 					}
+
+					// find out which settings most closely resemble the local config
+					bool first_config = mPreferedSpeed == -1; // detect whether we set config for the first time
+					boost::shared_ptr<IUserConfigReader> config = IUserConfigReader::createUserConfigReader("config.xml");
+
+					// speed
+					int speed = config->getInteger("gamefps");
+					auto& speeds = mStatus.mPossibleSpeeds;
+					auto closest_speed = std::min_element( speeds.begin(), speeds.end(),
+									[speed](int a, int b){ return std::abs(a-speed) < std::abs(b-speed); } );
+					mPreferedSpeed = std::distance( speeds.begin(), closest_speed );
+
+					// rules
+					auto gamelogic = createGameLogic(config->getString("rules"), nullptr, 1);
+					std::string rule = gamelogic->getTitle();
+					auto& rules = mStatus.mPossibleRules;
+					auto found = std::find( rules.begin(), rules.end(), rule);
+					/// \todo we need to open the lua file here to get the actual ruleset name.
+					if( found != rules.end())
+						mPreferedRules = std::distance( rules.begin(), found );
+
+					// points
+					int points = config->getInteger( "scoretowin" );
+					std::array<unsigned, 8> scores{2, 5, 10, 15, 20, 25, 40, 50};
+					auto closest_score = std::min_element( scores.begin(), scores.end(),
+									[points](int a, int b){ return std::abs(a-points) < std::abs(b-points); } );
+					mPreferedScore = std::distance( scores.begin(), closest_score );
+
+					// if this is the first time we receive the config, create new main substate
+					if( first_config )
+					{
+						mSubState = boost::make_shared<LobbyMainSubstate>(mClient, mPreferedSpeed, mPreferedRules, mPreferedScore);
+					}
+
 				} else if((LobbyPacketType)t == LobbyPacketType::GAME_STATUS)
 				{
 					mSubState = boost::make_shared<LobbyGameSubstate>(mClient, in);
 				} else if((LobbyPacketType)t == LobbyPacketType::REMOVED_FROM_GAME)
 				{
-					mSubState = boost::make_shared<LobbyMainSubstate>(mClient);
+					mSubState = boost::make_shared<LobbyMainSubstate>(mClient, mPreferedSpeed, mPreferedRules, mPreferedScore);
 				}
 				}
 				break;
@@ -211,7 +246,12 @@ const char* LobbyState::getStateName() const
 // ----------------------------------------------------------------------------
 // 				M a i n     S u b s t a t e
 // ----------------------------------------------------------------------------
-LobbyMainSubstate::LobbyMainSubstate(boost::shared_ptr<RakClient> client) : mClient(client)
+LobbyMainSubstate::LobbyMainSubstate(boost::shared_ptr<RakClient> client,
+									unsigned prefspeed, unsigned prefrules, unsigned prefscore ) :
+	mClient(client),
+	mChosenSpeed( prefspeed ),
+	mChosenRules( prefrules ),
+	mChosenScore( prefscore )
 {
 
 }

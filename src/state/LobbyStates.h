@@ -72,13 +72,18 @@ class LobbyState : public State
 
 		ServerStatusData mStatus;
 		boost::shared_ptr<LobbySubstate> mSubState;
+
+		// indices of settings that resemble most closely those of local settings
+		unsigned mPreferedSpeed = -1;
+		unsigned mPreferedRules = 0;
+		unsigned mPreferedScore = 3;
 };
 
 
 class LobbyMainSubstate : public LobbySubstate
 {
 public:
-	LobbyMainSubstate(boost::shared_ptr<RakClient> client);
+	LobbyMainSubstate(boost::shared_ptr<RakClient> client, unsigned speed, unsigned rules, unsigned score);
 	virtual void step( const ServerStatusData& status );
 private:
 	boost::shared_ptr<RakClient> mClient;
@@ -86,9 +91,9 @@ private:
 	unsigned int mSelectedGame = 0;
 
 	// temp variables for open game
-	unsigned mChosenSpeed = 0;
-	unsigned mChosenRules = 0;
-	unsigned mChosenScore = 3;
+	unsigned mChosenSpeed;
+	unsigned mChosenRules;
+	unsigned mChosenScore;
 
 	std::vector<unsigned> mPossibleScores{2, 5, 10, 15, 20, 25, 40, 50};
 };
